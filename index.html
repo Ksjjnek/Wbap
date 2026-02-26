@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Telegram WebApp</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+
+<body>
+
+<h1>Мой Telegram WebApp 🚀</h1>
+
+<button onclick="send()">Отправить данные</button>
+
+<script>
+const tg = window.Telegram.WebApp;
+
+tg.expand();
+
+function send(){
+  tg.sendData("Привет от WebApp");
+}
+</script>
+
+</body>
+</html>
