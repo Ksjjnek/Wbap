@@ -7,7 +7,7 @@
 <style>
 body { font-family: Arial; background:#0f172a; color:white; margin:0; text-align:center; }
 #registration, #chat { display:none; height:100vh; flex-direction:column; }
-#start { display:block; margin-top:150px; }
+#start { display:none; margin-top:150px; }
 button { padding:15px 30px; font-size:18px; border:none; border-radius:10px; background:#3b82f6; color:white; cursor:pointer; }
 #messages { flex:1; overflow:auto; padding:20px; text-align:left; }
 #input { display:flex; padding:10px; background:#1e293b; }
@@ -16,7 +16,6 @@ button { padding:15px 30px; font-size:18px; border:none; border-radius:10px; bac
 h2 { margin-top:30px; }
 </style>
 </head>
-
 <body>
 
 <div id="start">
@@ -43,7 +42,7 @@ h2 { margin-top:30px; }
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const ALLOWED_BOT_ID = 8250250632; // проверка на конкретного бота
+const ALLOWED_BOT_ID = 8250250632; // твой бот
 
 // Рандомные уведомления
 const registerMessages = [
@@ -55,16 +54,33 @@ const registerMessages = [
 
 let nickname = null;
 
-// Проверка Telegram и бота
-if(!tg.initData){
-    document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Открой через Telegram бота</h2>";
-} else if(tg.initDataUnsafe.bot_id != ALLOWED_BOT_ID){
-    document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Этот WebApp работает только с официальным ботом</h2>";
-} else {
-    document.getElementById("start").style.display="block";
+// ----------------------
+// Тщательная проверка Telegram
+// ----------------------
+function checkTelegramAccess() {
+    if(!tg.initData || !tg.initDataUnsafe){
+        return false;
+    }
+    const user = tg.initDataUnsafe.user;
+    const botId = tg.initDataUnsafe.bot_id;
+    if(!user || !botId){
+        return false;
+    }
+    if(botId != ALLOWED_BOT_ID){
+        return false;
+    }
+    return true;
 }
 
+if(!checkTelegramAccess()){
+    document.body.innerHTML = "<h2 style='color:red; margin-top:50px;'>❌ Доступ разрешён только через Telegram и официального бота</h2>";
+} else {
+    document.getElementById("start").style.display = "block";
+}
+
+// ----------------------
 // Функции
+// ----------------------
 function openRegistration(){
     document.getElementById("start").style.display="none";
     document.getElementById("registration").style.display="block";
