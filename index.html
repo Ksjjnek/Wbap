@@ -5,36 +5,166 @@
 <title>NovaChat</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
-body{
-  font-family: Arial;
-  background:#0f172a;
-  color:white;
-  margin:0;
-  text-align:center;
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    margin: 0;
+    text-align: center;
 }
-#start{margin-top:150px;}
-button{
-  padding:15px 30px;
-  font-size:18px;
-  border:none;
-  border-radius:10px;
-  background:#3b82f6;
-  color:white;
-  cursor:pointer;
+#registration, #chat { display: none; height: 100vh; flex-direction: column; }
+#start { display: none; margin-top: 150px; }
+button {
+    padding: 15px 30px;
+    font-size: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
 }
-#chat{
-  display:none;
-  height:100vh;
-  flex-direction:column;
+#messages {
+    flex: 1;
+    overflow: auto;
+    padding: 20px;
+    text-align: left;
 }
-#messages{flex:1; overflow:auto; padding:20px; text-align:left;}
-#input{display:flex; padding:10px; background:#1e293b;}
-#input input{flex:1; padding:10px; border:none; border-radius:8px;}
-#input button{margin-left:10px;}
+#input {
+    display: flex;
+    padding: 10px;
+    background: #1e293b;
+}
+#input input {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+}
+#input button { margin-left: 10px; }
+label { font-size: 14px; margin-left: 10px; }
 </style>
 </head>
 
 <body>
+
+<!-- Экран старт -->
+<div id="start">
+  <h1>NovaChat 💬</h1>
+  <p>Анонимный чат внутри Telegram</p>
+  <button onclick="openRegistration()">START</button>
+</div>
+
+<!-- Экран регистрации -->
+<div id="registration">
+  <h2>Выберите ник для чата</h2>
+  <input id="nickname" placeholder="Ваш ник" style="padding:10px; font-size:16px;">
+  <div style="margin:10px;">
+    <input type="checkbox" id="announce">
+    <label for="announce">Объявить о моём входе в чат</label>
+  </div>
+  <button onclick="register()">Войти в чат</button>
+</div>
+
+<!-- Экран чата -->
+<div id="chat">
+  <div id="messages"></div>
+  <div id="input">
+    <input id="text" placeholder="Написать сообщение">
+    <button onclick="send()">Отправить</button>
+  </div>
+</div>
+
+<script>
+const tg = window.Telegram.WebApp;
+tg.expand();
+
+// 🔒 Разрешённый ID бота
+const ALLOWED_BOT_ID = 8250250632;
+
+// Проверка открытия через Telegram и конкретного бота
+if(!tg.initData){
+    document.body.innerHTML="❌ Открой приложение через Telegram бота";
+} else if(tg.initDataUnsafe.bot_id != ALLOWED_BOT_ID){
+    document.body.innerHTML="❌ Этот WebApp работает только с официальным ботом";
+} else {
+    // Всё ок — показываем стартовый экран
+    document.getElementById("start").style.display="block";
+}
+
+// Рандомные сообщения
+const joinMessages = [
+  "заявился в чате!",
+  "присоединился к разговору!",
+  "вошёл в комнату!",
+  "только что появился здесь!"
+];
+
+const registerMessages = [
+  "зарегистрировался!",
+  "только что создал ник!",
+  "готов к общению!",
+  "присоединился к чату!"
+];
+
+let nickname = null;
+let showAnnouncement = true;
+
+// Открытие регистрации
+function openRegistration(){
+  document.getElementById("start").style.display="none";
+  document.getElementById("registration").style.display="block";
+}
+
+// Регистрация пользователя
+function register(){
+  const nickInput = document.getElementById("nickname").value.trim();
+  if(nickInput === ""){
+    alert("Введите ник, чтобы продолжить");
+    return;
+  }
+  nickname = nickInput;
+  showAnnouncement = document.getElementById("announce").checked;
+
+  document.getElementById("registration").style.display="none";
+  document.getElementById("chat").style.display="flex";
+
+  if(showAnnouncement){
+    const msg = registerMessages[Math.floor(Math.random()*registerMessages.length)];
+    addMessage("Система", `${nickname} ${msg}`);
+    tg.sendData(`SYSTEM_ANNOUNCE: ${nickname} ${msg}`);
+  }
+}
+
+// Отправка сообщений
+function send(){
+  const textInput = document.getElementById("text");
+  let text = textInput.value.trim();
+  if(text === "") return;
+
+  addMessage(nickname, text);
+  tg.sendData(text);
+  textInput.value = "";
+}
+
+// Добавление сообщений в чат
+function addMessage(name,text){
+  const msg = document.createElement("div");
+  msg.innerHTML = `<b>${name}:</b> ${text}`;
+  document.getElementById("messages").appendChild(msg);
+  document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+}
+
+// Сообщение о входе в чат
+function joinChat(nick){
+  const msg = joinMessages[Math.floor(Math.random()*joinMessages.length)];
+  addMessage("Система", `${nick} ${msg}`);
+  tg.sendData(`SYSTEM_JOIN: ${nick} ${msg}`);
+}
+
+</script>
+
+</body>
+</html><body>
 
 <div id="start">
   <h1>NovaChat 💬</h1>
