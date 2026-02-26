@@ -42,12 +42,13 @@ button {
 }
 #input button { margin-left: 10px; }
 label { font-size: 14px; margin-left: 10px; }
+h2 { margin-top: 30px; }
 </style>
 </head>
 
 <body>
 
-<!-- Экран старт -->
+<!-- Стартовый экран -->
 <div id="start">
   <h1>NovaChat 💬</h1>
   <p>Анонимный чат внутри Telegram</p>
@@ -81,13 +82,12 @@ tg.expand();
 // 🔒 Разрешённый ID бота
 const ALLOWED_BOT_ID = 8250250632;
 
-// Проверка открытия через Telegram и конкретного бота
+// Проверка Telegram и конкретного бота
 if(!tg.initData){
-    document.body.innerHTML="❌ Открой приложение через Telegram бота";
+    document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Открой приложение через Telegram бота</h2>";
 } else if(tg.initDataUnsafe.bot_id != ALLOWED_BOT_ID){
-    document.body.innerHTML="❌ Этот WebApp работает только с официальным ботом";
+    document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Этот WebApp работает только с официальным ботом</h2>";
 } else {
-    // Всё ок — показываем стартовый экран
     document.getElementById("start").style.display="block";
 }
 
@@ -98,7 +98,6 @@ const joinMessages = [
   "вошёл в комнату!",
   "только что появился здесь!"
 ];
-
 const registerMessages = [
   "зарегистрировался!",
   "только что создал ник!",
@@ -154,159 +153,12 @@ function addMessage(name,text){
   document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
 }
 
-// Сообщение о входе в чат
+// Сообщение о входе в чат (для будущих пользователей)
 function joinChat(nick){
   const msg = joinMessages[Math.floor(Math.random()*joinMessages.length)];
   addMessage("Система", `${nick} ${msg}`);
   tg.sendData(`SYSTEM_JOIN: ${nick} ${msg}`);
 }
-
-</script>
-
-</body>
-</html><body>
-
-<div id="start">
-  <h1>NovaChat 💬</h1>
-  <p>Анонимный чат внутри Telegram</p>
-  <button onclick="startApp()">START</button>
-</div>
-
-<div id="chat">
-  <div id="messages"></div>
-  <div id="input">
-    <input id="text" placeholder="Написать сообщение">
-    <button onclick="send()">Отправить</button>
-  </div>
-</div>
-
-<script>
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-/* 🔒 Проверка, что сайт открыт через Telegram */
-if(!tg.initData){
-  document.body.innerHTML="❌ Открой приложение через Telegram бота";
-}
-
-/* получаем пользователя */
-const user = tg.initDataUnsafe.user;
-
-function startApp(){
-  document.getElementById("start").style.display="none";
-  document.getElementById("chat").style.display="flex";
-  addMessage("Система","Добро пожаловать, "+user.first_name+"!");
-}
-
-function send(){
-  let text = document.getElementById("text").value;
-  if(text=="") return;
-  addMessage(user.first_name,text);
-  tg.sendData(text); // отправка боту
-  document.getElementById("text").value="";
-}
-
-function addMessage(name,text){
-  let msg=document.createElement("div");
-  msg.innerHTML="<b>"+name+":</b> "+text;
-  document.getElementById("messages").appendChild(msg);
-  document.getElementById("messages").scrollTop=document.getElementById("messages").scrollHeight;
-}
-</script>
-
-</body>
-</html>
-#messages{
-flex:1;
-overflow:auto;
-padding:20px;
-text-align:left;
-}
-
-#input{
-display:flex;
-padding:10px;
-background:#1e293b;
-}
-
-#input input{
-flex:1;
-padding:10px;
-border:none;
-border-radius:8px;
-}
-
-#input button{
-margin-left:10px;
-}
-</style>
-
-</head>
-
-<body>
-
-<div id="start">
-<h1>NovaChat 💬</h1>
-<p>Анонимный чат внутри Telegram</p>
-<button onclick="startApp()">START</button>
-</div>
-
-<div id="chat">
-<div id="messages"></div>
-
-<div id="input">
-<input id="text" placeholder="Написать сообщение">
-<button onclick="send()">Отправить</button>
-</div>
-</div>
-
-<script>
-
-const tg = window.Telegram.WebApp;
-tg.expand();
-
-/* 🔒 Проверка что сайт открыт именно через Telegram */
-if(!tg.initData){
-document.body.innerHTML="Открой приложение через Telegram бота";
-}
-
-/* 🔒 ID разрешённого бота */
-const BOT_ID = "8250250632";
-
-/* получаем пользователя */
-const user = tg.initDataUnsafe.user;
-
-function startApp(){
-document.getElementById("start").style.display="none";
-document.getElementById("chat").style.display="flex";
-
-addMessage("Система","Добро пожаловать "+user.first_name);
-}
-
-function send(){
-
-let text=document.getElementById("text").value;
-
-if(text=="") return;
-
-addMessage(user.first_name,text);
-
-/* отправляем боту */
-tg.sendData(text);
-
-document.getElementById("text").value="";
-}
-
-function addMessage(name,text){
-
-let msg=document.createElement("div");
-
-msg.innerHTML="<b>"+name+":</b> "+text;
-
-document.getElementById("messages").appendChild(msg);
-
-}
-
 </script>
 
 </body>
