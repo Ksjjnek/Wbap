@@ -2,24 +2,130 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Telegram WebApp</title>
+<title>NovaChat</title>
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+<style>
+body{
+font-family: Arial;
+background:#0f172a;
+color:white;
+text-align:center;
+margin:0;
+}
+
+#start{
+margin-top:150px;
+}
+
+button{
+padding:15px 30px;
+font-size:18px;
+border:none;
+border-radius:10px;
+background:#3b82f6;
+color:white;
+cursor:pointer;
+}
+
+#chat{
+display:none;
+height:100vh;
+flex-direction:column;
+}
+
+#messages{
+flex:1;
+overflow:auto;
+padding:20px;
+text-align:left;
+}
+
+#input{
+display:flex;
+padding:10px;
+background:#1e293b;
+}
+
+#input input{
+flex:1;
+padding:10px;
+border:none;
+border-radius:8px;
+}
+
+#input button{
+margin-left:10px;
+}
+</style>
+
 </head>
 
 <body>
 
-<h1>Мой Telegram WebApp 🚀</h1>
+<div id="start">
+<h1>NovaChat 💬</h1>
+<p>Анонимный чат внутри Telegram</p>
+<button onclick="startApp()">START</button>
+</div>
 
-<button onclick="send()">Отправить данные</button>
+<div id="chat">
+<div id="messages"></div>
+
+<div id="input">
+<input id="text" placeholder="Написать сообщение">
+<button onclick="send()">Отправить</button>
+</div>
+</div>
 
 <script>
-const tg = window.Telegram.WebApp;
 
+const tg = window.Telegram.WebApp;
 tg.expand();
 
-function send(){
-  tg.sendData("Привет от WebApp");
+/* 🔒 Проверка что сайт открыт именно через Telegram */
+if(!tg.initData){
+document.body.innerHTML="Открой приложение через Telegram бота";
 }
+
+/* 🔒 ID разрешённого бота */
+const BOT_ID = "8250250632";
+
+/* получаем пользователя */
+const user = tg.initDataUnsafe.user;
+
+function startApp(){
+document.getElementById("start").style.display="none";
+document.getElementById("chat").style.display="flex";
+
+addMessage("Система","Добро пожаловать "+user.first_name);
+}
+
+function send(){
+
+let text=document.getElementById("text").value;
+
+if(text=="") return;
+
+addMessage(user.first_name,text);
+
+/* отправляем боту */
+tg.sendData(text);
+
+document.getElementById("text").value="";
+}
+
+function addMessage(name,text){
+
+let msg=document.createElement("div");
+
+msg.innerHTML="<b>"+name+":</b> "+text;
+
+document.getElementById("messages").appendChild(msg);
+
+}
+
 </script>
 
 </body>
