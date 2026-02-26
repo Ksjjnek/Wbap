@@ -3,10 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <title>NovaChat</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
 body { font-family: Arial; background:#0f172a; color:white; margin:0; text-align:center; }
 #registration, #chat { display:none; height:100vh; flex-direction:column; }
-#start { display:block; margin-top:150px; }
+#start { display:none; margin-top:150px; }
 button { padding:15px 30px; font-size:18px; border:none; border-radius:10px; background:#3b82f6; color:white; cursor:pointer; }
 #messages { flex:1; overflow:auto; padding:20px; text-align:left; }
 #input { display:flex; padding:10px; background:#1e293b; }
@@ -16,6 +17,7 @@ label { font-size:14px; margin-left:10px; }
 h2 { margin-top:30px; }
 </style>
 </head>
+
 <body>
 
 <div id="start">
@@ -25,9 +27,9 @@ h2 { margin-top:30px; }
 </div>
 
 <div id="registration">
-  <h2>Введите код из кнопки бота</h2>
-  <input id="usercode" placeholder="Код" style="padding:10px; font-size:16px;">
-  <button onclick="verifyCode()">Подтвердить</button>
+  <h2>Выберите ник для чата</h2>
+  <input id="nickname" placeholder="Ваш ник" style="padding:10px; font-size:16px;">
+  <button onclick="register()">Войти в чат</button>
 </div>
 
 <div id="chat">
@@ -42,17 +44,31 @@ h2 { margin-top:30px; }
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-let nickname = null;
-let allowedCode = null;
-let allowedUserId = null;
+const ALLOWED_BOT_ID = 8250250632; // твой бот
 
-// Получаем user_id и code из URL
-const params = new URLSearchParams(window.location.search);
-if(params.has("user") && params.has("code")){
-    allowedUserId = params.get("user");
-    allowedCode = params.get("code");
-} else {
+// Рандомные уведомления
+const joinMessages = [
+  "заявился в чате!",
+  "присоединился к разговору!",
+  "вошёл в комнату!",
+  "только что появился здесь!"
+];
+const registerMessages = [
+  "зарегистрировался!",
+  "только что создал ник!",
+  "готов к общению!",
+  "присоединился к чату!"
+];
+
+let nickname = null;
+
+// Проверка Telegram и конкретного бота
+if(!tg.initData){
     document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Открой через Telegram бота</h2>";
+} else if(tg.initDataUnsafe.bot_id != ALLOWED_BOT_ID){
+    document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Этот WebApp работает только с официальным ботом</h2>";
+} else {
+    document.getElementById("start").style.display="block";
 }
 
 // Функции
@@ -61,23 +77,22 @@ function openRegistration(){
     document.getElementById("registration").style.display="block";
 }
 
-function verifyCode(){
-    const inputCode = document.getElementById("usercode").value.trim();
-    if(inputCode === allowedCode){
-        nickname = prompt("Введите ваш ник для чата:");
-        if(!nickname) {
-            alert("Ник обязателен");
-            return;
-        }
-        const showAnnouncement = confirm("Хотите, чтобы о вашем входе в чат было объявлено?");
-        document.getElementById("registration").style.display="none";
-        document.getElementById("chat").style.display="flex";
-        if(showAnnouncement){
-            addMessage("Система", `${nickname} вошёл в чат!`);
-            tg.sendData(`SYSTEM_ANNOUNCE: ${nickname} вошёл в чат!`);
-        }
-    } else {
-        alert("Неверный код! Используйте кнопку бота");
+function register(){
+    const nickInput = document.getElementById("nickname").value.trim();
+    if(nickInput === ""){
+        alert("Ник обязателен");
+        return;
+    }
+    nickname = nickInput;
+
+    const showAnnouncement = confirm("Хотите, чтобы о вашем входе в чат было объявлено?");
+    document.getElementById("registration").style.display="none";
+    document.getElementById("chat").style.display="flex";
+
+    if(showAnnouncement){
+        const msg = registerMessages[Math.floor(Math.random()*registerMessages.length)];
+        addMessage("Система", `${nickname} ${msg}`);
+        tg.sendData(`SYSTEM_ANNOUNCE: ${nickname} ${msg}`);
     }
 }
 
@@ -87,7 +102,7 @@ function send(){
     if(!text || !nickname) return;
     addMessage(nickname, text);
     textInput.value="";
-    tg.sendData(text); // отправка боту
+    tg.sendData(text);
 }
 
 function addMessage(name,text){
@@ -95,6 +110,13 @@ function addMessage(name,text){
     msg.innerHTML = `<b>${name}:</b> ${text}`;
     document.getElementById("messages").appendChild(msg);
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
+}
+
+// Пример уведомления о входе других пользователей
+function joinChat(nick){
+    const msg = joinMessages[Math.floor(Math.random()*joinMessages.length)];
+    addMessage("Система", `${nick} ${msg}`);
+    tg.sendData(`SYSTEM_JOIN: ${nick} ${msg}`);
 }
 </script>
 </body>
