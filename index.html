@@ -7,13 +7,12 @@
 <style>
 body { font-family: Arial; background:#0f172a; color:white; margin:0; text-align:center; }
 #registration, #chat { display:none; height:100vh; flex-direction:column; }
-#start { display:none; margin-top:150px; }
+#start { display:block; margin-top:150px; }
 button { padding:15px 30px; font-size:18px; border:none; border-radius:10px; background:#3b82f6; color:white; cursor:pointer; }
 #messages { flex:1; overflow:auto; padding:20px; text-align:left; }
 #input { display:flex; padding:10px; background:#1e293b; }
 #input input { flex:1; padding:10px; border:none; border-radius:8px; }
 #input button { margin-left:10px; }
-label { font-size:14px; margin-left:10px; }
 h2 { margin-top:30px; }
 </style>
 </head>
@@ -44,15 +43,9 @@ h2 { margin-top:30px; }
 const tg = window.Telegram.WebApp;
 tg.expand();
 
-const ALLOWED_BOT_ID = 8250250632; // твой бот
+const ALLOWED_BOT_ID = 8250250632; // проверка на конкретного бота
 
 // Рандомные уведомления
-const joinMessages = [
-  "заявился в чате!",
-  "присоединился к разговору!",
-  "вошёл в комнату!",
-  "только что появился здесь!"
-];
 const registerMessages = [
   "зарегистрировался!",
   "только что создал ник!",
@@ -62,7 +55,7 @@ const registerMessages = [
 
 let nickname = null;
 
-// Проверка Telegram и конкретного бота
+// Проверка Telegram и бота
 if(!tg.initData){
     document.body.innerHTML="<h2 style='color:red; margin-top:50px;'>❌ Открой через Telegram бота</h2>";
 } else if(tg.initDataUnsafe.bot_id != ALLOWED_BOT_ID){
@@ -110,13 +103,6 @@ function addMessage(name,text){
     msg.innerHTML = `<b>${name}:</b> ${text}`;
     document.getElementById("messages").appendChild(msg);
     document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-}
-
-// Пример уведомления о входе других пользователей
-function joinChat(nick){
-    const msg = joinMessages[Math.floor(Math.random()*joinMessages.length)];
-    addMessage("Система", `${nick} ${msg}`);
-    tg.sendData(`SYSTEM_JOIN: ${nick} ${msg}`);
 }
 </script>
 </body>
