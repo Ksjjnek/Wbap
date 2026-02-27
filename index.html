@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plinko Insane Mode</title>
+    <title>Plinko Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
@@ -15,53 +15,68 @@
         }
 
         /* Шапка */
-        .header { width: 100%; padding: 10px 15px; display: flex; align-items: center; box-sizing: border-box; }
+        .header { 
+            width: 100%; padding: 10px 15px; display: flex; 
+            justify-content: space-between; align-items: center; box-sizing: border-box; 
+        }
         .profile { display: flex; align-items: center; background: var(--gray); padding: 4px 12px 4px 4px; border-radius: 25px; }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; }
-        .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
+        .avatar { width: 30px; height: 30px; border-radius: 50%; background: #444; }
+        .bal-val { margin-left: 8px; font-weight: bold; font-size: 13px; }
 
-        /* Переключатели */
-        .toggle-box {
-            position: relative; width: 90%; background: var(--gray); border-radius: 12px;
-            display: flex; padding: 3px; margin: 8px 0;
+        .game-mode-btn {
+            background: var(--blue); border: none; color: white; 
+            padding: 6px 12px; border-radius: 12px; font-size: 12px; font-weight: bold;
         }
-        .toggle-btn { flex: 1; text-align: center; padding: 8px; z-index: 2; font-size: 13px; font-weight: 600; cursor: pointer; }
-        .slider {
-            position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px);
-            background: var(--blue); border-radius: 9px; transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 1;
-        }
-        .active-right .slider { transform: translateX(100%); }
 
-        /* Игровое поле */
-        #game { width: 100%; height: 380px; position: relative; margin-top: -10px; }
-        canvas { position: absolute; top: 0; left: 0; }
+        /* Поле */
+        #game { width: 400px; height: 380px; position: relative; margin-top: -5px; }
+        canvas { display: block; }
 
-        .mults { display: flex; justify-content: center; gap: 4px; width: 100%; padding: 0 10px; box-sizing: border-box; }
+        .mults { display: flex; justify-content: center; gap: 4px; width: 400px; padding: 0 10px; box-sizing: border-box; }
         .m-tile {
             flex: 1; padding: 8px 0; border-radius: 4px; text-align: center; font-size: 10px;
-            font-weight: bold; transition: 0.5s; opacity: 0; transform: translateY(10px);
-            box-shadow: inset 0 -3px rgba(0,0,0,0.2);
+            font-weight: bold; transition: 0.3s;
         }
-        .m-tile.show { opacity: 1; transform: translateY(0); }
 
-        /* Управление */
-        .panel { width: 90%; margin-top: 10px; }
-        .balls-grid { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 8px; }
+        /* Управление ставкой */
+        .bet-control {
+            display: flex; align-items: center; justify-content: center; 
+            gap: 10px; margin: 15px 0 5px; width: 90%;
+        }
+        .bet-input-wrap {
+            display: flex; align-items: center; background: var(--gray); 
+            border-radius: 12px; padding: 5px 10px;
+        }
+        .bet-btn-small {
+            background: none; border: none; color: var(--blue); 
+            font-size: 24px; font-weight: bold; cursor: pointer; padding: 0 10px;
+        }
+        .bet-input {
+            width: 60px; background: none; border: none; color: white; 
+            text-align: center; font-size: 18px; font-weight: bold; outline: none;
+        }
+        
+        .step-btn {
+            background: var(--gray); border: 1px solid #444; color: #aaa;
+            padding: 4px 8px; border-radius: 8px; font-size: 10px; margin-bottom: 10px;
+        }
+
+        .panel { width: 90%; display: flex; flex-direction: column; align-items: center; }
+        .balls-grid { display: flex; justify-content: space-between; gap: 4px; width: 100%; margin-bottom: 10px; }
         .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 10px 0; border-radius: 10px; font-size: 12px; font-weight: bold; }
         .b-btn.active { background: var(--green); }
 
         .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 16px; border-radius: 18px; font-size: 18px; font-weight: bold; }
-        .cost-info { text-align: center; margin-top: 8px; color: var(--orange); font-size: 14px; font-weight: 700; }
+        .cost-info { text-align: center; margin-top: 8px; color: var(--orange); font-size: 13px; font-weight: 700; }
 
-        /* Текст выигрыша */
+        /* Эффекты */
         .float {
             position: fixed; pointer-events: none; font-weight: 900; z-index: 100;
-            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
             animation: floatUp 1s ease-out forwards;
         }
         @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.5); opacity: 0; }
-            20% { transform: translateY(-20px) scale(1.3); opacity: 1; }
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            20% { transform: translateY(-20px) scale(1.2); opacity: 1; }
             100% { transform: translateY(-80px) scale(1); opacity: 0; }
         }
     </style>
@@ -73,18 +88,24 @@
             <img id="avatar" src="" class="avatar">
             <div class="bal-val" id="top-bal">1000 🪙</div>
         </div>
+        <button class="game-mode-btn" id="mode-toggle-btn" onclick="toggleGameMode()">РЕЖИМ: ОБЫЧНЫЙ</button>
     </div>
 
-    <div class="toggle-box" id="mode-t">
-        <div class="slider"></div>
-        <div class="toggle-btn" onclick="setMode('demo')">Демо</div>
-        <div class="toggle-btn" onclick="setMode('real')">Баланс</div>
-    </div>
+    <div class="toggle-box" style="display:none"> </div>
 
     <div id="game"></div>
     <div class="mults" id="mults-row"></div>
 
     <div class="panel">
+        <div class="bet-control">
+            <button class="bet-btn-small" onclick="adjustBet(-1)">−</button>
+            <div class="bet-input-wrap">
+                <input type="text" class="bet-input" id="bet-field" value="10" oninput="validateInput(this)" onblur="checkMin(this)">
+            </div>
+            <button class="bet-btn-small" onclick="adjustBet(1)">+</button>
+        </div>
+        <button class="step-btn" id="step-display" onclick="toggleStep()">ШАГ: 1</button>
+
         <div class="balls-grid">
             <button class="b-btn active" onclick="setB(1, this)">1</button>
             <button class="b-btn" onclick="setB(2, this)">2</button>
@@ -94,14 +115,8 @@
             <button class="b-btn" onclick="setB(50, this)">50</button>
         </div>
 
-        <div class="toggle-box" id="bet-t">
-            <div class="slider"></div>
-            <div class="toggle-btn" onclick="setBet(10)">10</div>
-            <div class="toggle-btn" onclick="setBet(100)">100</div>
-        </div>
-
         <button class="play-btn" onclick="play()">ИГРАТЬ</button>
-        <div class="cost-info" id="warn">С баланса спишется: 10 🪙</div>
+        <div class="cost-info" id="warn">Спишется: 10 🪙</div>
     </div>
 
     <script>
@@ -109,38 +124,53 @@
         tg.expand();
 
         let dBal = 1000, rBal = 0, mode = 'demo', balls = 1, bet = 10;
+        let gameMode = 'normal'; // 'normal' или 'insane'
+        let betStep = 1;
+        const steps = [0.5, 1, 2.5, 5, 10];
         let particles = [];
 
         const u = tg.initDataUnsafe?.user;
         document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=32d74b&color=fff`;
 
+        // Управление ставкой
+        function validateInput(el) {
+            el.value = el.value.replace(/[^0-9.]/g, '');
+            bet = parseFloat(el.value) || 0;
+            updateUI();
+        }
+        function checkMin(el) {
+            if (parseFloat(el.value) < 1 || el.value === "") { el.value = "1"; bet = 1; }
+            updateUI();
+        }
+        function adjustBet(dir) {
+            bet = Math.max(1, bet + (dir * betStep));
+            document.getElementById('bet-field').value = bet;
+            updateUI();
+        }
+        function toggleStep() {
+            let idx = steps.indexOf(betStep);
+            betStep = steps[(idx + 1) % steps.length];
+            document.getElementById('step-display').innerText = `ШАГ: ${betStep}`;
+        }
+        function toggleGameMode() {
+            gameMode = gameMode === 'normal' ? 'insane' : 'normal';
+            document.getElementById('mode-toggle-btn').innerText = `РЕЖИМ: ${gameMode === 'normal' ? 'ОБЫЧНЫЙ' : 'БЕЗУМНЫЙ'}`;
+            document.getElementById('mode-toggle-btn').style.background = gameMode === 'normal' ? 'var(--blue)' : 'var(--red)';
+        }
+
         function updateUI() {
-            if(dBal < 100) dBal = 100;
-            document.getElementById('top-bal').innerText = mode === 'demo' ? `${Math.floor(dBal)} 🪙` : `${rBal.toFixed(2)} USDT`;
-            document.getElementById('warn').innerText = `С баланса спишется: ${balls * bet} ${mode === 'demo' ? '🪙' : 'USDT'}`;
+            document.getElementById('top-bal').innerText = `${Math.floor(dBal)} 🪙`;
+            document.getElementById('warn').innerText = `Спишется: ${(balls * bet).toFixed(1)} 🪙`;
         }
 
-        function setMode(m) { mode = m; document.getElementById('mode-t').classList.toggle('active-right', m==='real'); updateUI(); }
-        function setBet(b) { bet = b; document.getElementById('bet-t').classList.toggle('active-right', b===100); updateUI(); }
-        function setB(n, el) { balls = n; document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); el.classList.add('active'); updateUI(); }
-
-        function createParticles(x, y, color) {
-            for (let i = 0; i < 12; i++) {
-                particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10-2, radius: Math.random()*3+1, color, life: 1.0 });
-            }
+        function setB(n, el) { 
+            balls = n; 
+            document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); 
+            el.classList.add('active'); 
+            updateUI(); 
         }
 
-        function spawnText(x, y, v, m) {
-            const el = document.createElement('div');
-            el.className = 'float';
-            if(m >= 1.5) { el.innerText = `+${v} 🔥`; el.style.color = '#32d74b'; createParticles(x, y, '#32d74b'); }
-            else if(m === 1) { el.innerText = `1x ⚖️`; el.style.color = '#fff'; createParticles(x, y, '#fff'); }
-            else { el.innerText = `-${(bet-v).toFixed(0)} 💀`; el.style.color = '#ff453a'; createParticles(x, y, '#ff453a'); }
-            el.style.left = x + 'px'; el.style.top = (y + 50) + 'px';
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 1000);
-        }
-
+        // Физика
         const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
         const eng = Engine.create();
         const ren = Render.create({ 
@@ -156,44 +186,39 @@
 
         const CAT_BALL = 0x0002, CAT_STATIC = 0x0001;
 
-        // Создаем множители и заниженные сенсоры
+        // Лунки и сенсоры
         conf.forEach((m, i) => {
             const d = document.createElement('div');
             d.className = 'm-tile'; d.innerText = m.l; d.style.background = m.c;
             document.getElementById('mults-row').appendChild(d);
-            setTimeout(() => d.classList.add('show'), 300 + i*50);
-
-            // Сенсоры опущены ниже (360 вместо 310)
-            const s = Bodies.rectangle(65 + i*45, 365, 35, 20, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
+            const s = Bodies.rectangle(65 + i*45, 370, 35, 10, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
             Composite.add(eng.world, s);
-
-            // Небольшие перегородки между множителями
-            if(i < conf.length) {
-                const wall = Bodies.rectangle(43 + i*45, 350, 4, 40, { isStatic: true, render: {fillStyle: '#333'} });
-                Composite.add(eng.world, wall);
-            }
+            const wall = Bodies.rectangle(43 + i*45, 355, 2, 30, { isStatic: true, render: {fillStyle: '#333'} });
+            Composite.add(eng.world, wall);
         });
-        // Последняя стенка для множителей
-        Composite.add(eng.world, Bodies.rectangle(43 + conf.length*45, 350, 4, 40, { isStatic: true, render: {fillStyle: '#333'} }));
+        Composite.add(eng.world, Bodies.rectangle(43 + 7*45, 355, 2, 30, { isStatic: true, render: {fillStyle: '#333'} }));
 
-        // Бортики по бокам игрового поля
-        const leftWall = Bodies.rectangle(35, 200, 10, 300, { isStatic: true, render: {fillStyle: '#2c2c2e'} });
-        const rightWall = Bodies.rectangle(365, 200, 10, 300, { isStatic: true, render: {fillStyle: '#2c2c2e'} });
-        Composite.add(eng.world, [leftWall, rightWall]);
+        // Тонкие бортики
+        Composite.add(eng.world, [
+            Bodies.rectangle(5, 190, 2, 320, { isStatic: true, render: {fillStyle: '#555'} }),
+            Bodies.rectangle(395, 190, 2, 320, { isStatic: true, render: {fillStyle: '#555'} })
+        ]);
 
-        // Исправленные колышки (Пины) - Идеальная центровка
-        const rows = 9;
+        // Пины: начало с 3-х штук, идеальная центровка
+        const startRows = 3;
+        const maxRows = 10;
         const spacingX = 36;
-        const spacingY = 32;
-        for(let i=2; i<=rows; i++) {
-            const rowWidth = (i - 1) * spacingX;
-            const startX = (400 - rowWidth) / 2;
-            for(let j=0; j<i; j++) {
-                const peg = Bodies.circle(startX + j*spacingX, 60 + (i*spacingY), 3, { 
+        const spacingY = 30;
+
+        for(let i = 0; i < (maxRows - startRows + 1); i++) {
+            let pinsInRow = startRows + i;
+            let rowWidth = (pinsInRow - 1) * spacingX;
+            let startX = 200 - (rowWidth / 2);
+            for(let j = 0; j < pinsInRow; j++) {
+                Composite.add(eng.world, Bodies.circle(startX + j*spacingX, 60 + (i*spacingY), 3, { 
                     isStatic: true, label: 'peg', collisionFilter: { category: CAT_STATIC },
                     render: { fillStyle: '#fff' } 
-                });
-                Composite.add(eng.world, peg);
+                }));
             }
         }
 
@@ -203,54 +228,54 @@
                 const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
                 const peg = p.bodyA.label === 'peg' ? p.bodyA : (p.bodyB.label === 'peg' ? p.bodyB : null);
 
-                // МОЩНЫЙ ОТСКОК (10%)
-                if(b && peg) {
-                    if(!b.hasPopped && Math.random() < 0.10) {
-                        b.hasPopped = true;
-                        const jumpX = (Math.random() - 0.5) * 12;
-                        Body.setVelocity(b, { x: jumpX, y: -9 });
-                        b.render.fillStyle = '#ffcc00'; // Подсветка при супер-отскоке
+                if(b && peg && !b.actionTaken) {
+                    b.actionTaken = true;
+                    if(gameMode === 'normal' && Math.random() < 0.10) {
+                        // Обычный режим: 10% шанс на слабый отскок
+                        Body.setVelocity(b, { x: b.velocity.x * 0.2, y: 1 });
+                    } else if(gameMode === 'insane' && Math.random() < 0.10) {
+                        // Безумный режим: 10% шанс на мощный подброс
+                        Body.setVelocity(b, { x: (Math.random()-0.5)*15, y: -10 });
+                        b.render.fillStyle = '#ffcc00';
                     }
                 }
 
                 if(b && s) {
                     const m = conf[s.label.split('_')[1]];
                     const win = b.bet * m.v;
-                    if(b.mode === 'demo') dBal += win; else rBal += win;
-                    spawnText(s.position.x, 320, win, m.v);
+                    dBal += win;
+                    spawnText(s.position.x, 330, win, m.v);
                     updateUI();
                     Composite.remove(eng.world, b);
                 }
             });
         });
 
-        Events.on(ren, 'afterRender', () => {
-            const ctx = ren.context;
-            particles.forEach((p, i) => {
-                p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life -= 0.025;
-                if (p.life <= 0) particles.splice(i, 1);
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0'); ctx.fill();
-            });
-        });
+        function spawnText(x, y, v, m) {
+            const el = document.createElement('div');
+            el.className = 'float';
+            el.innerText = m > 1 ? `+${v.toFixed(1)}` : (m < 1 ? `-${(bet-v).toFixed(1)}` : `1x`);
+            el.style.color = m > 1 ? 'var(--green)' : (m < 1 ? 'var(--red)' : '#fff');
+            el.style.left = x + 'px'; el.style.top = (y + 40) + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
 
         Render.run(ren);
         Runner.run(Runner.create(), eng);
 
         function play() {
-            const c = balls * bet;
-            if(mode === 'demo' && dBal < c) return tg.showAlert("Мало монет!");
-            if(mode === 'real' && rBal < c) return tg.showAlert("Пополните баланс!");
-            if(mode === 'demo') dBal -= c; else rBal -= c;
-            updateUI();
+            const total = balls * bet;
+            if(dBal < total) return tg.showAlert("Недостаточно средств");
+            dBal -= total; updateUI();
             for(let i=0; i<balls; i++) {
                 setTimeout(() => {
-                    const ball = Bodies.circle(200 + (Math.random()*2-1), 20, 6, { 
+                    const ball = Bodies.circle(200 + (Math.random()*4-2), 15, 5, { 
                         restitution: 0.5, friction: 0.01, label: 'b',
                         collisionFilter: { category: CAT_BALL, mask: CAT_STATIC },
                         render: { fillStyle: '#ff3b30' } 
                     });
-                    ball.bet = bet; ball.mode = mode; ball.hasPopped = false;
+                    ball.bet = bet; ball.actionTaken = false;
                     Composite.add(eng.world, ball);
                 }, i * 120);
             }
