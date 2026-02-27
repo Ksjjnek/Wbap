@@ -3,232 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plinko: Blue Chaos</title>
+    <title>MineSlot WebApp</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { 
-            --blue: #007aff; --green: #34c759; --red: #ff3b30; --purple: #af52de; --orange: #ff9500;
-            --bg: #e1f5fe; --text: #01579b; --panel: #b3e5fc; --pin: #0288d1;
-        }
-        body.dark-mode { 
-            --bg: #0d1117; --text: #c9d1d9; --panel: #161b22; --pin: #58a6ff;
-        }
-        
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        
-        .header { width: 100%; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        .profile { display: flex; align-items: center; background: var(--panel); padding: 5px 12px 5px 5px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); }
-        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #0288d1; object-fit: cover; }
-        .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
-        
-        .mode-btn { background: var(--blue); border: none; color: white; padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-
-        #game { width: 400px; height: 380px; position: relative; }
-        .portal { position: absolute; border-radius: 50%; border: 2px dashed var(--purple); animation: rotate 2s linear infinite; opacity: 0.5; pointer-events: none; display: none; }
-        @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-        .mults { display: flex; justify-content: center; width: 400px; padding: 0 12px; box-sizing: border-box; margin-top: 5px; }
-        .m-tile { flex: 1; margin: 0 2px; padding: 8px 0; border-radius: 6px; text-align: center; font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
-
-        .ui-panel { width: 90%; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px; }
-        .bet-box { display: flex; align-items: center; gap: 15px; background: var(--panel); padding: 8px 15px; border-radius: 20px; }
-        .bet-input { width: 60px; background: none; border: none; color: var(--text); text-align: center; font-size: 18px; font-weight: bold; outline: none; }
-        .circle-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--blue); color: white; font-size: 20px; font-weight: bold; }
-
-        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 16px; border-radius: 20px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .play-btn.locked { background: #607d8b; opacity: 0.5; pointer-events: none; }
-
-        #v-scene {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(13, 17, 23, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center;
-        }
+        body { margin: 0; background: #222; color: white; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        canvas { display: block; margin: 0 auto; background: #333; border: 2px solid #555; }
+        .ui { position: absolute; bottom: 20px; width: 100%; text-align: center; }
+        button { padding: 15px 30px; font-size: 18px; background: #5aab44; border: none; color: white; border-radius: 8px; cursor: pointer; }
+        button:active { background: #3e7a2f; }
+        #score { position: absolute; top: 10px; left: 10px; font-size: 20px; color: #ffcc00; }
     </style>
 </head>
 <body>
-
-    <div class="header">
-        <div class="profile">
-            <img id="avatar" src="" class="avatar">
-            <div class="bal-val" id="bal-txt">1000 🪙</div>
-        </div>
-        <button class="mode-btn" id="m-toggle" onclick="toggle()">ОБЫЧНЫЙ</button>
-    </div>
-
-    <div id="game">
-        <div id="p-l" class="portal" style="width:40px; height:40px; left:75px; top:175px;"></div>
-        <div id="p-r" class="portal" style="width:40px; height:40px; right:75px; top:175px;"></div>
-    </div>
-    
-    <div class="mults" id="m-row"></div>
-
-    <div class="ui-panel">
-        <div class="bet-box">
-            <button class="circle-btn" onclick="chBet(-1)">−</button>
-            <input type="text" id="bet-in" class="bet-input" value="10" oninput="vIn(this)">
-            <button class="circle-btn" onclick="chBet(1)">+</button>
-        </div>
-        
-        <div id="b-row" style="display:flex; gap:4px; width:100%"></div>
-
-        <button class="play-btn" id="p-btn" onclick="go()">ИГРАТЬ</button>
-        <div id="cost" style="font-size:13px; font-weight:900; color:var(--orange)">Спишется: 10 🪙</div>
-    </div>
-
-    <div id="v-scene">
-        <h1 style="color:var(--red); font-size:50px; margin:0">🌋 JACKPOT</h1>
-        <h2 style="color:var(--orange); font-size:70px; margin:10px">100x</h2>
-        <p style="color:white; letter-spacing: 2px;">VULCANIC POWER ACTIVATED</p>
+    <div id="score">Монеты: 0</div>
+    <canvas id="gameCanvas"></canvas>
+    <div class="ui">
+        <button onclick="spin()">КОПАТЬ! (SPIN)</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        let dBal = 1000, bet = 10, step = 1, balls = 1, insane = false;
-        let zCnt = 0, locked = false;
-        const steps = [0.5, 1, 5, 10, 50];
-        
-        const CAT_B = 0x0002, CAT_P = 0x0004, CAT_S = 0x0008, CAT_W = 0x0001;
-        const conf = [
-            {l:'10x', v:10, c: '#ff3b30'}, {l:'2x', v:2, c: '#ff9500'}, {l:'0.5x', v:0.5, c: '#ffcc00'},
-            {l:'0x', v:0, c: '#90a4ae'}, 
-            {l:'0.5x', v:0.5, c: '#ffcc00'}, {l:'2x', v:2, c: '#ff9500'}, {l:'10x', v:10, c: '#ff3b30'}
-        ];
+        tg.expand();
 
-        const u = tg.initDataUnsafe?.user;
-        document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=007aff&color=fff`;
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
 
-        function upUI() {
-            if(dBal < 100) dBal = 100;
-            document.getElementById('bal-txt').innerText = `${Math.floor(dBal)} 🪙`;
-            document.getElementById('cost').innerText = `Спишется: ${(balls * bet).toFixed(1)} 🪙`;
-            document.getElementById('p-btn').classList.toggle('locked', locked);
-        }
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 100;
 
-        function toggle() {
-            insane = !insane;
-            document.body.classList.toggle('dark-mode', insane);
-            document.getElementById('m-toggle').innerText = insane ? "БЕЗУМНЫЙ" : "ОБЫЧНЫЙ";
-            document.getElementById('m-toggle').style.background = insane ? "var(--red)" : "var(--blue)";
-            document.getElementById('p-l').style.display = insane ? 'block' : 'none';
-            document.getElementById('p-r').style.display = insane ? 'block' : 'none';
-        }
+        const COLS = 5;
+        const ROWS = 8;
+        const BLOCK_SIZE = canvas.width / COLS;
+        let score = 0;
 
-        function vIn(i) { i.value = i.value.replace(/[^0-9.]/g,''); bet = parseFloat(i.value)||1; upUI(); }
-        function chBet(d) { bet = Math.max(1, bet + d*step); document.getElementById('bet-in').value = bet; upUI(); }
+        // Типы блоков
+        const TYPES = {
+            AIR: 0,
+            DIRT: { color: '#8B4513', hp: 1 },
+            STONE: { color: '#808080', hp: 2 },
+            CHEST: { color: '#FFD700', hp: 1 }
+        };
 
-        const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
-        const eng = Engine.create();
-        const ren = Render.create({ 
-            element: document.getElementById('game'), 
-            engine: eng, 
-            options: { width: 400, height: 380, wireframes: false, background: 'transparent' } 
-        });
-
-        // Стены и Лунки
-        conf.forEach((m, i) => {
-            const t = document.createElement('div');
-            t.className = 'm-tile'; t.innerText = m.l; t.style.background = m.c;
-            document.getElementById('m-row').appendChild(t);
-            const x = 50 + i * 50; 
-            Composite.add(eng.world, [
-                Bodies.rectangle(x, 372, 40, 10, { isStatic: true, isSensor: true, label: 's_'+i, collisionFilter: { category: CAT_S }, render: { visible: false } }),
-                Bodies.rectangle(x-25, 355, 2, 45, { isStatic: true, render: {fillStyle: '#0288d1'} }),
-                Bodies.rectangle(x+25, 355, 2, 45, { isStatic: true, render: {fillStyle: '#0288d1'} })
-            ]);
-        });
-
-        Composite.add(eng.world, [
-            Bodies.rectangle(2, 190, 4, 380, { isStatic: true, render: {fillStyle: 'transparent'} }),
-            Bodies.rectangle(398, 190, 4, 380, { isStatic: true, render: {fillStyle: 'transparent'} })
-        ]);
-
-        // Пины
-        for(let i=0; i<10; i++) {
-            let cnt = 3 + i;
-            let sx = 200 - ((cnt-1)*36)/2;
-            for(let j=0; j<cnt; j++) {
-                Composite.add(eng.world, Bodies.circle(sx + j*36, 60 + i*30, 3, { isStatic: true, label: 'p', collisionFilter: { category: CAT_P }, render: { fillStyle: '#0288d1' } }));
+        let grid = [];
+        function initGrid() {
+            grid = [];
+            for (let r = 0; r < ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < COLS; c++) {
+                    if (r === ROWS - 1) grid[r][c] = { ...TYPES.CHEST };
+                    else grid[r][c] = Math.random() > 0.3 ? { ...TYPES.DIRT } : { ...TYPES.STONE };
+                }
             }
         }
 
-        Events.on(eng, 'collisionStart', e => {
-            e.pairs.forEach(p => {
-                const b = p.bodyA.label === 'b' ? p.bodyA : (p.bodyB.label === 'b' ? p.bodyB : null);
-                const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
-                const pin = p.bodyA.label === 'p' || p.bodyB.label === 'p';
+        let activePickaxes = [];
 
-                if(b && pin) {
-                    b.hits++;
-                    // Физика "притяжения/силы": небольшой рандомный толчок
-                    const force = (Math.random() - 0.5) * 0.002;
-                    Body.applyForce(b, b.position, { x: force, y: 0 });
-
-                    // Обычный: слабый шар
-                    if(!insane && !b.sp && Math.random() < 0.1) {
-                        b.sp = true; Body.setVelocity(b, { x: b.velocity.x * 0.1, y: 1 });
-                    }
-                    // Безумный: призрак на 2-м отскоке (шанс 10%)
-                    if(insane && b.hits === 2 && Math.random() < 0.1) {
-                        b.ghost = true; b.render.opacity = 0.4; b.render.fillStyle = '#af52de';
-                        b.collisionFilter.mask = CAT_W | CAT_S;
-                        setTimeout(() => { if(b) { b.ghost = false; b.render.opacity = 1; b.render.fillStyle = b.oc; b.collisionFilter.mask = CAT_W | CAT_S | CAT_P; } }, 1500);
-                    }
+        function spin() {
+            // Генерируем кирки в случайных колонках
+            for (let c = 0; c < COLS; c++) {
+                if (Math.random() > 0.5) {
+                    activePickaxes.push({ x: c, y: -1, speed: 0.2 });
                 }
-
-                if(b && s) {
-                    const m = conf[s.label.split('_')[1]];
-                    let w = b.bet * m.v;
-                    if(m.v === 0) zCnt++; else zCnt = 0;
-                    if(zCnt >= 25 && Math.random() < 0.04 && !locked && insane) { vTrigger(); w = b.bet * 100; }
-                    dBal += w; upUI(); Composite.remove(eng.world, b);
-                }
-            });
-        });
-
-        Events.on(ren, 'afterRender', () => {
-            const ctx = ren.context;
-            Composite.allBodies(eng.world).forEach(b => {
-                if(b.ghost) {
-                    if(!b.tr) b.tr = [];
-                    b.tr.push({x: b.position.x, y: b.position.y});
-                    if(b.tr.length > 5) b.tr.shift();
-                    b.tr.forEach((t, i) => { ctx.beginPath(); ctx.arc(t.x, t.y, 4, 0, Math.PI*2); ctx.fillStyle = `rgba(175, 82, 222, ${i/10})`; ctx.fill(); });
-                }
-            });
-        });
-
-        function vTrigger() {
-            locked = true; upUI();
-            const sc = document.getElementById('v-scene');
-            sc.style.display = 'flex';
-            setTimeout(() => { sc.style.display = 'none'; locked = false; zCnt = 0; upUI(); }, 3500);
-        }
-
-        function go() {
-            if(locked || dBal < bet * balls) return;
-            dBal -= bet * balls; upUI();
-            for(let i=0; i<balls; i++) {
-                setTimeout(() => {
-                    const b = Bodies.circle(200 + (Math.random()*6-3), 20, 5, {
-                        restitution: 0.4 + Math.random()*0.3, friction: 0.01, label: 'b',
-                        collisionFilter: { category: CAT_B, mask: CAT_W | CAT_S | CAT_P },
-                        render: { fillStyle: insane ? '#ff3b30' : '#ff3b30' } // Всегда красный в обычном
-                    });
-                    b.bet = bet; b.hits = 0; b.oc = b.render.fillStyle;
-                    Composite.add(eng.world, b);
-                }, i*100);
             }
         }
 
-        [1, 5, 10, 25, 50].forEach(n => {
-            const btn = document.createElement('button');
-            btn.className = 'mode-btn'; btn.style.flex = "1"; btn.style.background = "var(--panel)"; btn.style.color = "var(--text)"; btn.innerText = n;
-            btn.onclick = () => { balls = n; upUI(); };
-            document.getElementById('b-row').appendChild(btn);
-        });
+        function update() {
+            activePickaxes.forEach((pick, index) => {
+                pick.y += pick.speed;
+                let gridY = Math.floor(pick.y);
+                
+                if (gridY >= 0 && gridY < ROWS) {
+                    let block = grid[gridY][pick.x];
+                    if (block && block.hp > 0) {
+                        block.hp--;
+                        if (block.hp <= 0) {
+                            if (gridY === ROWS - 1) { // Это сундук!
+                                score += 100;
+                                scoreEl.innerText = `Монеты: ${score}`;
+                                tg.HapticFeedback.notificationOccurred('success');
+                            }
+                            // Блок разрушен, кирка летит дальше
+                        } else {
+                            // Кирка застряла на прочном блоке (удаляем её)
+                            activePickaxes.splice(index, 1);
+                        }
+                    }
+                }
+                if (pick.y > ROWS) activePickaxes.splice(index, 1);
+            });
+        }
 
-        Render.run(ren); Runner.run(Runner.create(), eng);
-        upUI();
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Рисуем блоки
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    let block = grid[r][c];
+                    if (block.hp > 0) {
+                        ctx.fillStyle = block.color;
+                        ctx.fillRect(c * BLOCK_SIZE + 2, r * BLOCK_SIZE + 2, BLOCK_SIZE - 4, BLOCK_SIZE - 4);
+                        // Текстура трещин, если HP мало
+                        if (block.hp === 1 && block.color === '#808080') {
+                            ctx.fillStyle = 'black';
+                            ctx.fillRect(c * BLOCK_SIZE + 10, r * BLOCK_SIZE + 10, 5, 5);
+                        }
+                    }
+                }
+            }
+
+            // Рисуем летящие кирки
+            ctx.fillStyle = '#00FFFF';
+            activePickaxes.forEach(pick => {
+                ctx.fillRect(pick.x * BLOCK_SIZE + BLOCK_SIZE/3, pick.y * BLOCK_SIZE, 10, 20);
+            });
+
+            update();
+            requestAnimationFrame(draw);
+        }
+
+        initGrid();
+        draw();
     </script>
 </body>
 </html>
