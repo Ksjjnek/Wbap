@@ -8,122 +8,143 @@ if (!tg.initDataUnsafe.user) {
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
-const segments = 20;   // количество точек
-let angle = 0;
+const segments = 20;
+let wheelAngle = 0;
+
 let speed = 0;
 let spinning = false;
 
+let phase = "idle";
+let lastPin = 0;
+
+function draw() {
+
+    ctx.clearRect(0,0,320,320);
+
+    drawWheel();
+    drawArrow();
+
+}
+
 function drawWheel(){
 
-ctx.clearRect(0,0,320,320);
+    const cx = 160;
+    const cy = 160;
+    const r = 140;
 
-const cx = 160;
-const cy = 160;
-const r = 140;
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.rotate(wheelAngle);
 
-for(let i=0;i<segments;i++){
+    for(let i=0;i<segments;i++){
 
-let start = (i/segments)*Math.PI*2;
-let end = ((i+1)/segments)*Math.PI*2;
+        let start = (i/segments)*Math.PI*2;
+        let end = ((i+1)/segments)*Math.PI*2;
 
-ctx.beginPath();
-ctx.moveTo(cx,cy);
-ctx.arc(cx,cy,r,start,end);
+        ctx.beginPath();
+        ctx.moveTo(0,0);
+        ctx.arc(0,0,r,start,end);
 
-ctx.fillStyle = i%2==0 ? "#e53935" : "#43a047";
-ctx.fill();
+        ctx.fillStyle = i%2 ? "#e53935" : "#43a047";
+        ctx.fill();
 
-}
+    }
 
-drawPins();
-drawArrow();
+    // пины
+    for(let i=0;i<segments;i++){
 
-}
+        let a = (i/segments)*Math.PI*2;
 
-function drawPins(){
+        let x = Math.cos(a)*150;
+        let y = Math.sin(a)*150;
 
-const cx = 160;
-const cy = 160;
-const r = 150;
+        ctx.beginPath();
+        ctx.arc(x,y,4,0,Math.PI*2);
+        ctx.fillStyle="white";
+        ctx.fill();
 
-for(let i=0;i<segments;i++){
+    }
 
-let a = (i/segments)*Math.PI*2;
-
-let x = cx + Math.cos(a)*r;
-let y = cy + Math.sin(a)*r;
-
-ctx.beginPath();
-ctx.arc(x,y,4,0,Math.PI*2);
-ctx.fillStyle="white";
-ctx.fill();
-
-}
+    ctx.restore();
 
 }
 
 function drawArrow(){
 
-ctx.beginPath();
+    ctx.beginPath();
 
-ctx.moveTo(160,10);
-ctx.lineTo(150,40);
-ctx.lineTo(170,40);
+    ctx.moveTo(160,15);
+    ctx.lineTo(150,45);
+    ctx.lineTo(170,45);
 
-ctx.fillStyle="yellow";
-ctx.fill();
+    ctx.fillStyle="yellow";
+    ctx.fill();
 
 }
 
-drawWheel();
+draw();
 
 document.getElementById("spin").onclick = ()=>{
 
-if(spinning) return;
+    if(spinning) return;
 
-speed = Math.random()*0.4 + 0.45;
-spinning = true;
+    spinning = true;
 
-requestAnimationFrame(update);
+    phase = "accelerate";
+
+    speed = 0.01;
+
+    requestAnimationFrame(update);
 
 };
 
-let lastPin = 0;
-
 function update(){
 
-if(!spinning) return;
+    if(!spinning) return;
 
-angle += speed;
+    if(phase === "accelerate"){
 
-speed *= 0.992;
+        speed += 0.002;
 
-let pinIndex = Math.floor((angle%(Math.PI*2))/(Math.PI*2/segments));
+        if(speed > 0.5){
+            phase = "decelerate";
+        }
 
-if(pinIndex !== lastPin){
+    }
 
-speed *= 0.9;
+    if(phase === "decelerate"){
 
-lastPin = pinIndex;
+        speed *= 0.992;
 
-}
+    }
 
-canvas.style.transform = `rotate(${angle}rad)`;
+    wheelAngle += speed;
 
-if(speed < 0.002){
+    // удары по пинам
+    let pinIndex = Math.floor((wheelAngle%(Math.PI*2))/(Math.PI*2/segments));
 
-spinning = false;
+    if(pinIndex !== lastPin){
 
-let sector = Math.floor((angle%(Math.PI*2))/(Math.PI*2/2));
+        speed *= 0.97;
 
-let result = sector === 0 ? "Выигрыш 🎉" : "Проигрыш 😢";
+        lastPin = pinIndex;
 
-document.getElementById("result").innerText = result;
+    }
 
-return;
+    if(speed < 0.002){
 
-}
+        spinning = false;
 
-requestAnimationFrame(update);
+        let sector = Math.floor((wheelAngle%(Math.PI*2))/(Math.PI));
+
+        let result = sector === 0 ? "Выигрыш 🎉" : "Проигрыш 😢";
+
+        document.getElementById("result").innerText = result;
+
+    }
+
+    draw();
+
+    requestAnimationFrame(update);
 
 }
