@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Casino Web App Improved Physics</title>
+<title>Casino Web App Improved</title>
 <style>
 body {
     font-family: Arial, sans-serif;
@@ -22,7 +22,6 @@ body {
     background: #333;
     margin-bottom: 20px;
     cursor: pointer;
-    user-select: none;
 }
 .toggle div {
     flex: 1;
@@ -37,7 +36,7 @@ body {
     border-radius: 30px;
 }
 .game-area {
-    width: 320px;
+    width: 360px;
     height: 400px;
     background: #222;
     margin-bottom: 20px;
@@ -82,10 +81,10 @@ button:hover { background: #f39c12; color: #000; }
 button.selected { background: #f39c12; color: #000; }
 #play { width: 80%; margin-top: 10px; font-size: 16px; }
 #betCost { font-weight: bold; color: #f39c12; }
-.ball { width: 20px; height: 20px; border-radius: 50%; background: #f39c12; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
+.ball { width: 12px; height: 12px; border-radius: 50%; background: #f39c12; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
 .prize {
-    width: 50px;
-    height: 30px;
+    width: 45px;
+    height: 28px;
     position: absolute;
     bottom: 0;
     border-radius: 5px;
@@ -93,11 +92,11 @@ button.selected { background: #f39c12; color: #000; }
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 12px;
+    font-size: 11px;
     transition: background 0.3s;
 }
 .prize.win { background: #f39c12; }
-.pin { width: 10px; height: 10px; background: #888; border-radius: 50%; position: absolute; }
+.pin { width: 8px; height: 8px; background: #888; border-radius: 50%; position: absolute; }
 </style>
 </head>
 <body>
@@ -110,10 +109,14 @@ button.selected { background: #f39c12; color: #000; }
 <div class="game-area" id="gameArea">
     <!-- Призовые зоны -->
     <div class="prize" style="left:0%">0x</div>
-    <div class="prize" style="left:20%">0.1x</div>
-    <div class="prize" style="left:40%">0.5x</div>
-    <div class="prize" style="left:60%">0.75x</div>
-    <div class="prize" style="left:80%">1x</div>
+    <div class="prize" style="left:12%">0.1x</div>
+    <div class="prize" style="left:24%">0.5x</div>
+    <div class="prize" style="left:36%">0.75x</div>
+    <div class="prize" style="left:48%">1x</div>
+    <div class="prize" style="left:60%">1.5x</div>
+    <div class="prize" style="left:72%">2x</div>
+    <div class="prize" style="left:84%">2.5x</div>
+    <div class="prize" style="left:96%">5x</div>
 </div>
 
 <div class="controls">
@@ -142,18 +145,17 @@ toggle.addEventListener('click', e=>{
     if(e.target.id==='demo'){demo.classList.add('active');balance.classList.remove('active');mode='demo'}
     else if(e.target.id==='balance'){balance.classList.add('active');demo.classList.remove('active');mode='balance'}
 });
-
 document.querySelectorAll('#balls button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#balls button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}));
 document.querySelectorAll('#bet button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#bet button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('betCost').innerText=btn.innerText;}));
 
 const gameArea=document.getElementById('gameArea');
 const prizes=Array.from(document.querySelectorAll('.prize'));
 
-// Треугольная сетка пинов
+// Сетка пинов
 const pins=[];
-let rows=6;
-let spacingX=50;
-let spacingY=50;
+const rows=6;
+const spacingX=50;
+const spacingY=50;
 for(let r=0;r<rows;r++){
     let cols=r+1;
     for(let c=0;c<cols;c++){
@@ -175,25 +177,23 @@ function dropBall(){
         ball.classList.add('ball');
         gameArea.appendChild(ball);
 
-        let posX=gameArea.clientWidth/2-10;
+        let posX=gameArea.clientWidth/2-6; // по центру
         let posY=0;
-        let velocityX=(Math.random()-0.5)*2;
+        let velocityX=(Math.random()-0.5)*1.5;
         let velocityY=1;
-
-        const gravity=0.2;
+        const gravity=0.15;
         const friction=0.7;
 
-        let interval=setInterval(()=>{
+        const interval=setInterval(()=>{
             velocityY+=gravity;
             posX+=velocityX;
             posY+=velocityY;
 
-            // Столкновение с пинами
             pins.forEach(pin=>{
-                let dx=(posX+10)-(pin.offsetLeft+5);
-                let dy=(posY+10)-(pin.offsetTop+5);
+                let dx=(posX+6)-(pin.offsetLeft+4);
+                let dy=(posY+6)-(pin.offsetTop+4);
                 let dist=Math.sqrt(dx*dx+dy*dy);
-                if(dist<15){
+                if(dist<10){
                     let angle=Math.atan2(dy,dx);
                     let speed=Math.sqrt(velocityX*velocityX+velocityY*velocityY)*friction;
                     velocityX=-speed*Math.cos(angle);
@@ -201,30 +201,23 @@ function dropBall(){
                 }
             });
 
-            // Столкновение со стенками
             if(posX<0){posX=0;velocityX=-velocityX*friction}
-            if(posX>gameArea.clientWidth-20){posX=gameArea.clientWidth-20;velocityX=-velocityX*friction}
-            if(posY>gameArea.clientHeight-20){posY=gameArea.clientHeight-20;velocityY=-velocityY*friction}
+            if(posX>gameArea.clientWidth-12){posX=gameArea.clientWidth-12;velocityX=-velocityX*friction}
+            if(posY>gameArea.clientHeight-12){posY=gameArea.clientHeight-12;velocityY=-velocityY*friction}
 
             ball.style.transform=`translate(${posX}px,${posY}px)`;
 
-            // Попадание в призовые зоны
             prizes.forEach(prize=>{
-                let prizeX=prize.offsetLeft;
-                let prizeY=prize.offsetTop;
-                let prizeW=prize.offsetWidth;
-                let prizeH=prize.offsetHeight;
-                if(posX+10>prizeX && posX<prizeX+prizeW && posY+10>prizeY && posY<prizeY+prizeH){
+                let px=prize.offsetLeft;
+                let py=prize.offsetTop;
+                let pw=prize.offsetWidth;
+                let ph=prize.offsetHeight;
+                if(posX+6>px && posX<px+pw && posY+6>py && posY<py+ph){
                     prize.classList.add('win');
                     clearInterval(interval);
-                    setTimeout(()=>{
-                        ball.remove();
-                        prize.classList.remove('win');
-                    },500);
+                    setTimeout(()=>{ball.remove();prize.classList.remove('win');},500);
                     if(window.Telegram?.WebApp){
-                        Telegram.WebApp.sendData(JSON.stringify({
-                            mode, balls:ballsCount, bet:betAmount, prize:prize.innerText
-                        }));
+                        Telegram.WebApp.sendData(JSON.stringify({mode,balls:ballsCount,bet:betAmount,prize:prize.innerText}));
                     }
                 }
             });
@@ -232,9 +225,7 @@ function dropBall(){
         },20);
     }
 }
-
 document.getElementById('play').addEventListener('click',dropBall);
 </script>
-
 </body>
 </html>
