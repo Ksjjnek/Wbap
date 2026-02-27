@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plinko Pro Max</title>
+    <title>Plinko Insane Mode</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
-        :root { --blue: #0a84ff; --green: #32d74b; --red: #ff453a; --gray: #2c2c2e; }
+        :root { --blue: #0a84ff; --green: #32d74b; --red: #ff453a; --gray: #2c2c2e; --orange: #ff9f0a; }
         body {
             margin: 0; background: #1c1c1e; color: white;
             font-family: -apple-system, sans-serif; overflow: hidden;
@@ -16,14 +16,14 @@
 
         /* Шапка */
         .header { width: 100%; padding: 10px 15px; display: flex; align-items: center; box-sizing: border-box; }
-        .profile { display: flex; align-items: center; background: var(--gray); padding: 4px 12px 4px 4px; border-radius: 25px; cursor: pointer; }
+        .profile { display: flex; align-items: center; background: var(--gray); padding: 4px 12px 4px 4px; border-radius: 25px; }
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; }
         .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
 
         /* Переключатели */
         .toggle-box {
             position: relative; width: 90%; background: var(--gray); border-radius: 12px;
-            display: flex; padding: 3px; margin: 10px 0;
+            display: flex; padding: 3px; margin: 8px 0;
         }
         .toggle-btn { flex: 1; text-align: center; padding: 8px; z-index: 2; font-size: 13px; font-weight: 600; cursor: pointer; }
         .slider {
@@ -33,25 +33,25 @@
         .active-right .slider { transform: translateX(100%); }
 
         /* Игровое поле */
-        #game { width: 100%; height: 320px; position: relative; }
+        #game { width: 100%; height: 380px; position: relative; margin-top: -10px; }
         canvas { position: absolute; top: 0; left: 0; }
 
-        .mults { display: flex; justify-content: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
+        .mults { display: flex; justify-content: center; gap: 4px; width: 100%; padding: 0 10px; box-sizing: border-box; }
         .m-tile {
-            flex: 1; padding: 6px 0; border-radius: 4px; text-align: center; font-size: 9px;
+            flex: 1; padding: 8px 0; border-radius: 4px; text-align: center; font-size: 10px;
             font-weight: bold; transition: 0.5s; opacity: 0; transform: translateY(10px);
+            box-shadow: inset 0 -3px rgba(0,0,0,0.2);
         }
         .m-tile.show { opacity: 1; transform: translateY(0); }
 
-        /* Панель управления */
-        .panel { width: 90%; margin-top: 15px; }
-        .balls-grid { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 10px; }
-        .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: bold; }
+        /* Управление */
+        .panel { width: 90%; margin-top: 10px; }
+        .balls-grid { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 8px; }
+        .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 10px 0; border-radius: 10px; font-size: 12px; font-weight: bold; }
         .b-btn.active { background: var(--green); }
 
-        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(50, 215, 75, 0.3); }
-        .play-btn:active { transform: scale(0.96); }
-        .cost-info { text-align: center; margin-top: 8px; color: #ff9f0a; font-size: 14px; font-weight: 600; }
+        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 16px; border-radius: 18px; font-size: 18px; font-weight: bold; }
+        .cost-info { text-align: center; margin-top: 8px; color: var(--orange); font-size: 14px; font-weight: 700; }
 
         /* Текст выигрыша */
         .float {
@@ -60,9 +60,9 @@
             animation: floatUp 1s ease-out forwards;
         }
         @keyframes floatUp {
-            0% { transform: translateY(0) scale(0.8); opacity: 0; }
-            20% { transform: translateY(-10px) scale(1.2); opacity: 1; }
-            100% { transform: translateY(-70px) scale(1); opacity: 0; }
+            0% { transform: translateY(0) scale(0.5); opacity: 0; }
+            20% { transform: translateY(-20px) scale(1.3); opacity: 1; }
+            100% { transform: translateY(-80px) scale(1); opacity: 0; }
         }
     </style>
 </head>
@@ -111,7 +111,6 @@
         let dBal = 1000, rBal = 0, mode = 'demo', balls = 1, bet = 10;
         let particles = [];
 
-        // Инициализация юзера
         const u = tg.initDataUnsafe?.user;
         document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=32d74b&color=fff`;
 
@@ -125,39 +124,29 @@
         function setBet(b) { bet = b; document.getElementById('bet-t').classList.toggle('active-right', b===100); updateUI(); }
         function setB(n, el) { balls = n; document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); el.classList.add('active'); updateUI(); }
 
-        // --- Система частиц ---
         function createParticles(x, y, color) {
-            for (let i = 0; i < 15; i++) {
-                particles.push({
-                    x, y,
-                    vx: (Math.random() - 0.5) * 8,
-                    vy: (Math.random() - 0.5) * 8 - 3,
-                    radius: Math.random() * 3 + 1,
-                    color: color,
-                    life: 1.0
-                });
+            for (let i = 0; i < 12; i++) {
+                particles.push({ x, y, vx: (Math.random()-0.5)*10, vy: (Math.random()-0.5)*10-2, radius: Math.random()*3+1, color, life: 1.0 });
             }
         }
 
-        // --- Эффекты текста ---
         function spawnText(x, y, v, m) {
             const el = document.createElement('div');
             el.className = 'float';
             if(m >= 1.5) { el.innerText = `+${v} 🔥`; el.style.color = '#32d74b'; createParticles(x, y, '#32d74b'); }
-            else if(m === 1) { el.innerText = `ВОЗВРАТ`; el.style.color = '#fff'; createParticles(x, y, '#fff'); }
+            else if(m === 1) { el.innerText = `1x ⚖️`; el.style.color = '#fff'; createParticles(x, y, '#fff'); }
             else { el.innerText = `-${(bet-v).toFixed(0)} 💀`; el.style.color = '#ff453a'; createParticles(x, y, '#ff453a'); }
-            el.style.left = x + 'px'; el.style.top = y + 'px';
+            el.style.left = x + 'px'; el.style.top = (y + 50) + 'px';
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 1000);
         }
 
-        // --- Физика ---
-        const { Engine, Render, Runner, Bodies, Composite, Events, Vector } = Matter;
+        const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
         const eng = Engine.create();
         const ren = Render.create({ 
             element: document.getElementById('game'), 
             engine: eng, 
-            options: { width: 400, height: 320, wireframes: false, background: 'transparent' } 
+            options: { width: 400, height: 380, wireframes: false, background: 'transparent' } 
         });
 
         const conf = [
@@ -167,76 +156,81 @@
 
         const CAT_BALL = 0x0002, CAT_STATIC = 0x0001;
 
+        // Создаем множители и заниженные сенсоры
         conf.forEach((m, i) => {
             const d = document.createElement('div');
             d.className = 'm-tile'; d.innerText = m.l; d.style.background = m.c;
             document.getElementById('mults-row').appendChild(d);
             setTimeout(() => d.classList.add('show'), 300 + i*50);
 
-            const s = Bodies.rectangle(65 + i*45, 310, 35, 20, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
+            // Сенсоры опущены ниже (360 вместо 310)
+            const s = Bodies.rectangle(65 + i*45, 365, 35, 20, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
             Composite.add(eng.world, s);
-        });
 
-        // Колышки
-        for(let i=2; i<9; i++) {
-            for(let j=0; j<=i; j++) {
-                const peg = Bodies.circle(200 + (j*34) - (i*17), 40 + (i*30), 3, { 
-                    isStatic: true, 
-                    label: 'peg',
-                    collisionFilter: { category: CAT_STATIC },
+            // Небольшие перегородки между множителями
+            if(i < conf.length) {
+                const wall = Bodies.rectangle(43 + i*45, 350, 4, 40, { isStatic: true, render: {fillStyle: '#333'} });
+                Composite.add(eng.world, wall);
+            }
+        });
+        // Последняя стенка для множителей
+        Composite.add(eng.world, Bodies.rectangle(43 + conf.length*45, 350, 4, 40, { isStatic: true, render: {fillStyle: '#333'} }));
+
+        // Бортики по бокам игрового поля
+        const leftWall = Bodies.rectangle(35, 200, 10, 300, { isStatic: true, render: {fillStyle: '#2c2c2e'} });
+        const rightWall = Bodies.rectangle(365, 200, 10, 300, { isStatic: true, render: {fillStyle: '#2c2c2e'} });
+        Composite.add(eng.world, [leftWall, rightWall]);
+
+        // Исправленные колышки (Пины) - Идеальная центровка
+        const rows = 9;
+        const spacingX = 36;
+        const spacingY = 32;
+        for(let i=2; i<=rows; i++) {
+            const rowWidth = (i - 1) * spacingX;
+            const startX = (400 - rowWidth) / 2;
+            for(let j=0; j<i; j++) {
+                const peg = Bodies.circle(startX + j*spacingX, 60 + (i*spacingY), 3, { 
+                    isStatic: true, label: 'peg', collisionFilter: { category: CAT_STATIC },
                     render: { fillStyle: '#fff' } 
                 });
                 Composite.add(eng.world, peg);
             }
         }
 
-        // Обработка столкновений
         Events.on(eng, 'collisionStart', e => {
             e.pairs.forEach(p => {
                 const b = p.bodyA.label === 'b' ? p.bodyA : (p.bodyB.label === 'b' ? p.bodyB : null);
                 const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
                 const peg = p.bodyA.label === 'peg' ? p.bodyA : (p.bodyB.label === 'peg' ? p.bodyB : null);
 
-                // 1. ЛОГИКА ПЕРВОГО ОТСКОКА (80/20)
-                if(b && peg && !b.firstHit) {
-                    b.firstHit = true;
-                    if(Math.random() < 0.20) { // 20% шанс "слабого" отскока
-                        // Замедляем шарик и толкаем его к центру (x=200)
-                        const directionToCenter = 200 - b.position.x;
-                        Matter.Body.setVelocity(b, { 
-                            x: directionToCenter * 0.05, 
-                            y: b.velocity.y * 0.5 
-                        });
-                        b.restitution = 0.3; // Делаем менее прыгучим
+                // МОЩНЫЙ ОТСКОК (10%)
+                if(b && peg) {
+                    if(!b.hasPopped && Math.random() < 0.10) {
+                        b.hasPopped = true;
+                        const jumpX = (Math.random() - 0.5) * 12;
+                        Body.setVelocity(b, { x: jumpX, y: -9 });
+                        b.render.fillStyle = '#ffcc00'; // Подсветка при супер-отскоке
                     }
                 }
 
-                // 2. ПОПАДАНИЕ В ЛУНКУ
                 if(b && s) {
                     const m = conf[s.label.split('_')[1]];
                     const win = b.bet * m.v;
                     if(b.mode === 'demo') dBal += win; else rBal += win;
-                    spawnText(s.position.x, 280, win, m.v);
+                    spawnText(s.position.x, 320, win, m.v);
                     updateUI();
                     Composite.remove(eng.world, b);
                 }
             });
         });
 
-        // Кастомный рендер частиц поверх всего
         Events.on(ren, 'afterRender', () => {
             const ctx = ren.context;
             particles.forEach((p, i) => {
-                p.x += p.vx;
-                p.y += p.vy;
-                p.vy += 0.2; // гравитация частиц
-                p.life -= 0.02;
+                p.x += p.vx; p.y += p.vy; p.vy += 0.25; p.life -= 0.025;
                 if (p.life <= 0) particles.splice(i, 1);
-                
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0'); ctx.fill();
             });
         });
 
@@ -247,20 +241,16 @@
             const c = balls * bet;
             if(mode === 'demo' && dBal < c) return tg.showAlert("Мало монет!");
             if(mode === 'real' && rBal < c) return tg.showAlert("Пополните баланс!");
-
             if(mode === 'demo') dBal -= c; else rBal -= c;
             updateUI();
-
             for(let i=0; i<balls; i++) {
                 setTimeout(() => {
-                    const ball = Bodies.circle(200 + (Math.random()*2-1), 10, 6, { 
-                        restitution: 0.6, 
-                        friction: 0.01, 
-                        label: 'b',
+                    const ball = Bodies.circle(200 + (Math.random()*2-1), 20, 6, { 
+                        restitution: 0.5, friction: 0.01, label: 'b',
                         collisionFilter: { category: CAT_BALL, mask: CAT_STATIC },
                         render: { fillStyle: '#ff3b30' } 
                     });
-                    ball.bet = bet; ball.mode = mode; ball.firstHit = false; // Маркер первого удара
+                    ball.bet = bet; ball.mode = mode; ball.hasPopped = false;
                     Composite.add(eng.world, ball);
                 }, i * 120);
             }
