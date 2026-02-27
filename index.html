@@ -3,233 +3,186 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mega Mine Slot</title>
+    <title>MineSlot Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; background: #1a1a1a; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; touch-action: none; }
-        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
-        canvas { display: block; background: #2c3e50; flex-grow: 1; touch-action: none; }
-        .hud { position: absolute; top: 10px; width: 100%; display: flex; justify-content: space-around; pointer-events: none; }
-        .stat { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 1px solid #555; font-weight: bold; color: #ffcc00; }
-        .controls { height: 100px; background: #333; display: flex; align-items: center; justify-content: center; border-top: 4px solid #555; }
-        button { 
-            background: linear-gradient(to bottom, #5aab44 0%, #3e7a2f 100%);
-            border: none; border-bottom: 4px solid #2d5a22; border-radius: 12px;
-            color: white; padding: 15px 40px; font-size: 20px; font-weight: bold;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5); cursor: pointer; transition: 0.1s;
+        body { margin: 0; background: #1e1e1e; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        canvas { display: block; image-rendering: pixelated; }
+        .ui-panel {
+            position: absolute; bottom: 0; width: 100%; height: 120px;
+            background: #333; border-top: 4px solid #000;
+            display: flex; justify-content: center; align-items: center;
         }
-        button:active { transform: translateY(2px); border-bottom-width: 2px; }
+        .btn-mine {
+            width: 80%; height: 60px; background: #555; color: #fff;
+            border: 4px solid #000; font-size: 24px; font-weight: bold;
+            box-shadow: inset -4px -4px #222, inset 4px 4px #888;
+            cursor: pointer; active: transform: scale(0.95);
+        }
+        #score-board {
+            position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7);
+            padding: 10px; border: 2px solid #fff; color: #55ff55; font-size: 20px;
+        }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="hud">
-        <div class="stat">💎 <span id="coins">0</span></div>
-        <div class="stat">⚡ <span id="energy">100</span></div>
-    </div>
-    <canvas id="canvas"></canvas>
-    <div class="controls">
-        <button onclick="spin()">SPIN!</button>
-    </div>
+<div id="score-board">SCORE: 0</div>
+<canvas id="game"></canvas>
+<div class="ui-panel">
+    <button class="btn-mine" onclick="spawnPickaxes()">MINE!</button>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
-tg.expand();
-tg.enableClosingConfirmation();
-
-const canvas = document.getElementById('canvas');
+const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const coinsEl = document.getElementById('coins');
+const scoreEl = document.getElementById('score-board');
 
-// Настройки игры
-const COLS = 5;
-const ROWS = 9;
-let cellSize = 0;
-let coins = 0;
+let width, height, cellSize;
+let score = 0;
 let shake = 0;
+const COLS = 5;
+const ROWS = 7;
 
-// Цвета блоков
-const COLORS = {
-    DIRT: '#8B4513', STONE: '#707070', TNT: '#ff4d4d', 
-    CHEST: '#d4a017', IRON: '#ced4da', DIAMOND: '#00f2ff'
+// --- ТЕКСТУРЫ (Base64 для быстрой работы) ---
+const TEXTURES = {
+    DIRT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2N88eLffwY0wNjYyIghMIGBAnD8j6EAbAbMIGwG4DMIWwaMpqDRFBAZCAD67R0LidmUoQAAAABJRU5ErkJggg==',
+    STONE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4T2M8c+bMfwY0wNjYyIghMIGBAnD8j6EAbAbMAD6iGAsU6pSDAAAAAElFTkSuQmCC',
+    PICK: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAYklEQVQ4T2NkoBAwUqifAWpAbGxs/0E0shgcY2h8uA2AmYDNAGwG4DMIWwaMpqDRFBAZCAD67R0LidmUoQAAAABJRU5ErkJggg==',
 };
 
+const images = {};
+Object.keys(TEXTURES).forEach(k => {
+    images[k] = new Image();
+    images[k].src = TEXTURES[k];
+});
+
 let grid = [];
-let entities = []; // Кирки и частицы
-
-class Particle {
-    constructor(x, y, color) {
-        this.x = x; this.y = y;
-        this.vx = (Math.random() - 0.5) * 10;
-        this.vy = (Math.random() - 0.5) * 10;
-        this.life = 1.0;
-        this.color = color;
-    }
-    draw() {
-        ctx.globalAlpha = this.life;
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.x, this.y, 5, 5);
-        ctx.globalAlpha = 1;
-    }
-    update() {
-        this.x += this.vx; this.y += this.vy;
-        this.vy += 0.5; // гравитация
-        this.life -= 0.04;
-    }
-}
-
-class Pickaxe {
-    constructor(col, type) {
-        this.col = col;
-        this.type = type; // 'iron' или 'diamond'
-        this.y = 0;
-        this.speed = 0.15;
-        this.power = (type === 'diamond') ? 3 : 1;
-        this.color = COLORS[type.toUpperCase()];
-    }
-    draw() {
-        ctx.save();
-        ctx.translate(this.col * cellSize + cellSize/2, this.y * cellSize);
-        ctx.fillStyle = this.color;
-        // Простая форма кирки
-        ctx.fillRect(-15, 0, 30, 8);
-        ctx.fillRect(-4, 0, 8, 25);
-        ctx.restore();
-    }
-}
+let picks = [];
+let particles = [];
 
 function initGrid() {
     grid = [];
     for(let r=0; r<ROWS; r++) {
         grid[r] = [];
         for(let c=0; c<COLS; c++) {
-            let type = 'DIRT';
-            if (r > 3) type = Math.random() > 0.8 ? 'STONE' : 'DIRT';
-            if (Math.random() > 0.95) type = 'TNT';
-            if (r === ROWS - 1) type = 'CHEST';
-            grid[r][c] = { type, hp: (type==='STONE'? 2 : 1), active: true };
+            grid[r][c] = createBlock(r);
         }
     }
 }
 
-function createExplosion(x, y, color) {
-    for(let i=0; i<10; i++) entities.push(new Particle(x, y, color));
+function createBlock(r) {
+    let type = (Math.random() > 0.8) ? 'STONE' : 'DIRT';
+    if(r === ROWS - 1) type = 'CHEST'; 
+    return { type, hp: (type === 'STONE' ? 2 : 1), active: true };
 }
 
-function explodeTNT(r, c) {
-    shake = 15;
-    tg.HapticFeedback.notificationOccurred('warning');
-    for(let i = -1; i <= 1; i++) {
-        for(let j = -1; j <= 1; j++) {
-            if(grid[r+i] && grid[r+i][c+j]) {
-                let b = grid[r+i][c+j];
-                if(b.active) {
-                    b.active = false;
-                    createExplosion((c+j)*cellSize + cellSize/2, (r+i)*cellSize + cellSize/2, '#ffcc00');
-                }
-            }
-        }
-    }
-}
-
-function spin() {
-    tg.HapticFeedback.impactOccurred('medium');
+function spawnPickaxes() {
+    tg.HapticFeedback.impactOccurred('rigid');
     for(let c=0; c<COLS; c++) {
-        if(Math.random() > 0.4) {
-            let type = Math.random() > 0.8 ? 'diamond' : 'iron';
-            entities.push(new Pickaxe(c, type));
+        if(Math.random() > 0.5) {
+            picks.push({ x: c, y: -1, speed: 0.12 });
         }
     }
 }
 
 function update() {
-    if(shake > 0) shake *= 0.9;
+    if(shake > 0) shake *= 0.8;
 
-    entities.forEach((ent, index) => {
-        if(ent instanceof Particle) {
-            ent.update();
-            if(ent.life <= 0) entities.splice(index, 1);
-        }
-        if(ent instanceof Pickaxe) {
-            ent.y += ent.speed;
-            let r = Math.floor(ent.y);
-            let b = grid[r] ? grid[r][ent.col] : null;
-
-            if(b && b.active) {
-                if(b.type === 'TNT') {
-                    explodeTNT(r, ent.col);
-                    entities.splice(index, 1);
-                } else {
-                    b.hp -= ent.power;
-                    createExplosion(ent.col * cellSize + cellSize/2, ent.y * cellSize, COLORS[b.type]);
-                    if(b.hp <= 0) {
-                        b.active = false;
-                        if(b.type === 'CHEST') {
-                            coins += 50;
-                            coinsEl.innerText = coins;
-                            tg.HapticFeedback.notificationOccurred('success');
-                        }
-                    }
-                    if(ent.type === 'iron') entities.splice(index, 1);
-                }
+    // Движение кирок
+    picks.forEach((p, i) => {
+        p.y += p.speed;
+        let r = Math.floor(p.y);
+        if(grid[r] && grid[r][p.x] && grid[r][p.x].active) {
+            let b = grid[r][p.x];
+            b.hp--;
+            createExplosion(p.x * cellSize + cellSize/2, r * cellSize + cellSize/2);
+            if(b.hp <= 0) {
+                b.active = false;
+                score += 10;
+                scoreEl.innerText = `SCORE: ${score}`;
             }
-            if(ent.y > ROWS) entities.splice(index, 1);
+            picks.splice(i, 1);
         }
+        if(p.y > ROWS) picks.splice(i, 1);
     });
+
+    // Частицы
+    particles.forEach((pt, i) => {
+        pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.05;
+        if(pt.life <= 0) particles.splice(i, 1);
+    });
+
+    // Рестарт/Генерация новых блоков при прохождении
+    let rowFilled = grid[ROWS-1].every(b => !b.active);
+    if(rowFilled) {
+        grid.pop();
+        grid.unshift(Array.from({length: COLS}, () => createBlock(0)));
+        shake = 10;
+    }
+}
+
+function createExplosion(x, y) {
+    for(let i=0; i<6; i++) {
+        particles.push({
+            x: x, y: y,
+            vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
+            life: 1.0
+        });
+    }
 }
 
 function draw() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
+    ctx.clearRect(0, 0, width, height);
     ctx.save();
-    if(shake > 1) ctx.translate((Math.random()-0.5)*shake, (Math.random()-0.5)*shake);
+    if(shake > 0.5) ctx.translate(Math.random()*shake, Math.random()*shake);
 
-    // Рисуем сетку блоков
     for(let r=0; r<ROWS; r++) {
         for(let c=0; c<COLS; c++) {
             let b = grid[r][c];
             if(!b.active) continue;
-
-            let x = c * cellSize;
-            let y = r * cellSize;
-
-            // Тело блока
-            ctx.fillStyle = COLORS[b.type];
-            ctx.fillRect(x + 1, y + 1, cellSize - 2, cellSize - 2);
-
-            // "Пиксельная" текстура (грязь/камень)
-            ctx.fillStyle = 'rgba(0,0,0,0.1)';
-            ctx.fillRect(x+5, y+5, 10, 10);
-            ctx.fillRect(x+cellSize-15, y+cellSize-15, 8, 8);
             
-            // Если камень прочный - рисуем трещину
-            if(b.hp > 1) {
-                ctx.strokeStyle = 'black';
-                ctx.beginPath(); ctx.moveTo(x+10, y+10); ctx.lineTo(x+cellSize-10, y+cellSize-10); ctx.stroke();
-            }
+            // Рисуем блок (Пикселизированный)
+            ctx.fillStyle = b.type === 'STONE' ? '#777' : (b.type === 'CHEST' ? '#f1c40f' : '#8B4513');
+            ctx.fillRect(c*cellSize+2, r*cellSize+2, cellSize-4, cellSize-4);
+            
+            // Добавляем "текстуру" вручную
+            ctx.fillStyle = 'rgba(0,0,0,0.2)';
+            ctx.fillRect(c*cellSize+cellSize-15, r*cellSize+cellSize-15, 10, 10);
         }
     }
 
-    entities.forEach(ent => ent.draw());
-    ctx.restore();
+    // Рисуем кирки (нормальная иконка)
+    picks.forEach(p => {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(p.x * cellSize + cellSize/2 - 5, p.y * cellSize, 10, 30); // Ручка
+        ctx.fillStyle = '#00ffff';
+        ctx.fillRect(p.x * cellSize + cellSize/2 - 20, p.y * cellSize, 40, 10); // Лезвие
+    });
 
+    // Рисуем частицы
+    particles.forEach(pt => {
+        ctx.globalAlpha = pt.life;
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(pt.x, pt.y, 4, 4);
+    });
+
+    ctx.restore();
     update();
     requestAnimationFrame(draw);
 }
 
 function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight - 100;
-    cellSize = canvas.width / COLS;
-    initGrid();
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight - 120;
+    cellSize = width / COLS;
 }
 
-window.addEventListener('resize', resize);
+window.onresize = resize;
 resize();
+initGrid();
 draw();
-
 </script>
 </body>
 </html>
