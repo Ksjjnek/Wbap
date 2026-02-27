@@ -12,38 +12,21 @@
             margin: 0;
             background-color: #1c1c1d;
             color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: sans-serif;
             overflow: hidden;
             touch-action: manipulation;
         }
 
-        .container {
+        /* Оболочка для прыжка */
+        .jump-box {
             position: relative;
-            width: 200px;
-            height: 300px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .shadow {
-            position: absolute;
-            bottom: 40px;
-            width: 80px;
-            height: 15px;
-            background: rgba(0,0,0,0.5);
-            border-radius: 50%;
-            filter: blur(8px);
-            transform: scale(1);
-            transition: all 0.6s ease-out;
-            opacity: 0.8;
+            transition: transform 1.5s cubic-bezier(0.45, 0.05, 0.55, 0.95);
         }
 
         .scene {
             width: 100px;
             height: 100px;
             perspective: 1000px;
-            z-index: 2;
         }
 
         .cube {
@@ -51,43 +34,38 @@
             height: 100%;
             position: relative;
             transform-style: preserve-3d;
-            transform: translateZ(-50px) rotateX(-15deg) rotateY(-20deg);
-        }
-
-        @keyframes toss-animation {
-            0% { transform: translate(-100px, 150px) rotateX(0deg); }
-            40% { transform: translate(0px, -180px) rotateX(180deg) scale(1.2); }
-            100% { transform: translate(0px, 0px) rotateX(0deg) scale(1); }
-        }
-
-        .cube.is-tossing {
-            animation: toss-animation 1.5s cubic-bezier(0.25, 1, 0.5, 1);
+            /* Начальный наклон для объема */
+            transform: rotateX(-20deg) rotateY(20deg);
+            transition: transform 1.5s cubic-bezier(0.15, 0.8, 0.4, 1);
         }
 
         .cube__face {
             position: absolute;
             width: 100px;
             height: 100px;
-            border: 1px solid rgba(255,255,255,0.4);
+            border: 2px solid rgba(255,255,255,0.5);
             line-height: 100px;
-            font-size: 45px;
+            font-size: 40px;
             font-weight: bold;
-            color: rgba(255,255,255,0.9);
             text-align: center;
             background: rgba(255, 255, 255, 0.1);
-            border-radius: 20px;
-            box-shadow: inset 0 0 15px rgba(255,255,255,0.1);
-            transition: background 0.4s, color 0.4s, box-shadow 0.4s;
-            backface-visibility: visible;
+            border-radius: 15px;
+            transition: all 0.4s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
         }
 
+        /* Точки как на реальном кубике (опционально) */
         .cube__face.winner {
             background: #ffffff !important;
             color: #000 !important;
-            box-shadow: 0 0 30px rgba(255,255,255,0.8);
-            border: none;
+            box-shadow: 0 0 25px rgba(255,255,255,0.6);
+            border-color: #fff;
         }
 
+        /* Координаты сторон */
         .cube__face--1 { transform: rotateY(  0deg) translateZ(50px); }
         .cube__face--2 { transform: rotateY(180deg) translateZ(50px); }
         .cube__face--3 { transform: rotateY( 90deg) translateZ(50px); }
@@ -95,27 +73,36 @@
         .cube__face--5 { transform: rotateX( 90deg) translateZ(50px); }
         .cube__face--6 { transform: rotateX(-90deg) translateZ(50px); }
 
+        .shadow {
+            position: absolute;
+            bottom: -20px;
+            left: 10px;
+            width: 80px;
+            height: 10px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 50%;
+            filter: blur(5px);
+            transition: all 1.5s;
+        }
+
         button {
-            margin-top: 40px;
-            padding: 18px 45px;
+            margin-top: 100px;
+            padding: 15px 40px;
             font-size: 18px;
             font-weight: bold;
             background: #0088cc;
             color: white;
             border: none;
-            border-radius: 15px;
+            border-radius: 12px;
             cursor: pointer;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            transition: transform 0.1s;
+            z-index: 10;
         }
-
-        button:active { transform: scale(0.95); }
-        button:disabled { background: #3d3d3d; opacity: 0.6; }
+        button:disabled { opacity: 0.5; }
     </style>
 </head>
 <body>
 
-    <div class="container">
+    <div class="jump-box" id="jump-box">
         <div class="shadow" id="shadow"></div>
         <div class="scene">
             <div class="cube" id="cube">
@@ -129,14 +116,12 @@
         </div>
     </div>
 
-    <button id="roll-button" onclick="rollDice()">БРОСИТЬ 🎲</button>
+    <button id="roll-button" onclick="rollDice()">Бросить 🎲</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-
         const cube = document.getElementById('cube');
+        const jumpBox = document.getElementById('jump-box');
         const shadow = document.getElementById('shadow');
         const btn = document.getElementById('roll-button');
         const faces = document.querySelectorAll('.cube__face');
@@ -148,40 +133,46 @@
             isRolling = true;
             btn.disabled = true;
 
-            // Сброс предыдущего результата
+            // Сброс стиля
             faces.forEach(f => f.classList.remove('winner'));
 
             const result = Math.floor(Math.random() * 6) + 1;
-            
-            const rotations = {
-                1: 'rotateY(0deg)', 2: 'rotateY(180deg)', 3: 'rotateY(-90deg)',
-                4: 'rotateY(90deg)', 5: 'rotateX(-90deg)', 6: 'rotateX(90deg)'
+
+            // Конечные углы для каждой грани, чтобы она смотрела прямо на экран
+            const finalRotations = {
+                1: { x: 0,   y: 0 },
+                2: { x: 0,   y: 180 },
+                3: { x: 0,   y: -90 },
+                4: { x: 0,   y: 90 },
+                5: { x: -90, y: 0 },
+                6: { x: 90,  y: 0 }
             };
 
-            // Визуальные эффекты взлета
-            cube.classList.remove('is-tossing');
-            void cube.offsetWidth; // Force reflow для перезапуска анимации
-            cube.classList.add('is-tossing');
-            
-            shadow.style.transform = 'scale(0.3) translateX(-50px)';
+            // Добавляем 3-4 полных оборота (1080-1440 градусов) для натуральности
+            const rotateX = finalRotations[result].x + (360 * 3);
+            const rotateY = finalRotations[result].y + (360 * 3);
+
+            // 1. Анимация прыжка (поднимаем jump-box)
+            jumpBox.style.transform = 'translateY(-150px) scale(1.1)';
+            shadow.style.transform = 'scale(0.3)';
             shadow.style.opacity = '0.2';
 
-            // Случайное вращение + поворот к нужной грани
-            const spinX = 1440 + (Math.random() * 720); 
-            const spinY = 1440 + (Math.random() * 720);
-            
-            cube.style.transition = 'transform 1.5s cubic-bezier(0.15, 0.8, 0.4, 1)';
-            cube.style.transform = `translateZ(-50px) ${rotations[result]} rotateX(${spinX}deg) rotateY(${spinY}deg)`;
+            // 2. Анимация вращения самого куба
+            cube.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
 
-            // Завершение анимации
+            // 3. Возвращение на землю (через половину времени)
             setTimeout(() => {
-                shadow.style.transform = 'scale(1) translateX(0)';
-                shadow.style.opacity = '0.8';
-                
+                jumpBox.style.transform = 'translateY(0) scale(1)';
+                shadow.style.transform = 'scale(1)';
+                shadow.style.opacity = '0.6';
+            }, 750);
+
+            // 4. Финал
+            setTimeout(() => {
                 const targetFace = document.querySelector(`.cube__face--${result}`);
                 targetFace.classList.add('winner');
                 
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 
                 isRolling = false;
                 btn.disabled = false;
