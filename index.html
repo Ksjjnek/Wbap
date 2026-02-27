@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plinko Pro</title>
+    <title>Plinko Pro Max</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
@@ -14,13 +14,13 @@
             display: flex; flex-direction: column; align-items: center;
         }
 
-        /* Шапка и Профиль */
+        /* Шапка */
         .header { width: 100%; padding: 10px 15px; display: flex; align-items: center; box-sizing: border-box; }
         .profile { display: flex; align-items: center; background: var(--gray); padding: 4px 12px 4px 4px; border-radius: 25px; cursor: pointer; }
         .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; }
         .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
 
-        /* Тэглы (Анимация переключения) */
+        /* Переключатели */
         .toggle-box {
             position: relative; width: 90%; background: var(--gray); border-radius: 12px;
             display: flex; padding: 3px; margin: 10px 0;
@@ -32,8 +32,10 @@
         }
         .active-right .slider { transform: translateX(100%); }
 
-        /* Игра */
-        #game { width: 100%; height: 320px; }
+        /* Игровое поле */
+        #game { width: 100%; height: 320px; position: relative; }
+        canvas { position: absolute; top: 0; left: 0; }
+
         .mults { display: flex; justify-content: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
         .m-tile {
             flex: 1; padding: 6px 0; border-radius: 4px; text-align: center; font-size: 9px;
@@ -41,30 +43,33 @@
         }
         .m-tile.show { opacity: 1; transform: translateY(0); }
 
-        /* Управление */
+        /* Панель управления */
         .panel { width: 90%; margin-top: 15px; }
         .balls-grid { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 10px; }
-        .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; }
+        .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; font-weight: bold; }
         .b-btn.active { background: var(--green); }
 
-        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; }
+        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; box-shadow: 0 4px 15px rgba(50, 215, 75, 0.3); }
+        .play-btn:active { transform: scale(0.96); }
         .cost-info { text-align: center; margin-top: 8px; color: #ff9f0a; font-size: 14px; font-weight: 600; }
 
-        /* Эффекты выигрыша */
+        /* Текст выигрыша */
         .float {
-            position: fixed; pointer-events: none; font-weight: 800; z-index: 100;
+            position: fixed; pointer-events: none; font-weight: 900; z-index: 100;
+            filter: drop-shadow(0 0 5px rgba(0,0,0,0.5));
             animation: floatUp 1s ease-out forwards;
         }
         @keyframes floatUp {
-            0% { transform: translateY(0); opacity: 1; }
-            100% { transform: translateY(-60px); opacity: 0; }
+            0% { transform: translateY(0) scale(0.8); opacity: 0; }
+            20% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+            100% { transform: translateY(-70px) scale(1); opacity: 0; }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="profile" onclick="tg.showAlert('Ваш баланс обновляется мгновенно!')">
+        <div class="profile">
             <img id="avatar" src="" class="avatar">
             <div class="bal-val" id="top-bal">1000 🪙</div>
         </div>
@@ -96,7 +101,7 @@
         </div>
 
         <button class="play-btn" onclick="play()">ИГРАТЬ</button>
-        <div class="cost-info" id="warn">Спишется: 10 🪙</div>
+        <div class="cost-info" id="warn">С баланса спишется: 10 🪙</div>
     </div>
 
     <script>
@@ -104,46 +109,63 @@
         tg.expand();
 
         let dBal = 1000, rBal = 0, mode = 'demo', balls = 1, bet = 10;
+        let particles = [];
 
-        // Юзер
+        // Инициализация юзера
         const u = tg.initDataUnsafe?.user;
         document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=32d74b&color=fff`;
 
-        function update() {
+        function updateUI() {
             if(dBal < 100) dBal = 100;
             document.getElementById('top-bal').innerText = mode === 'demo' ? `${Math.floor(dBal)} 🪙` : `${rBal.toFixed(2)} USDT`;
-            document.getElementById('warn').innerText = `Спишется: ${balls * bet} ${mode === 'demo' ? '🪙' : 'USDT'}`;
+            document.getElementById('warn').innerText = `С баланса спишется: ${balls * bet} ${mode === 'demo' ? '🪙' : 'USDT'}`;
         }
 
-        function setMode(m) { mode = m; document.getElementById('mode-t').classList.toggle('active-right', m==='real'); update(); }
-        function setBet(b) { bet = b; document.getElementById('bet-t').classList.toggle('active-right', b===100); update(); }
-        function setB(n, el) { balls = n; document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); el.classList.add('active'); update(); }
+        function setMode(m) { mode = m; document.getElementById('mode-t').classList.toggle('active-right', m==='real'); updateUI(); }
+        function setBet(b) { bet = b; document.getElementById('bet-t').classList.toggle('active-right', b===100); updateUI(); }
+        function setB(n, el) { balls = n; document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); el.classList.add('active'); updateUI(); }
 
-        // Эффекты
-        function fx(x, y, v, m) {
+        // --- Система частиц ---
+        function createParticles(x, y, color) {
+            for (let i = 0; i < 15; i++) {
+                particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 3,
+                    radius: Math.random() * 3 + 1,
+                    color: color,
+                    life: 1.0
+                });
+            }
+        }
+
+        // --- Эффекты текста ---
+        function spawnText(x, y, v, m) {
             const el = document.createElement('div');
             el.className = 'float';
-            if(m >= 1.5) { el.innerText = `+${v} 🔥`; el.style.color = '#32d74b'; }
-            else if(m === 1) { el.innerText = `ВОЗВРАТ`; el.style.color = '#fff'; }
-            else { el.innerText = `-${(bet-v).toFixed(0)} 💀`; el.style.color = '#ff453a'; }
+            if(m >= 1.5) { el.innerText = `+${v} 🔥`; el.style.color = '#32d74b'; createParticles(x, y, '#32d74b'); }
+            else if(m === 1) { el.innerText = `ВОЗВРАТ`; el.style.color = '#fff'; createParticles(x, y, '#fff'); }
+            else { el.innerText = `-${(bet-v).toFixed(0)} 💀`; el.style.color = '#ff453a'; createParticles(x, y, '#ff453a'); }
             el.style.left = x + 'px'; el.style.top = y + 'px';
             document.body.appendChild(el);
             setTimeout(() => el.remove(), 1000);
         }
 
-        // Физика
-        const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
+        // --- Физика ---
+        const { Engine, Render, Runner, Bodies, Composite, Events, Vector } = Matter;
         const eng = Engine.create();
-        const ren = Render.create({ element: document.getElementById('game'), engine: eng, options: { width: 400, height: 320, wireframes: false, background: 'transparent' } });
+        const ren = Render.create({ 
+            element: document.getElementById('game'), 
+            engine: eng, 
+            options: { width: 400, height: 320, wireframes: false, background: 'transparent' } 
+        });
 
         const conf = [
             {l:'0x', v:0, c:'#444'}, {l:'0.5x', v:0.5, c:'#ff9f0a'}, {l:'1.5x', v:1.5, c:'#ff9f0a'},
             {l:'10x', v:10, c:'#32d74b'}, {l:'3x', v:3, c:'#ff9f0a'}, {l:'1x', v:1, c:'#ffd60a'}, {l:'0x', v:0, c:'#444'}
         ];
 
-        // Категории для отключения коллизий между шарами
-        const CAT_BALL = 0x0002;
-        const CAT_STATIC = 0x0001;
+        const CAT_BALL = 0x0002, CAT_STATIC = 0x0001;
 
         conf.forEach((m, i) => {
             const d = document.createElement('div');
@@ -158,26 +180,63 @@
         // Колышки
         for(let i=2; i<9; i++) {
             for(let j=0; j<=i; j++) {
-                Composite.add(eng.world, Bodies.circle(200 + (j*34) - (i*17), 40 + (i*30), 3, { 
+                const peg = Bodies.circle(200 + (j*34) - (i*17), 40 + (i*30), 3, { 
                     isStatic: true, 
+                    label: 'peg',
                     collisionFilter: { category: CAT_STATIC },
                     render: { fillStyle: '#fff' } 
-                }));
+                });
+                Composite.add(eng.world, peg);
             }
         }
 
+        // Обработка столкновений
         Events.on(eng, 'collisionStart', e => {
             e.pairs.forEach(p => {
                 const b = p.bodyA.label === 'b' ? p.bodyA : (p.bodyB.label === 'b' ? p.bodyB : null);
                 const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
+                const peg = p.bodyA.label === 'peg' ? p.bodyA : (p.bodyB.label === 'peg' ? p.bodyB : null);
+
+                // 1. ЛОГИКА ПЕРВОГО ОТСКОКА (80/20)
+                if(b && peg && !b.firstHit) {
+                    b.firstHit = true;
+                    if(Math.random() < 0.20) { // 20% шанс "слабого" отскока
+                        // Замедляем шарик и толкаем его к центру (x=200)
+                        const directionToCenter = 200 - b.position.x;
+                        Matter.Body.setVelocity(b, { 
+                            x: directionToCenter * 0.05, 
+                            y: b.velocity.y * 0.5 
+                        });
+                        b.restitution = 0.3; // Делаем менее прыгучим
+                    }
+                }
+
+                // 2. ПОПАДАНИЕ В ЛУНКУ
                 if(b && s) {
                     const m = conf[s.label.split('_')[1]];
                     const win = b.bet * m.v;
                     if(b.mode === 'demo') dBal += win; else rBal += win;
-                    fx(s.position.x, 280, win, m.v);
-                    update();
+                    spawnText(s.position.x, 280, win, m.v);
+                    updateUI();
                     Composite.remove(eng.world, b);
                 }
+            });
+        });
+
+        // Кастомный рендер частиц поверх всего
+        Events.on(ren, 'afterRender', () => {
+            const ctx = ren.context;
+            particles.forEach((p, i) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // гравитация частиц
+                p.life -= 0.02;
+                if (p.life <= 0) particles.splice(i, 1);
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color + Math.floor(p.life * 255).toString(16).padStart(2, '0');
+                ctx.fill();
             });
         });
 
@@ -190,23 +249,23 @@
             if(mode === 'real' && rBal < c) return tg.showAlert("Пополните баланс!");
 
             if(mode === 'demo') dBal -= c; else rBal -= c;
-            update();
+            updateUI();
 
             for(let i=0; i<balls; i++) {
                 setTimeout(() => {
-                    const ball = Bodies.circle(200 + (Math.random()*4-2), 10, 6, { 
-                        restitution: 0.5, 
+                    const ball = Bodies.circle(200 + (Math.random()*2-1), 10, 6, { 
+                        restitution: 0.6, 
                         friction: 0.01, 
                         label: 'b',
-                        collisionFilter: { category: CAT_BALL, mask: CAT_STATIC }, // НЕ сталкивается с другими шарами
+                        collisionFilter: { category: CAT_BALL, mask: CAT_STATIC },
                         render: { fillStyle: '#ff3b30' } 
                     });
-                    ball.bet = bet; ball.mode = mode;
+                    ball.bet = bet; ball.mode = mode; ball.firstHit = false; // Маркер первого удара
                     Composite.add(eng.world, ball);
                 }, i * 120);
             }
         }
-        update();
+        updateUI();
     </script>
 </body>
 </html>
