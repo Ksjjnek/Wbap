@@ -3,185 +3,228 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MineSlot Pro</title>
+    <title>Mine Slot Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; background: #1e1e1e; overflow: hidden; font-family: 'Courier New', Courier, monospace; }
+        body { margin: 0; background: #121212; color: white; font-family: 'Arial', sans-serif; overflow: hidden; }
+        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
         canvas { display: block; image-rendering: pixelated; }
-        .ui-panel {
-            position: absolute; bottom: 0; width: 100%; height: 120px;
-            background: #333; border-top: 4px solid #000;
-            display: flex; justify-content: center; align-items: center;
+        .controls { height: 80px; background: #222; display: flex; align-items: center; justify-content: center; border-top: 2px solid #444; }
+        .spin-btn { 
+            width: 70%; height: 50px; background: #3fb51e; border: none; border-radius: 10px;
+            color: white; font-weight: bold; font-size: 20px; box-shadow: 0 4px #267511; cursor: pointer;
         }
-        .btn-mine {
-            width: 80%; height: 60px; background: #555; color: #fff;
-            border: 4px solid #000; font-size: 24px; font-weight: bold;
-            box-shadow: inset -4px -4px #222, inset 4px 4px #888;
-            cursor: pointer; active: transform: scale(0.95);
-        }
-        #score-board {
-            position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.7);
-            padding: 10px; border: 2px solid #fff; color: #55ff55; font-size: 20px;
-        }
+        .spin-btn:active { transform: translateY(2px); box-shadow: 0 2px #267511; }
     </style>
 </head>
 <body>
 
-<div id="score-board">SCORE: 0</div>
-<canvas id="game"></canvas>
-<div class="ui-panel">
-    <button class="btn-mine" onclick="spawnPickaxes()">MINE!</button>
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div class="controls">
+        <button class="spin-btn" onclick="startSpin()">КРУТИТЬ (SPIN)</button>
+    </div>
 </div>
 
 <script>
 const tg = window.Telegram.WebApp;
-const canvas = document.getElementById('game');
+const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score-board');
 
-let width, height, cellSize;
+let width, height, slotSize, mineSize;
+let isSpinning = false;
 let score = 0;
-let shake = 0;
+
 const COLS = 5;
-const ROWS = 7;
+const SLOT_ROWS = 3;
+const MINE_ROWS = 6;
 
-// --- ТЕКСТУРЫ (Base64 для быстрой работы) ---
-const TEXTURES = {
-    DIRT: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2N88eLffwY0wNjYyIghMIGBAnD8j6EAbAbMIGwG4DMIWwaMpqDRFBAZCAD67R0LidmUoQAAAABJRU5ErkJggg==',
-    STONE: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAIElEQVQ4T2M8c+bMfwY0wNjYyIghMIGBAnD8j6EAbAbMAD6iGAsU6pSDAAAAAElFTkSuQmCC',
-    PICK: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAYklEQVQ4T2NkoBAwUqifAWpAbGxs/0E0shgcY2h8uA2AmYDNAGwG4DMIWwaMpqDRFBAZCAD67R0LidmUoQAAAABJRU5ErkJggg==',
-};
+let slots = []; // Верхняя часть 5x3
+let grid = [];  // Нижняя часть (блоки)
+let flyingPicks = []; // Кирки в полете
 
-const images = {};
-Object.keys(TEXTURES).forEach(k => {
-    images[k] = new Image();
-    images[k].src = TEXTURES[k];
-});
+// Инициализация
+function init() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight - 80;
+    slotSize = width / COLS;
+    mineSize = slotSize; // Делаем блоки такими же по ширине
 
-let grid = [];
-let picks = [];
-let particles = [];
+    // Заполняем слоты (пусто)
+    for(let r=0; r<SLOT_ROWS; r++) {
+        slots[r] = new Array(COLS).fill(null);
+    }
 
-function initGrid() {
+    // Заполняем шахту
     grid = [];
-    for(let r=0; r<ROWS; r++) {
+    for(let r=0; r<MINE_ROWS; r++) {
         grid[r] = [];
         for(let c=0; c<COLS; c++) {
-            grid[r][c] = createBlock(r);
+            grid[r][c] = { hp: Math.random() > 0.8 ? 2 : 1, type: 'block' };
         }
     }
 }
 
-function createBlock(r) {
-    let type = (Math.random() > 0.8) ? 'STONE' : 'DIRT';
-    if(r === ROWS - 1) type = 'CHEST'; 
-    return { type, hp: (type === 'STONE' ? 2 : 1), active: true };
+// Отрисовка красивой кирки
+function drawPickaxe(x, y, scale = 1, color = '#00ffff') {
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(scale, scale);
+    
+    // Тень
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.fillRect(-2, 4, 6, 25);
+
+    // Рукоятка (дерево)
+    ctx.fillStyle = '#634121';
+    ctx.fillRect(0, 0, 4, 25);
+
+    // Головка кирки (металл)
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(-15, 2);
+    ctx.quadraticCurveTo(2, -5, 19, 2);
+    ctx.lineTo(19, 6);
+    ctx.quadraticCurveTo(2, 0, -15, 6);
+    ctx.closePath();
+    ctx.fill();
+
+    // Блик
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.fillRect(-10, 3, 5, 1);
+    
+    ctx.restore();
 }
 
-function spawnPickaxes() {
-    tg.HapticFeedback.impactOccurred('rigid');
+function startSpin() {
+    if(isSpinning) return;
+    isSpinning = true;
+    tg.HapticFeedback.impactOccurred('medium');
+
+    let duration = 1500;
+    let startTime = Date.now();
+
+    const animateSpin = () => {
+        let elapsed = Date.now() - startTime;
+        
+        // Рандомно «мелькаем» кирками в слотах
+        for(let r=0; r<SLOT_ROWS; r++) {
+            for(let c=0; c<COLS; c++) {
+                slots[r][c] = Math.random() > 0.8 ? 'pick' : null;
+            }
+        }
+
+        if(elapsed < duration) {
+            requestAnimationFrame(animateSpin);
+        } else {
+            finalizeSpin();
+        }
+    };
+    animateSpin();
+}
+
+function finalizeSpin() {
+    isSpinning = false;
+    // Определяем финальные кирки и запускаем их вниз
     for(let c=0; c<COLS; c++) {
-        if(Math.random() > 0.5) {
-            picks.push({ x: c, y: -1, speed: 0.12 });
+        let count = Math.floor(Math.random() * 3); // Сколько кирок выпало в столбце
+        for(let i=0; i<count; i++) {
+            setTimeout(() => {
+                flyingPicks.push({
+                    x: c * slotSize + slotSize/2,
+                    y: slotSize * 1.5,
+                    col: c,
+                    speed: 8 + Math.random() * 4
+                });
+            }, i * 200);
         }
     }
 }
 
 function update() {
-    if(shake > 0) shake *= 0.8;
-
-    // Движение кирок
-    picks.forEach((p, i) => {
+    flyingPicks.forEach((p, index) => {
         p.y += p.speed;
-        let r = Math.floor(p.y);
-        if(grid[r] && grid[r][p.x] && grid[r][p.x].active) {
-            let b = grid[r][p.x];
-            b.hp--;
-            createExplosion(p.x * cellSize + cellSize/2, r * cellSize + cellSize/2);
-            if(b.hp <= 0) {
-                b.active = false;
-                score += 10;
-                scoreEl.innerText = `SCORE: ${score}`;
-            }
-            picks.splice(i, 1);
+        
+        // Проверка столкновения с блоками
+        let relativeY = p.y - (SLOT_ROWS * slotSize);
+        let row = Math.floor(relativeY / mineSize);
+        
+        if(grid[row] && grid[row][p.col] && grid[row][p.col].hp > 0) {
+            grid[row][p.col].hp--;
+            tg.HapticFeedback.impactOccurred('light');
+            flyingPicks.splice(index, 1); // Кирка ломается об блок
+            
+            // Если ряд очищен — респавним его сверху (цикл)
+            checkLevelProgress();
         }
-        if(p.y > ROWS) picks.splice(i, 1);
-    });
 
-    // Частицы
-    particles.forEach((pt, i) => {
-        pt.x += pt.vx; pt.y += pt.vy; pt.life -= 0.05;
-        if(pt.life <= 0) particles.splice(i, 1);
+        if(p.y > height) flyingPicks.splice(index, 1);
     });
-
-    // Рестарт/Генерация новых блоков при прохождении
-    let rowFilled = grid[ROWS-1].every(b => !b.active);
-    if(rowFilled) {
-        grid.pop();
-        grid.unshift(Array.from({length: COLS}, () => createBlock(0)));
-        shake = 10;
-    }
 }
 
-function createExplosion(x, y) {
-    for(let i=0; i<6; i++) {
-        particles.push({
-            x: x, y: y,
-            vx: (Math.random()-0.5)*8, vy: (Math.random()-0.5)*8,
-            life: 1.0
-        });
+function checkLevelProgress() {
+    // Если нижний ряд пуст, сдвигаем всё
+    if(grid[MINE_ROWS-1].every(b => b.hp <= 0)) {
+        grid.pop();
+        let newRow = [];
+        for(let c=0; c<COLS; c++) newRow.push({ hp: Math.random() > 0.8 ? 2 : 1 });
+        grid.unshift(newRow);
+        score += 100;
     }
 }
 
 function draw() {
     ctx.clearRect(0, 0, width, height);
-    ctx.save();
-    if(shake > 0.5) ctx.translate(Math.random()*shake, Math.random()*shake);
 
-    for(let r=0; r<ROWS; r++) {
+    // 1. Рисуем сетку слотов (5x3)
+    ctx.strokeStyle = '#333';
+    for(let r=0; r<SLOT_ROWS; r++) {
         for(let c=0; c<COLS; c++) {
-            let b = grid[r][c];
-            if(!b.active) continue;
-            
-            // Рисуем блок (Пикселизированный)
-            ctx.fillStyle = b.type === 'STONE' ? '#777' : (b.type === 'CHEST' ? '#f1c40f' : '#8B4513');
-            ctx.fillRect(c*cellSize+2, r*cellSize+2, cellSize-4, cellSize-4);
-            
-            // Добавляем "текстуру" вручную
-            ctx.fillStyle = 'rgba(0,0,0,0.2)';
-            ctx.fillRect(c*cellSize+cellSize-15, r*cellSize+cellSize-15, 10, 10);
+            ctx.strokeRect(c*slotSize, r*slotSize, slotSize, slotSize);
+            if(slots[r][c] === 'pick') {
+                drawPickaxe(c*slotSize + slotSize/2, r*slotSize + slotSize/2, 1.5);
+            }
         }
     }
 
-    // Рисуем кирки (нормальная иконка)
-    picks.forEach(p => {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(p.x * cellSize + cellSize/2 - 5, p.y * cellSize, 10, 30); // Ручка
-        ctx.fillStyle = '#00ffff';
-        ctx.fillRect(p.x * cellSize + cellSize/2 - 20, p.y * cellSize, 40, 10); // Лезвие
+    // Разделитель
+    ctx.fillStyle = '#444';
+    ctx.fillRect(0, SLOT_ROWS * slotSize, width, 5);
+
+    // 2. Рисуем шахту (блоки)
+    for(let r=0; r<MINE_ROWS; r++) {
+        for(let c=0; c<COLS; c++) {
+            let b = grid[r][c];
+            if(b.hp <= 0) continue;
+
+            let x = c * mineSize;
+            let y = (SLOT_ROWS * slotSize) + (r * mineSize) + 5;
+
+            // Рисуем блок с градиентом
+            let grad = ctx.createLinearGradient(x, y, x, y + mineSize);
+            grad.addColorStop(0, b.hp > 1 ? '#777' : '#8B4513');
+            grad.addColorStop(1, b.hp > 1 ? '#444' : '#5D2E0C');
+            ctx.fillStyle = grad;
+            ctx.fillRect(x + 2, y + 2, mineSize - 4, mineSize - 4);
+            
+            // Трещины
+            if(b.hp === 1 && b.type === 'block') {
+                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+                ctx.beginPath(); ctx.moveTo(x+10, y+10); ctx.lineTo(x+30, y+30); ctx.stroke();
+            }
+        }
+    }
+
+    // 3. Рисуем летящие кирки
+    flyingPicks.forEach(p => {
+        drawPickaxe(p.x, p.y, 1.2, '#00ffff');
     });
 
-    // Рисуем частицы
-    particles.forEach(pt => {
-        ctx.globalAlpha = pt.life;
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(pt.x, pt.y, 4, 4);
-    });
-
-    ctx.restore();
     update();
     requestAnimationFrame(draw);
 }
 
-function resize() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight - 120;
-    cellSize = width / COLS;
-}
-
-window.onresize = resize;
-resize();
-initGrid();
+init();
 draw();
 </script>
 </body>
