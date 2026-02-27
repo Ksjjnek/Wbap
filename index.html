@@ -1,237 +1,202 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Casino Web App Improved</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background: #111;
-    color: #fff;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 0;
-    padding: 20px;
-}
-.toggle {
-    display: flex;
-    width: 220px;
-    border-radius: 30px;
-    background: #333;
-    margin-bottom: 20px;
-    cursor: pointer;
-}
-.toggle div {
-    flex: 1;
-    text-align: center;
-    padding: 12px 0;
-    transition: all 0.3s;
-    font-weight: bold;
-}
-.toggle .active {
-    background: #f39c12;
-    color: #000;
-    border-radius: 30px;
-}
-.game-area {
-    width: 360px;
-    height: 400px;
-    background: #222;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    position: relative;
-    overflow: hidden;
-    border: 2px solid #444;
-}
-.controls {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    width: 100%;
-    align-items: center;
-}
-.control-group {
-    width: 100%;
-}
-.control-group p {
-    margin: 0 0 5px 0;
-    font-size: 14px;
-    color: #ccc;
-    text-align: center;
-}
-.buttons {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
-    justify-content: center;
-}
-button {
-    padding: 10px 15px;
-    border: none;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s;
-    font-weight: bold;
-    background: #333;
-    color: #fff;
-}
-button:hover { background: #f39c12; color: #000; }
-button.selected { background: #f39c12; color: #000; }
-#play { width: 80%; margin-top: 10px; font-size: 16px; }
-#betCost { font-weight: bold; color: #f39c12; }
-.ball { width: 12px; height: 12px; border-radius: 50%; background: #f39c12; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
-.prize {
-    width: 40px;
-    height: 28px;
-    position: absolute;
-    bottom: 0;
-    border-radius: 5px;
-    background: #444;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 11px;
-    transition: background 0.3s;
-}
-.prize.win { background: #f39c12; }
-.pin { width: 8px; height: 8px; background: #888; border-radius: 50%; position: absolute; }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Plinko Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0; padding: 0; background-color: #1c1c1e; color: white;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex; flex-direction: column; align-items: center; overflow: hidden;
+        }
+        
+        /* Стили для переключателей (Свитчеры) */
+        .toggle-container {
+            position: relative; width: 80%; background: #2c2c2e; border-radius: 25px;
+            display: flex; margin: 15px 0; padding: 5px; box-sizing: border-box;
+        }
+        .toggle-btn {
+            flex: 1; text-align: center; padding: 10px; z-index: 2; cursor: pointer;
+            font-weight: bold; font-size: 14px; transition: color 0.3s;
+        }
+        .toggle-slider {
+            position: absolute; top: 5px; left: 5px; width: calc(50% - 5px); height: calc(100% - 10px);
+            background: #0a84ff; border-radius: 20px; transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); z-index: 1;
+        }
+        .demo-mode .toggle-slider { transform: translateX(0); }
+        .balance-mode .toggle-slider { transform: translateX(100%); }
+
+        /* Игровое поле */
+        #game-container { position: relative; width: 100%; max-width: 400px; height: 350px; }
+        canvas { width: 100%; height: 100%; display: block; }
+        
+        /* Множители (Призовые места) */
+        .multipliers {
+            display: flex; justify-content: space-between; width: 100%; max-width: 400px;
+            padding: 0 10px; box-sizing: border-box; margin-top: -20px; z-index: 10;
+        }
+        .multiplier {
+            background: #ff9f0a; padding: 5px; border-radius: 5px; font-size: 12px; font-weight: bold;
+            opacity: 0; transform: translateY(10px); transition: all 0.5s ease;
+        }
+        .multiplier.show { opacity: 1; transform: translateY(0); }
+
+        /* Панель управления */
+        .controls { width: 90%; max-width: 400px; margin-top: 20px; text-align: center; }
+        .btn-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
+        .btn-row button {
+            background: #3a3a3c; border: none; color: white; padding: 10px 15px;
+            border-radius: 10px; cursor: pointer; font-size: 14px;
+        }
+        .btn-row button.active { background: #32d74b; }
+        
+        .play-btn {
+            width: 100%; background: #32d74b; color: #fff; border: none;
+            padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
+        }
+        .cost-display { margin-top: 10px; font-size: 14px; color: #8e8e93; }
+    </style>
 </head>
 <body>
 
-<div class="toggle">
-    <div class="active" id="demo">Демо</div>
-    <div id="balance">Баланс</div>
-</div>
-
-<div class="game-area" id="gameArea">
-    <!-- Призовые зоны -->
-    <div class="prize" style="left:0%">0x</div>
-    <div class="prize" style="left:12%">0.1x</div>
-    <div class="prize" style="left:24%">0.5x</div>
-    <div class="prize" style="left:36%">0.75x</div>
-    <div class="prize" style="left:48%">1x</div>
-    <div class="prize" style="left:60%">1.5x</div>
-    <div class="prize" style="left:72%">2x</div>
-    <div class="prize" style="left:84%">2.5x</div>
-    <div class="prize" style="left:96%">5x</div>
-</div>
-
-<div class="controls">
-    <div class="control-group">
-        <p>Количество шариков</p>
-        <div class="buttons" id="balls">
-            <button>1</button><button>2</button><button>5</button><button>10</button><button>25</button><button>50</button>
-        </div>
+    <div class="toggle-container demo-mode" id="mode-toggle">
+        <div class="toggle-slider"></div>
+        <div class="toggle-btn" onclick="setMode('demo')">Демо</div>
+        <div class="toggle-btn" onclick="setMode('balance')">Баланс</div>
     </div>
-    <div class="control-group">
-        <p>Выбор ставки</p>
-        <div class="buttons" id="bet">
-            <button>10</button><button>50</button><button>100</button>
+
+    <div id="game-container"></div>
+    
+    <div class="multipliers" id="multipliers-container">
         </div>
+
+    <div class="controls">
+        <p style="margin: 0 0 5px 0; font-size: 12px; color: #8e8e93;">Количество шариков:</p>
+        <div class="btn-row" id="balls-row">
+            <button class="active" onclick="setBalls(1, this)">1</button>
+            <button onclick="setBalls(2, this)">2</button>
+            <button onclick="setBalls(5, this)">5</button>
+            <button onclick="setBalls(10, this)">10</button>
+            <button onclick="setBalls(25, this)">25</button>
+            <button onclick="setBalls(50, this)">50</button>
+        </div>
+
+        <p style="margin: 10px 0 5px 0; font-size: 12px; color: #8e8e93;">Ставка:</p>
+        <div class="toggle-container demo-mode" id="bet-toggle">
+            <div class="toggle-slider"></div>
+            <div class="toggle-btn" onclick="setBet(10, this)">10 🪙</div>
+            <div class="toggle-btn" onclick="setBet(100, this)">100 🪙</div>
+        </div>
+
+        <button class="play-btn" onclick="play()">ИГРАТЬ</button>
+        <div class="cost-display" id="total-cost">Стоимость: 10 🪙</div>
     </div>
-    <button id="play">Играть</button>
-    <p>Стоимость ставки: <span id="betCost">10</span>₽</p>
-</div>
 
-<script>
-const toggle = document.querySelector('.toggle');
-const demo = document.getElementById('demo');
-const balance = document.getElementById('balance');
-let mode='demo';
-toggle.addEventListener('click', e=>{
-    if(e.target.id==='demo'){demo.classList.add('active');balance.classList.remove('active');mode='demo'}
-    else if(e.target.id==='balance'){balance.classList.add('active');demo.classList.remove('active');mode='balance'}
-});
-document.querySelectorAll('#balls button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#balls button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}));
-document.querySelectorAll('#bet button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#bet button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('betCost').innerText=btn.innerText;}));
+    <script>
+        // Инициализация Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-const gameArea=document.getElementById('gameArea');
-const prizes=Array.from(document.querySelectorAll('.prize'));
+        let currentMode = 'demo';
+        let ballsCount = 1;
+        let betAmount = 10;
 
-// Треугольная сетка пинов
-const pins=[];
-const rows=6;
-const spacingX=50;
-const spacingY=50;
-for(let r=0;r<rows;r++){
-    let cols=r+1;
-    for(let c=0;c<cols;c++){
-        let pin=document.createElement('div');
-        pin.classList.add('pin');
-        pin.style.left=(gameArea.clientWidth/2-(cols-1)*spacingX/2 + c*spacingX)+'px';
-        pin.style.top=(50+r*spacingY)+'px';
-        gameArea.appendChild(pin);
-        pins.push(pin);
-    }
-}
+        // UI Функции
+        function setMode(mode) {
+            currentMode = mode;
+            const toggle = document.getElementById('mode-toggle');
+            if (mode === 'demo') { toggle.classList.replace('balance-mode', 'demo-mode'); } 
+            else { toggle.classList.replace('demo-mode', 'balance-mode'); }
+            updateCost();
+        }
 
-function dropBall(){
-    const ballsCount=parseInt(document.querySelector('#balls button.selected')?.innerText||'1');
-    const betAmount=parseInt(document.querySelector('#bet button.selected')?.innerText||'10');
+        function setBalls(count, btn) {
+            ballsCount = count;
+            document.querySelectorAll('#balls-row button').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            updateCost();
+        }
 
-    for(let i=0;i<ballsCount;i++){
-        const ball=document.createElement('div');
-        ball.classList.add('ball');
-        gameArea.appendChild(ball);
+        function setBet(amount, btn) {
+            betAmount = amount;
+            const toggle = document.getElementById('bet-toggle');
+            if (amount === 10) { toggle.classList.replace('balance-mode', 'demo-mode'); } 
+            else { toggle.classList.replace('demo-mode', 'balance-mode'); }
+            updateCost();
+        }
 
-        // Старт по центру игрового поля
-        let posX = gameArea.clientWidth/2 - 6;
-        let posY = 0;
+        function updateCost() {
+            const total = ballsCount * betAmount;
+            const currency = currentMode === 'demo' ? 'Демо-монет' : 'USDT';
+            document.getElementById('total-cost').innerText = `Стоимость: ${total} ${currency}`;
+        }
 
-        let velocityX = (Math.random()-0.5)*1;
-        let velocityY = 1;
-        const gravity = 0.15;
-        const friction = 0.7;
+        // Анимация появления множителей
+        const mults = ['10x', '3x', '1.5x', '0.5x', '1.5x', '3x', '10x'];
+        const multContainer = document.getElementById('multipliers-container');
+        mults.forEach((m, i) => {
+            let el = document.createElement('div');
+            el.className = 'multiplier';
+            el.innerText = m;
+            multContainer.appendChild(el);
+            // Плавное появление с задержкой
+            setTimeout(() => el.classList.add('show'), 500 + (i * 100));
+        });
 
-        const interval = setInterval(()=>{
-            velocityY += gravity;
-            posX += velocityX;
-            posY += velocityY;
+        // --- Физика игры (Matter.js) ---
+        const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner,
+              Bodies = Matter.Bodies, Composite = Matter.Composite;
 
-            // Отскок от пинов
-            pins.forEach(pin=>{
-                let dx=(posX+6)-(pin.offsetLeft+4);
-                let dy=(posY+6)-(pin.offsetTop+4);
-                let dist=Math.sqrt(dx*dx+dy*dy);
-                if(dist<10){
-                    let angle=Math.atan2(dy,dx);
-                    let speed=Math.sqrt(velocityX*velocityX+velocityY*velocityY)*friction;
-                    velocityX=-speed*Math.cos(angle);
-                    velocityY=-speed*Math.sin(angle);
-                }
-            });
+        const engine = Engine.create();
+        const render = Render.create({
+            element: document.getElementById('game-container'),
+            engine: engine,
+            options: { width: 400, height: 350, wireframes: false, background: 'transparent' }
+        });
 
-            // Столкновения со стенками
-            if(posX<0){posX=0;velocityX=-velocityX*friction}
-            if(posX>gameArea.clientWidth-12){posX=gameArea.clientWidth-12;velocityX=-velocityX*friction}
-            if(posY>gameArea.clientHeight-12){posY=gameArea.clientHeight-12;velocityY=-velocityY*friction}
+        // Создаем точки (pegs)
+        const pegs = [];
+        const rows = 8;
+        for (let i = 2; i < rows; i++) {
+            for (let j = 0; j <= i; j++) {
+                let x = 200 + (j * 40) - (i * 20);
+                let y = 50 + (i * 35);
+                pegs.push(Bodies.circle(x, y, 4, { isStatic: true, render: { fillStyle: '#ffffff' } }));
+            }
+        }
+        Composite.add(engine.world, pegs);
 
-            ball.style.transform=`translate(${posX}px,${posY}px)`;
+        Render.run(render);
+        const runner = Runner.create();
+        Runner.run(runner, engine);
 
-            // Проверка попадания в призовые зоны
-            prizes.forEach(prize=>{
-                let px=prize.offsetLeft;
-                let py=prize.offsetTop;
-                let pw=prize.offsetWidth;
-                let ph=prize.offsetHeight;
-                if(posX+6>px && posX<px+pw && posY+6>py && posY<py+ph){
-                    prize.classList.add('win');
-                    clearInterval(interval);
-                    setTimeout(()=>{ball.remove();prize.classList.remove('win');},500);
-                    if(window.Telegram?.WebApp){
-                        Telegram.WebApp.sendData(JSON.stringify({mode,balls:ballsCount,bet:betAmount,prize:prize.innerText}));
-                    }
-                }
-            });
+        // Функция броска шарика
+        function play() {
+            // Если режим "Баланс", здесь нужно отправлять данные в бота для оплаты
+            if (currentMode === 'balance') {
+                tg.sendData(JSON.stringify({ action: 'pay', amount: ballsCount * betAmount }));
+                // В реальном приложении шарики не падают до подтверждения оплаты!
+            }
 
-        },20);
-    }
-}
-document.getElementById('play').addEventListener('click',dropBall);
-</script>
-
+            for (let i = 0; i < ballsCount; i++) {
+                setTimeout(() => {
+                    // Небольшой рандом при спавне
+                    let xOffset = 200 + (Math.random() * 10 - 5);
+                    let ball = Bodies.circle(xOffset, 10, 8, { 
+                        restitution: 0.8, // Отскок
+                        render: { fillStyle: '#ff3b30' } 
+                    });
+                    Composite.add(engine.world, ball);
+                    
+                    // Удаляем шарик через 5 секунд (чтобы не перегружать память)
+                    setTimeout(() => { Composite.remove(engine.world, ball); }, 5000);
+                }, i * 200); // Задержка между шариками
+            }
+        }
+    </script>
 </body>
 </html>
