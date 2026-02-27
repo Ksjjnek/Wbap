@@ -29,35 +29,29 @@
         .mode-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; transition: 0.3s; }
         .profile-trigger { display: flex; align-items: center; gap: 10px; cursor: pointer; }
         
-        .avatar-fallback { 
+        .avatar-small { width: 38px; height: 38px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.1); object-fit: cover; }
+        .avatar-fallback-small { 
             width: 38px; height: 38px; border-radius: 50%; background: linear-gradient(135deg, #0088cc, #004466); 
             display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; border: 2px solid rgba(255,255,255,0.1);
         }
 
         /* --- SCREENS --- */
-        /* ДОБАВЛЕН ФОН, чтобы меню не просвечивало */
+        /* Плотный фон, чтобы экраны не наслаивались друг на друга */
         .screen { display: none; flex-direction: column; align-items: center; width: 100%; height: calc(100vh - 70px); position: absolute; top: 70px; left: 0; background-color: var(--bg-color); z-index: 10;}
         .screen.active { display: flex; }
 
-        /* --- LOGIN SCREEN --- */
-        #login-screen { top: 0; height: 100vh; z-index: 300; justify-content: center; padding: 20px; box-sizing: border-box; text-align: center; }
-        .login-card { background: var(--card-bg); padding: 30px 20px; border-radius: 24px; width: 100%; max-width: 350px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .login-input { width: 90%; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 15px; border-radius: 12px; font-size: 18px; text-align: center; margin-bottom: 20px; outline: none; }
-        .login-btn { background: var(--accent-color); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 18px; font-weight: bold; transition: 0.2s; }
-        .login-btn:active { transform: scale(0.95); }
-
         /* --- PROFILE SCREEN --- */
-        #profile-screen { justify-content: center; top: 0; height: 100vh; z-index: 200; opacity: 0; pointer-events: none; display: flex; transition: opacity 0.3s ease; background-color: var(--bg-color);}
-        .profile-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(30px) brightness(0.2); transform: scale(1.2); background: linear-gradient(135deg, #0088cc, #004466); }
+        #profile-screen { justify-content: center; top: 0; height: 100vh; z-index: 200; opacity: 0; pointer-events: none; display: flex; transition: opacity 0.3s ease; }
+        .profile-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; filter: blur(30px) brightness(0.2); transform: scale(1.2); background: linear-gradient(135deg, #0088cc, #004466); background-size: cover; background-position: center; }
         .profile-content { position: relative; text-align: center; z-index: 92; width: 100%; display: flex; flex-direction: column; align-items: center;}
         
-        /* Новая большая аватарка для профиля */
-        .profile-large-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #0088cc, #004466); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 36px; border: 3px solid rgba(255,255,255,0.2); margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        /* Большие аватарки для профиля */
+        .avatar-large { width: 90px; height: 90px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2); margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); object-fit: cover; }
+        .avatar-fallback-large { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, #0088cc, #004466); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 36px; border: 3px solid rgba(255,255,255,0.2); margin-bottom: 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
         
         .user-nick { color: var(--accent-color); font-size: 16px; margin-bottom: 5px; display: block; }
         .user-name { font-size: 28px; font-weight: 800; margin-bottom: 25px; }
         .balance-card { background: rgba(255,255,255,0.08); padding: 15px; border-radius: 20px; backdrop-filter: blur(15px); margin: 8px 40px; border: 1px solid rgba(255,255,255,0.1); width: 70%;}
-        .logout-btn { background: rgba(255, 59, 48, 0.2); color: #ff3b30; border: 1px solid #ff3b30; padding: 10px 30px; border-radius: 15px; margin-top: 20px; font-weight: bold; }
 
         /* --- MENU SCREEN --- */
         #menu-screen { padding: 20px; display: block; top: 70px; }
@@ -93,10 +87,12 @@
         .play-btn.auto-stop { background: var(--loss-color); }
         .condition-select { background: rgba(255,255,255,0.1); border: none; color: white; padding: 10px 15px; border-radius: 12px; font-size: 14px; font-weight: bold; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px; }
 
-        /* Стили для профиля */
+        /* Логика отображения профиля поверх всего */
         body.profile-open #profile-screen { opacity: 1; pointer-events: all; }
         body.profile-open #menu-screen, body.profile-open #game-screen { display: none !important; }
-        body.profile-open header .profile-trigger { visibility: hidden; } /* Прячем старую аватарку */
+        body.profile-open header .profile-trigger { visibility: hidden; }
+        
+        /* Кнопка "Назад" */
         .back-btn { display: none; position: absolute; right: 20px; top: 15px; z-index: 300;}
         body.profile-open .back-btn { display: block; }
         body.game-open .back-btn { display: block; }
@@ -114,92 +110,81 @@
 </head>
 <body>
 
-    <div id="login-screen" class="screen active">
-        <div class="login-card">
-            <h2 style="margin-top: 0;">Вход в аккаунт</h2>
-            <p style="color: var(--text-secondary); font-size: 14px; margin-bottom: 25px;">Узнай свой ID в боте (команда /start) и введи его ниже.</p>
-            <input type="number" id="login-id-input" class="login-input" placeholder="Ваш Telegram ID">
-            <button class="login-btn" id="login-btn" onclick="attemptLogin()">Войти</button>
-            <p id="login-status" style="color: var(--win-color); font-size: 14px; display: none; margin-top: 15px;">Ожидание подтверждения в боте...</p>
+    <header>
+        <button class="mode-btn" id="mode-toggle" onclick="toggleMode()">Демо</button>
+        <button class="mode-btn back-btn" onclick="goBack()">Назад</button>
+        <div class="profile-trigger" id="header-profile" onclick="toggleProfile()">
+            <span id="header-balance">1000 🍬</span>
+            <img id="user-photo-small" class="avatar-small" style="display:none;">
+            <div id="user-fallback-small" class="avatar-fallback-small">?</div>
+        </div>
+    </header>
+
+    <div id="menu-screen" class="screen active">
+        <div class="game-card">
+            <div class="game-preview">🎲</div>
+            <div class="game-info" style="flex: 1;">
+                <div style="font-size: 20px; font-weight: 700;">Кубик</div>
+                <div style="color: var(--text-secondary); font-size: 13px;">Угадай Чёт / Нечет</div>
+            </div>
+            <button class="mode-btn" style="background: var(--accent-color);" onclick="openGame()">Играть</button>
         </div>
     </div>
 
-    <div id="main-app" style="display: none;">
-        <header>
-            <button class="mode-btn" id="mode-toggle" onclick="toggleMode()">Демо</button>
-            <button class="mode-btn back-btn" onclick="goBack()">Назад</button>
-            <div class="profile-trigger" id="header-profile" onclick="toggleProfile()">
-                <span id="header-balance">1000 🍬</span>
-                <div id="user-fallback-small" class="avatar-fallback">?</div>
-            </div>
-        </header>
-
-        <div id="menu-screen" class="screen active">
-            <div class="game-card">
-                <div class="game-preview">🎲</div>
-                <div class="game-info" style="flex: 1;">
-                    <div style="font-size: 20px; font-weight: 700;">Кубик</div>
-                    <div style="color: var(--text-secondary); font-size: 13px;">Угадай Чёт / Нечет</div>
-                </div>
-                <button class="mode-btn" style="background: var(--accent-color);" onclick="openGame()">Играть</button>
-            </div>
-        </div>
-
-        <div id="profile-screen" class="screen">
-            <div class="profile-bg"></div>
-            <div class="profile-content">
-                <div id="user-fallback-large" class="profile-large-avatar">?</div>
-                <div class="user-name" id="user-full-name">Игрок</div>
-                <span class="user-nick" id="user-id-display">ID: 000000</span>
-                
-                <div class="balance-card">
-                    <div style="color: var(--text-secondary); font-size: 12px;">ДЕМО БАЛАНС</div>
-                    <div id="demo-val" style="font-size: 24px; font-weight: 800;">1000 🍬</div>
-                </div>
-                <div class="balance-card">
-                    <div style="color: var(--text-secondary); font-size: 12px;">РЕАЛЬНЫЙ СЧЕТ</div>
-                    <div id="real-val" style="font-size: 24px; font-weight: 800;">0.00 $</div>
-                </div>
-
-                <button class="logout-btn" onclick="logout()">Выйти из аккаунта</button>
-            </div>
-        </div>
-
-        <div id="game-screen" class="screen">
-            <div class="top-notify" id="win-notify">Возможный выигрыш: 19 🍬</div>
+    <div id="profile-screen" class="screen">
+        <div class="profile-bg" id="profile-blur-bg"></div>
+        <div class="profile-content">
+            <img id="user-photo-large" class="avatar-large" style="display:none;">
+            <div id="user-fallback-large" class="avatar-fallback-large">?</div>
             
-            <div class="jump-box" id="jump-box">
-                <div class="shadow" id="shadow"></div>
-                <div class="scene">
-                    <div class="cube" id="cube">
-                        <div class="cube__face cube__face--1">1</div>
-                        <div class="cube__face cube__face--2">2</div>
-                        <div class="cube__face cube__face--3">3</div>
-                        <div class="cube__face cube__face--4">4</div>
-                        <div class="cube__face cube__face--5">5</div>
-                        <div class="cube__face cube__face--6">6</div>
-                    </div>
-                </div>
+            <div class="user-name" id="user-full-name">Загрузка...</div>
+            <span class="user-nick" id="user-id-display">Подключение...</span>
+            
+            <div class="balance-card">
+                <div style="color: var(--text-secondary); font-size: 12px;">ДЕМО БАЛАНС</div>
+                <div id="demo-val" style="font-size: 24px; font-weight: 800;">1000 🍬</div>
             </div>
+            <div class="balance-card">
+                <div style="color: var(--text-secondary); font-size: 12px;">РЕАЛЬНЫЙ СЧЕТ</div>
+                <div id="real-val" style="font-size: 24px; font-weight: 800;">0.00 $</div>
+            </div>
+        </div>
+    </div>
 
-            <div class="controls-panel">
-                <div class="controls-row">
-                    <button class="btn-icon" onclick="openMenuModal()">☰</button>
-                    <button class="condition-select" onclick="openConditionModal()">
-                        <span id="current-condition-text">Чёт (1.9x)</span> ▼
-                    </button>
+    <div id="game-screen" class="screen">
+        <div class="top-notify" id="win-notify">Возможный выигрыш: 19 🍬</div>
+        
+        <div class="jump-box" id="jump-box">
+            <div class="shadow" id="shadow"></div>
+            <div class="scene">
+                <div class="cube" id="cube">
+                    <div class="cube__face cube__face--1">1</div>
+                    <div class="cube__face cube__face--2">2</div>
+                    <div class="cube__face cube__face--3">3</div>
+                    <div class="cube__face cube__face--4">4</div>
+                    <div class="cube__face cube__face--5">5</div>
+                    <div class="cube__face cube__face--6">6</div>
                 </div>
-                <div class="controls-row">
-                    <button class="btn-icon" onclick="changeBet(-1)">-</button>
-                    <div class="bet-input-wrap"><input type="number" id="bet-input" class="bet-input" value="10" onchange="manualBetChange()"></div>
-                    <button class="btn-icon" onclick="changeBet(1)">+</button>
-                </div>
-                <div class="step-toggles">
-                    <button class="step-btn active" id="step-5" onclick="setStep(5)">± 5</button>
-                    <button class="step-btn" id="step-10" onclick="setStep(10)">± 10</button>
-                </div>
-                <button id="roll-button" class="play-btn" onclick="handleRollClick()">БРОСИТЬ 🎲</button>
             </div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="controls-row">
+                <button class="btn-icon" onclick="openMenuModal()">☰</button>
+                <button class="condition-select" onclick="openConditionModal()">
+                    <span id="current-condition-text">Чёт (1.9x)</span> ▼
+                </button>
+            </div>
+            <div class="controls-row">
+                <button class="btn-icon" onclick="changeBet(-1)">-</button>
+                <div class="bet-input-wrap"><input type="number" id="bet-input" class="bet-input" value="10" onchange="manualBetChange()"></div>
+                <button class="btn-icon" onclick="changeBet(1)">+</button>
+            </div>
+            <div class="step-toggles">
+                <button class="step-btn active" id="step-5" onclick="setStep(5)">± 5</button>
+                <button class="step-btn" id="step-10" onclick="setStep(10)">± 10</button>
+            </div>
+            <button id="roll-button" class="play-btn" onclick="handleRollClick()">БРОСИТЬ 🎲</button>
         </div>
     </div>
 
@@ -224,7 +209,6 @@
         tg.expand();
 
         let state = {
-            userId: null,
             mode: 'demo', demoBalance: 1000, realBalance: 0,
             isProfileOpen: false, isGameOpen: false,
             currentRotationX: -20, currentRotationY: 20, isRolling: false,
@@ -232,53 +216,56 @@
             autoMode: 'infinite', autoActive: false, autoTimeout: null
         };
 
-        // --- СИСТЕМА АВТОРИЗАЦИИ ---
-        function checkAuth() {
-            const savedId = localStorage.getItem('app_user_id');
-            if (savedId) {
-                state.userId = savedId;
-                showMainApp();
+        // --- ПОЛУЧЕНИЕ ДАННЫХ TELEGRAM ---
+        function initTelegram() {
+            const user = tg.initDataUnsafe?.user;
+            
+            if (user) {
+                // Имя
+                const fullName = [user.first_name, user.last_name].filter(Boolean).join(' ');
+                document.getElementById('user-full-name').innerText = fullName || "Игрок";
+                
+                // Никнейм или ID
+                document.getElementById('user-id-display').innerText = user.username ? `@${user.username}` : `ID: ${user.id}`;
+                
+                // Аватарка
+                if (user.photo_url) {
+                    document.getElementById('user-photo-small').src = user.photo_url;
+                    document.getElementById('user-photo-large').src = user.photo_url;
+                    document.getElementById('user-photo-small').style.display = 'block';
+                    document.getElementById('user-photo-large').style.display = 'block';
+                    
+                    document.getElementById('user-fallback-small').style.display = 'none';
+                    document.getElementById('user-fallback-large').style.display = 'none';
+                    
+                    document.getElementById('profile-blur-bg').style.backgroundImage = `url(${user.photo_url})`;
+                } else {
+                    setFallbackAvatar(user.first_name || "U");
+                }
             } else {
-                document.getElementById('login-screen').classList.add('active');
-                document.getElementById('main-app').style.display = 'none';
+                // Если зашли НЕ через кнопку бота (для тестов в браузере)
+                document.getElementById('user-full-name').innerText = "Гость (Offline)";
+                document.getElementById('user-id-display').innerText = "Зайди через бота";
+                setFallbackAvatar("G");
+                
+                // Пробуем еще раз через полсекунды (бывает, что Telegram грузит данные с задержкой)
+                if (tg.initData) setTimeout(initTelegram, 500); 
             }
-        }
-
-        function attemptLogin() {
-            const idInput = document.getElementById('login-id-input').value;
-            if (!idInput || idInput.length < 5) return alert("Введите корректный ID");
-
-            const btn = document.getElementById('login-btn');
-            const status = document.getElementById('login-status');
-            
-            btn.disabled = true;
-            btn.innerText = "Ожидание...";
-            status.style.display = "block";
-
-            // ИМИТАЦИЯ ожидания подтверждения из бота (2 секунды)
-            setTimeout(() => {
-                localStorage.setItem('app_user_id', idInput);
-                state.userId = idInput;
-                showMainApp();
-            }, 2000);
-        }
-
-        function logout() {
-            localStorage.removeItem('app_user_id');
-            window.location.reload(); // Перезагружаем страницу для очистки
-        }
-
-        function showMainApp() {
-            document.getElementById('login-screen').classList.remove('active');
-            document.getElementById('main-app').style.display = 'block';
-            
-            // Заполняем профиль
-            document.getElementById('user-id-display').innerText = `ID: ${state.userId}`;
-            const firstLetter = "U"; // Можно генерировать букву
-            document.getElementById('user-fallback-small').innerText = firstLetter;
-            document.getElementById('user-fallback-large').innerText = firstLetter;
-            
             updateUI();
+        }
+
+        function setFallbackAvatar(name) {
+            const letter = name.charAt(0).toUpperCase();
+            document.getElementById('user-fallback-small').innerText = letter;
+            document.getElementById('user-fallback-large').innerText = letter;
+            
+            document.getElementById('user-photo-small').style.display = 'none';
+            document.getElementById('user-photo-large').style.display = 'none';
+            document.getElementById('user-fallback-small').style.display = 'flex';
+            document.getElementById('user-fallback-large').style.display = 'flex';
+            
+            document.getElementById('profile-blur-bg').style.backgroundImage = 'none';
+            document.getElementById('profile-blur-bg').style.background = 'linear-gradient(135deg, #0088cc, #004466)';
         }
 
         // --- НАВИГАЦИЯ ---
@@ -291,6 +278,7 @@
             if(state.isRolling || state.autoActive) return;
             state.isProfileOpen = !state.isProfileOpen;
             document.body.classList.toggle('profile-open', state.isProfileOpen);
+            try { tg.HapticFeedback.impactOccurred('light'); } catch(e){}
         }
 
         function openGame() {
@@ -308,7 +296,7 @@
             document.body.classList.remove('game-open');
         }
 
-        // --- ЛОГИКА ИГРЫ (Урезана для компактности, но полностью рабочая) ---
+        // --- ЛОГИКА ИГРЫ ---
         function toggleMode() { state.mode = state.mode === 'demo' ? 'real' : 'demo'; document.getElementById('mode-toggle').innerText = state.mode === 'demo' ? 'Демо' : 'Баланс'; updateUI(); }
         function getBalance() { return state.mode === 'demo' ? state.demoBalance : state.realBalance; }
         function setBalance(val) { if(state.mode === 'demo') state.demoBalance = val; else state.realBalance = val; updateUI(); }
@@ -360,13 +348,14 @@
             setTimeout(() => {
                 state.isRolling = false; document.getElementById('roll-button').disabled = false;
                 const isWin = (res % 2 === 0 && state.winCondition === 'even') || (res % 2 !== 0 && state.winCondition === 'odd');
-                if(isWin) { document.querySelector(`.cube__face--${res}`).classList.add('winner'); setBalance(getBalance() + (state.betAmount * state.multiplier)); } 
-                else { document.querySelector(`.cube__face--${res}`).classList.add('loser'); }
+                if(isWin) { document.querySelector(`.cube__face--${res}`).classList.add('winner'); setBalance(getBalance() + (state.betAmount * state.multiplier)); try { tg.HapticFeedback.notificationOccurred('success'); } catch(e){} } 
+                else { document.querySelector(`.cube__face--${res}`).classList.add('loser'); try { tg.HapticFeedback.notificationOccurred('error'); } catch(e){} }
                 if(state.autoActive) state.autoTimeout = setTimeout(executeRoll, 1000);
             }, 1500);
         }
 
-        window.onload = checkAuth;
+        // Запускаем сбор данных
+        window.onload = initTelegram;
     </script>
 </body>
-                            </html>
+    </html>
