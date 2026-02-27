@@ -2,302 +2,234 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Plinko Game</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plinko Web App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
-    
     <style>
+        :root { --blue: #0a84ff; --green: #32d74b; --gray: #2c2c2e; --text-gray: #8e8e93; }
         body {
-            margin: 0; padding: 0; background-color: #1c1c1e; color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            display: flex; flex-direction: column; align-items: center; overflow: hidden;
+            margin: 0; padding: 0; background: #1c1c1e; color: white;
+            font-family: -apple-system, system-ui, sans-serif; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        /* --- НОВОЕ: Профиль пользователя --- */
-        .profile-container {
-            position: absolute; top: 15px; left: 15px; display: flex; align-items: center;
-            background: rgba(44, 44, 46, 0.8); padding: 5px 12px 5px 5px; border-radius: 25px; 
-            cursor: pointer; z-index: 100; backdrop-filter: blur(5px);
+        /* Профиль */
+        .header {
+            width: 100%; padding: 15px; display: flex; align-items: center; justify-content: space-between;
+            box-sizing: border-box; z-index: 10;
         }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; background: #3a3a3c; }
-        .balance-text { margin-left: 10px; font-weight: bold; font-size: 14px; }
+        .profile {
+            display: flex; align-items: center; background: var(--gray);
+            padding: 5px 15px 5px 5px; border-radius: 30px; cursor: pointer;
+        }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; background: #3a3a3c; }
+        .balance-info { margin-left: 10px; font-weight: bold; font-size: 14px; }
 
-        /* --- НОВОЕ: Модальное окно профиля --- */
-        .modal {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 200; align-items: center; justify-content: center;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .modal.show { display: flex; opacity: 1; }
-        .modal-content {
-            background: #2c2c2e; padding: 25px; border-radius: 20px; width: 75%; 
-            max-width: 300px; text-align: center; position: relative;
-        }
-        .close-btn {
-            position: absolute; top: 10px; right: 15px; font-size: 24px; 
-            color: #8e8e93; cursor: pointer;
-        }
-        .modal-item { margin: 15px 0; font-size: 16px; background: #1c1c1e; padding: 15px; border-radius: 10px; }
-        
-        /* Стили для переключателей */
+        /* Переключатели (Свитчеры) */
         .toggle-container {
-            position: relative; width: 80%; background: #2c2c2e; border-radius: 25px;
-            display: flex; margin: 15px 0; padding: 5px; box-sizing: border-box; margin-top: 60px; /* Отступ под профиль */
+            position: relative; width: 90%; background: var(--gray); border-radius: 12px;
+            display: flex; padding: 4px; box-sizing: border-box; margin: 10px 0;
         }
         .toggle-btn {
             flex: 1; text-align: center; padding: 10px; z-index: 2; cursor: pointer;
-            font-weight: bold; font-size: 14px; transition: color 0.3s;
+            font-size: 14px; font-weight: 600; transition: 0.3s;
         }
-        .toggle-slider {
-            position: absolute; top: 5px; left: 5px; width: calc(50% - 5px); height: calc(100% - 10px);
-            background: #0a84ff; border-radius: 20px; transition: transform 0.3s cubic-bezier(0.25, 0.1, 0.25, 1); z-index: 1;
+        .slider {
+            position: absolute; top: 4px; left: 4px; width: calc(50% - 4px); height: calc(100% - 8px);
+            background: var(--blue); border-radius: 10px; transition: transform 0.3s ease; z-index: 1;
         }
-        .demo-mode .toggle-slider { transform: translateX(0); }
-        .balance-mode .toggle-slider { transform: translateX(100%); }
+        .state-right .slider { transform: translateX(100%); }
 
-        /* Игровое поле */
-        #game-container { position: relative; width: 100%; max-width: 400px; height: 350px; }
-        canvas { width: 100%; height: 100%; display: block; }
-        
-        /* Множители */
+        /* Игра */
+        #game-area { width: 100%; height: 320px; position: relative; }
+        canvas { width: 100%; height: 100%; }
+
         .multipliers {
-            display: flex; justify-content: space-between; width: 100%; max-width: 400px;
-            padding: 0 10px; box-sizing: border-box; margin-top: -20px; z-index: 10;
+            display: flex; justify-content: center; gap: 4px; width: 100%; padding: 0 5px; box-sizing: border-box;
         }
-        .multiplier {
-            background: #ff9f0a; padding: 5px; border-radius: 5px; font-size: 12px; font-weight: bold;
-            opacity: 0; transform: translateY(10px); transition: all 0.5s ease; width: 35px; text-align: center;
+        .mult {
+            flex: 1; padding: 8px 0; border-radius: 6px; text-align: center; font-size: 10px;
+            font-weight: bold; transform: translateY(10px); opacity: 0; transition: 0.5s;
         }
-        .multiplier.show { opacity: 1; transform: translateY(0); }
+        .mult.show { transform: translateY(0); opacity: 1; }
 
-        /* Панель управления */
-        .controls { width: 90%; max-width: 400px; margin-top: 10px; text-align: center; }
-        .btn-row { display: flex; justify-content: space-between; margin-bottom: 10px; }
-        .btn-row button {
-            background: #3a3a3c; border: none; color: white; padding: 10px 15px;
-            border-radius: 10px; cursor: pointer; font-size: 14px; transition: 0.2s;
+        /* Кнопки управления */
+        .controls { width: 90%; margin-top: 15px; text-align: center; }
+        .ball-selector { display: flex; justify-content: space-between; gap: 5px; margin-bottom: 15px; }
+        .ball-btn {
+            flex: 1; background: var(--gray); border: none; color: white; padding: 8px;
+            border-radius: 8px; font-size: 12px; transition: 0.2s;
         }
-        .btn-row button.active { background: #32d74b; transform: scale(1.05); }
-        
+        .ball-btn.active { background: var(--green); }
+
         .play-btn {
-            width: 100%; background: #32d74b; color: #fff; border: none;
-            padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; cursor: pointer;
-            transition: 0.2s;
+            width: 100%; background: var(--green); border: none; color: white;
+            padding: 16px; border-radius: 16px; font-size: 18px; font-weight: bold; cursor: pointer;
         }
-        .play-btn:active { transform: scale(0.95); }
-        .cost-display { margin-top: 10px; font-size: 14px; color: #8e8e93; }
-        .bet-toggle-container { margin-top: 0; margin-bottom: 15px; } /* Корректировка отступа для ставки */
+        .play-btn:active { transform: scale(0.98); }
+
+        /* Модалка */
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 100; align-items: center; justify-content: center;
+        }
+        .modal-content { background: var(--gray); padding: 25px; border-radius: 20px; width: 280px; text-align: center; }
     </style>
 </head>
 <body>
 
-    <div class="profile-container" onclick="toggleModal(true)">
-        <img id="user-avatar" src="https://ui-avatars.com/api/?name=User&background=random" alt="Avatar" class="avatar" onerror="this.src='https://ui-avatars.com/api/?name=User&background=random'">
-        <span id="header-balance" class="balance-text">1000 🪙</span>
-    </div>
-
-    <div id="profile-modal" class="modal" onclick="toggleModal(false)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <span class="close-btn" onclick="toggleModal(false)">&times;</span>
-            <h2>Твой кошелек</h2>
-            <div class="modal-item">
-                <span style="color: #8e8e93; font-size: 12px; display: block;">Реальный баланс</span>
-                <strong style="font-size: 20px;"><span id="modal-real-balance">0.00</span> USDT</strong>
-            </div>
-            <div class="modal-item">
-                <span style="color: #8e8e93; font-size: 12px; display: block;">Демо баланс</span>
-                <strong style="font-size: 20px;"><span id="modal-demo-balance">1000</span> 🪙</strong>
-            </div>
+    <div class="header">
+        <div class="profile" onclick="openProfile()">
+            <img id="user-pic" src="" class="avatar">
+            <div class="balance-info" id="current-balance">1000 🪙</div>
         </div>
     </div>
 
-    <div class="toggle-container demo-mode" id="mode-toggle">
-        <div class="toggle-slider"></div>
+    <div class="toggle-container" id="mode-toggle">
+        <div class="slider"></div>
         <div class="toggle-btn" onclick="setMode('demo')">Демо</div>
-        <div class="toggle-btn" onclick="setMode('balance')">Баланс</div>
+        <div class="toggle-btn" onclick="setMode('real')">Баланс</div>
     </div>
 
-    <div id="game-container"></div>
-    
-    <div class="multipliers" id="multipliers-container"></div>
+    <div id="game-area"></div>
+    <div class="multipliers" id="mult-row"></div>
 
     <div class="controls">
-        <p style="margin: 0 0 5px 0; font-size: 12px; color: #8e8e93;">Количество шариков:</p>
-        <div class="btn-row" id="balls-row">
-            <button class="active" onclick="setBalls(1, this)">1</button>
-            <button onclick="setBalls(2, this)">2</button>
-            <button onclick="setBalls(5, this)">5</button>
-            <button onclick="setBalls(10, this)">10</button>
-            <button onclick="setBalls(25, this)">25</button>
-            <button onclick="setBalls(50, this)">50</button>
+        <div class="ball-selector" id="ball-row">
+            <button class="ball-btn active" onclick="setBalls(1, this)">1</button>
+            <button class="ball-btn" onclick="setBalls(2, this)">2</button>
+            <button class="ball-btn" onclick="setBalls(5, this)">5</button>
+            <button class="ball-btn" onclick="setBalls(10, this)">10</button>
+            <button class="ball-btn" onclick="setBalls(25, this)">25</button>
+            <button class="ball-btn" onclick="setBalls(50, this)">50</button>
         </div>
 
-        <p style="margin: 10px 0 5px 0; font-size: 12px; color: #8e8e93;">Ставка:</p>
-        <div class="toggle-container demo-mode bet-toggle-container" id="bet-toggle">
-            <div class="toggle-slider"></div>
-            <div class="toggle-btn" onclick="setBet(10, this)">10</div>
-            <div class="toggle-btn" onclick="setBet(100, this)">100</div>
+        <div class="toggle-container" id="bet-toggle">
+            <div class="slider"></div>
+            <div class="toggle-btn" onclick="setBet(10)">10</div>
+            <div class="toggle-btn" onclick="setBet(100)">100</div>
         </div>
 
-        <button class="play-btn" onclick="play()">ИГРАТЬ</button>
-        <div class="cost-display" id="total-cost">Стоимость: 10 🪙</div>
+        <button class="play-btn" onclick="launchBalls()">ИГРАТЬ</button>
+        <p id="cost-text" style="color: var(--text-gray); font-size: 13px; margin-top: 10px;">Стоимость: 10 🪙</p>
+    </div>
+
+    <div id="modal" class="modal" onclick="this.style.display='none'">
+        <div class="modal-content">
+            <h3>Кошелек</h3>
+            <p>Демо: <span id="m-demo">1000</span> 🪙</p>
+            <p>Реал: <span id="m-real">0.00</span> USDT</p>
+            <button class="ball-btn" style="width:100%; margin-top:10px;">Пополнить через Crypto Bot</button>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Расширяем на весь экран
+        tg.expand();
 
-        // Балансы пользователя
-        let demoBalance = 1000;
-        let realBalance = 0.00;
-        
-        let currentMode = 'demo';
-        let ballsCount = 1;
-        let betAmount = 10;
+        let demoBal = 1000, realBal = 0, mode = 'demo', balls = 1, bet = 10;
 
-        // Инициализация данных пользователя из Telegram
+        // Настройка пользователя
         const user = tg.initDataUnsafe?.user;
-        if (user) {
-            if (user.photo_url) {
-                document.getElementById('user-avatar').src = user.photo_url;
-            } else {
-                // Если аватарки нет, генерируем заглушку с первой буквой имени
-                document.getElementById('user-avatar').src = `https://ui-avatars.com/api/?name=${user.first_name}&background=32d74b&color=fff`;
-            }
+        document.getElementById('user-pic').src = user?.photo_url || `https://ui-avatars.com/api/?name=${user?.first_name || 'U'}&background=32d74b&color=fff`;
+
+        function updateUI() {
+            if (demoBal < 100) demoBal = 100;
+            document.getElementById('current-balance').innerText = mode === 'demo' ? `${Math.floor(demoBal)} 🪙` : `${realBal.toFixed(2)} USDT`;
+            document.getElementById('cost-text').innerText = `Стоимость: ${balls * bet} ${mode === 'demo' ? '🪙' : 'USDT'}`;
+            document.getElementById('m-demo').innerText = Math.floor(demoBal);
+            document.getElementById('m-real').innerText = realBal.toFixed(2);
         }
 
-        // Обновление интерфейса балансов
-        function updateBalances() {
-            // Если демо баланс упал ниже 100, восполняем его
-            if (demoBalance < 100) demoBalance = 100;
-
-            document.getElementById('modal-demo-balance').innerText = Math.floor(demoBalance);
-            document.getElementById('modal-real-balance').innerText = realBalance.toFixed(2);
-            
-            const headerBal = currentMode === 'demo' ? `${Math.floor(demoBalance)} 🪙` : `${realBalance.toFixed(2)} USDT`;
-            document.getElementById('header-balance').innerText = headerBal;
+        function setMode(m) {
+            mode = m;
+            document.getElementById('mode-toggle').className = `toggle-container ${m === 'real' ? 'state-right' : ''}`;
+            updateUI();
         }
 
-        function toggleModal(show) {
-            const modal = document.getElementById('profile-modal');
-            if (show) modal.classList.add('show');
-            else modal.classList.remove('show');
-            updateBalances();
+        function setBet(b) {
+            bet = b;
+            document.getElementById('bet-toggle').className = `toggle-container ${b === 100 ? 'state-right' : ''}`;
+            updateUI();
         }
 
-        // Управление UI
-        function setMode(mode) {
-            currentMode = mode;
-            const toggle = document.getElementById('mode-toggle');
-            if (mode === 'demo') { toggle.classList.replace('balance-mode', 'demo-mode'); } 
-            else { toggle.classList.replace('demo-mode', 'balance-mode'); }
-            updateBalances();
-            updateCost();
-        }
-
-        function setBalls(count, btn) {
-            ballsCount = count;
-            document.querySelectorAll('#balls-row button').forEach(b => b.classList.remove('active'));
+        function setBalls(n, btn) {
+            balls = n;
+            document.querySelectorAll('.ball-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            updateCost();
+            updateUI();
         }
 
-        function setBet(amount, btn) {
-            betAmount = amount;
-            const toggle = document.getElementById('bet-toggle');
-            if (amount === 10) { toggle.classList.replace('balance-mode', 'demo-mode'); } 
-            else { toggle.classList.replace('demo-mode', 'balance-mode'); }
-            updateCost();
-        }
+        function openProfile() { document.getElementById('modal').style.display = 'flex'; }
 
-        function updateCost() {
-            const total = ballsCount * betAmount;
-            const currency = currentMode === 'demo' ? '🪙' : 'USDT';
-            document.getElementById('total-cost').innerText = `Стоимость: ${total} ${currency}`;
-        }
-
-        // Отрисовка множителей (10x по центру)
-        const mults = ['0.5x', '1.5x', '3x', '10x', '3x', '1.5x', '0.5x'];
-        const multContainer = document.getElementById('multipliers-container');
-        mults.forEach((m, i) => {
-            let el = document.createElement('div');
-            el.className = 'multiplier';
-            el.innerText = m;
-            multContainer.appendChild(el);
-            setTimeout(() => el.classList.add('show'), 500 + (i * 100));
-        });
-
-        // --- Физика Matter.js ---
-        const Engine = Matter.Engine, Render = Matter.Render, Runner = Matter.Runner,
-              Bodies = Matter.Bodies, Composite = Matter.Composite;
-
+        // Физика
+        const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
         const engine = Engine.create();
         const render = Render.create({
-            element: document.getElementById('game-container'),
+            element: document.getElementById('game-area'),
             engine: engine,
-            options: { width: 400, height: 350, wireframes: false, background: 'transparent' }
+            options: { width: 400, height: 320, wireframes: false, background: 'transparent' }
         });
 
-        const pegs = [];
-        const rows = 8;
-        for (let i = 2; i < rows; i++) {
-            for (let j = 0; j <= i; j++) {
-                let x = 200 + (j * 40) - (i * 20);
-                let y = 50 + (i * 35);
-                pegs.push(Bodies.circle(x, y, 4, { isStatic: true, render: { fillStyle: '#ffffff' } }));
+        // Множители
+        const cfg = [
+            {l:'0x', v:0, c:'#444'}, {l:'0.5x', v:0.5, c:'#ff9f0a'}, {l:'1.5x', v:1.5, c:'#ff9f0a'},
+            {l:'10x', v:10, c:'#32d74b'}, {l:'1.5x', v:1.5, c:'#ff9f0a'}, {l:'1x', v:1, c:'#ffd60a'}, {l:'0x', v:0, c:'#444'}
+        ];
+
+        const row = document.getElementById('mult-row');
+        cfg.forEach((m, i) => {
+            const d = document.createElement('div');
+            d.className = 'mult'; d.innerText = m.l; d.style.background = m.c;
+            row.appendChild(d);
+            setTimeout(() => d.classList.add('show'), 300 + i*50);
+
+            const sensor = Bodies.rectangle(60 + i*47, 310, 40, 20, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
+            Composite.add(engine.world, sensor);
+        });
+
+        // Пины
+        for(let i=2; i<9; i++) {
+            for(let j=0; j<=i; j++) {
+                Composite.add(engine.world, Bodies.circle(200 + (j*34) - (i*17), 40 + (i*30), 3, {isStatic:true, render:{fillStyle:'#fff'}}));
             }
         }
-        Composite.add(engine.world, pegs);
+
+        Events.on(engine, 'collisionStart', e => {
+            e.pairs.forEach(p => {
+                const b = p.bodyA.label === 'ball' ? p.bodyA : (p.bodyB.label === 'ball' ? p.bodyB : null);
+                const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
+                if(b && s) {
+                    const res = cfg[s.label.split('_')[1]];
+                    if(b.mode === 'demo') demoBal += b.bet * res.v;
+                    else realBal += b.bet * res.v;
+                    updateUI();
+                    Composite.remove(engine.world, b);
+                }
+            });
+        });
+
         Render.run(render);
-        const runner = Runner.create();
-        Runner.run(runner, engine);
+        Runner.run(Runner.create(), engine);
 
-        // Функция игры
-        function play() {
-            const totalCost = ballsCount * betAmount;
+        function launchBalls() {
+            const cost = balls * bet;
+            if(mode === 'demo' && demoBal < cost) return tg.showAlert("Мало демо-монет!");
+            if(mode === 'real' && realBal < cost) return tg.showAlert("Пополните баланс!");
 
-            // Проверка баланса
-            if (currentMode === 'demo') {
-                if (demoBalance < totalCost) {
-                    tg.showAlert("Недостаточно демо-монет!");
-                    return;
-                }
-                demoBalance -= totalCost;
-                updateBalances();
-            } else {
-                if (realBalance < totalCost) {
-                    tg.showAlert("Недостаточно USDT на балансе! Пополните счет.");
-                    // Здесь можно вызвать tg.sendData для запроса пополнения у бота
-                    return;
-                }
-                realBalance -= totalCost;
-                updateBalances();
-            }
+            if(mode === 'demo') demoBal -= cost; else realBal -= cost;
+            updateUI();
 
-            // Запуск шариков
-            for (let i = 0; i < ballsCount; i++) {
+            for(let i=0; i<balls; i++) {
                 setTimeout(() => {
-                    let xOffset = 200 + (Math.random() * 10 - 5);
-                    let ball = Bodies.circle(xOffset, 10, 8, { 
-                        restitution: 0.8, friction: 0.001,
-                        render: { fillStyle: '#ff3b30' } 
-                    });
+                    const ball = Bodies.circle(200 + Math.random()*2, 10, 6, { restitution:0.5, friction:0.01, label:'ball', render:{fillStyle:'#ff3b30'} });
+                    ball.bet = bet; ball.mode = mode;
                     Composite.add(engine.world, ball);
-                    
-                    // Удаляем шарик и зачисляем воображаемый выигрыш
-                    setTimeout(() => { 
-                        Composite.remove(engine.world, ball); 
-                        // В реальном приложении здесь нужно вычислять координату X шарика
-                        // и умножать ставку на коэффициент ячейки
-                    }, 4000);
-                }, i * 200);
+                }, i*100);
             }
         }
-
-        // Инициализация при загрузке
-        updateBalances();
-        updateCost();
+        updateUI();
     </script>
 </body>
 </html>
