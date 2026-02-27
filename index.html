@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Casino Web App</title>
+<title>Casino Web App Pinball</title>
 <style>
 body {
     font-family: Arial, sans-serif;
@@ -39,7 +39,7 @@ body {
 }
 
 .game-area {
-    width: 300px;
+    width: 320px;
     height: 400px;
     background: #222;
     margin-bottom: 20px;
@@ -105,7 +105,6 @@ button.selected {
     color: #f39c12;
 }
 
-/* Шарики */
 .ball {
     width: 20px;
     height: 20px;
@@ -115,11 +114,9 @@ button.selected {
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    transition: transform 0.5s ease-in-out;
     z-index: 2;
 }
 
-/* Призовые зоны */
 .prize {
     width: 60px;
     height: 30px;
@@ -136,25 +133,33 @@ button.selected {
 .prize.win {
     background: #f39c12;
 }
+
+/* Пины */
+.pin {
+    width: 10px;
+    height: 10px;
+    background: #888;
+    border-radius: 50%;
+    position: absolute;
+}
 </style>
 </head>
 <body>
 
-<!-- Переключатель демо/баланс -->
 <div class="toggle">
     <div class="active" id="demo">Демо</div>
     <div id="balance">Баланс</div>
 </div>
 
-<!-- Игровая зона -->
 <div class="game-area" id="gameArea">
     <!-- Призовые зоны -->
     <div class="prize" style="left: 10%;">x2</div>
     <div class="prize" style="left: 40%;">x3</div>
     <div class="prize" style="left: 70%;">x5</div>
+
+    <!-- Пины для отскоков -->
 </div>
 
-<!-- Управление ставками и шариками -->
 <div class="controls">
     <div class="control-group">
         <p>Количество шариков</p>
@@ -190,7 +195,6 @@ toggle.addEventListener('click', e => {
     }
 });
 
-// Выбор количества шариков
 document.querySelectorAll('#balls button').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('#balls button').forEach(b => b.classList.remove('selected'));
@@ -198,7 +202,6 @@ document.querySelectorAll('#balls button').forEach(btn => {
     });
 });
 
-// Выбор ставки
 document.querySelectorAll('#bet button').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('#bet button').forEach(b => b.classList.remove('selected'));
@@ -207,47 +210,80 @@ document.querySelectorAll('#bet button').forEach(btn => {
     });
 });
 
-// Игровая механика
+// Пины
 const gameArea = document.getElementById('gameArea');
 const prizes = Array.from(document.querySelectorAll('.prize'));
+
+// Генерируем пины
+const pins = [];
+for(let i=0; i<15; i++) {
+    let pin = document.createElement('div');
+    pin.classList.add('pin');
+    pin.style.left = Math.random() * (gameArea.clientWidth-10) + 'px';
+    pin.style.top = Math.random() * (gameArea.clientHeight-150) + 'px';
+    gameArea.appendChild(pin);
+    pins.push(pin);
+}
 
 function dropBall() {
     const ballsCount = parseInt(document.querySelector('#balls button.selected')?.innerText || '1');
     const betAmount = parseInt(document.querySelector('#bet button.selected')?.innerText || '10');
 
-    for (let i=0; i<ballsCount; i++) {
+    for(let i=0;i<ballsCount;i++){
         const ball = document.createElement('div');
         ball.classList.add('ball');
         gameArea.appendChild(ball);
 
-        // Анимация падения с рандомным смещением
-        let targetPrize = prizes[Math.floor(Math.random() * prizes.length)];
-        let targetX = targetPrize.offsetLeft + targetPrize.offsetWidth/2 - 10; // Центр шара
-        let targetY = targetPrize.offsetTop;
+        let posX = gameArea.clientWidth/2;
+        let posY = 0;
+        let velocityX = (Math.random()-0.5)*4; // случайное движение
+        let velocityY = 2 + Math.random()*3;
 
-        setTimeout(() => {
-            ball.style.transform = `translate(${targetX - gameArea.offsetWidth/2 + 10}px, ${targetY}px)`;
-        }, 50 + i*300); // задержка между шариками
+        let interval = setInterval(()=>{
+            posX += velocityX;
+            posY += velocityY;
 
-        // Подсветка выигрышной зоны
-        setTimeout(() => {
-            targetPrize.classList.add('win');
-        }, 500 + i*300);
+            // Столкновение с пинами
+            pins.forEach(pin=>{
+                let pinX = pin.offsetLeft + pin.offsetWidth/2;
+                let pinY = pin.offsetTop + pin.offsetHeight/2;
+                let dx = posX - pinX;
+                let dy = posY - pinY;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+                if(dist < 15){
+                    velocityY = -velocityY * 0.7;
+                    velocityX = -velocityX + (Math.random()-0.5)*2;
+                }
+            });
 
-        // Отправка результата в Telegram бот через WebApp API
-        setTimeout(() => {
-            if(window.Telegram?.WebApp) {
-                Telegram.WebApp.sendData(JSON.stringify({
-                    mode, balls: ballsCount, bet: betAmount, prize: targetPrize.innerText
-                }));
-            }
-        }, 800 + i*300);
+            // Столкновение со стенками
+            if(posX<0 || posX>gameArea.clientWidth-20) velocityX = -velocityX;
+            if(posY>gameArea.clientHeight-20) posY = gameArea.clientHeight-20;
 
-        // Убираем шарик через секунду
-        setTimeout(() => {
-            ball.remove();
-            targetPrize.classList.remove('win');
-        }, 2000 + i*300);
+            ball.style.transform = `translate(${posX}px, ${posY}px)`;
+
+            // Попадание в призовую зону
+            prizes.forEach(prize=>{
+                let prizeX = prize.offsetLeft;
+                let prizeY = prize.offsetTop;
+                let prizeW = prize.offsetWidth;
+                let prizeH = prize.offsetHeight;
+                if(posX>prizeX && posX<prizeX+prizeW && posY>prizeY && posY<prizeY+prizeH){
+                    prize.classList.add('win');
+                    clearInterval(interval);
+                    setTimeout(()=>{
+                        ball.remove();
+                        prize.classList.remove('win');
+                    },500);
+                    // Отправка результата
+                    if(window.Telegram?.WebApp){
+                        Telegram.WebApp.sendData(JSON.stringify({
+                            mode, balls: ballsCount, bet: betAmount, prize: prize.innerText
+                        }));
+                    }
+                }
+            });
+        },20);
     }
 }
 
