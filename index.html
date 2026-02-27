@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Casino Web App Pinball</title>
+<title>Casino Web App Improved Physics</title>
 <style>
 body {
     font-family: Arial, sans-serif;
@@ -15,7 +15,6 @@ body {
     margin: 0;
     padding: 20px;
 }
-
 .toggle {
     display: flex;
     width: 220px;
@@ -37,7 +36,6 @@ body {
     color: #000;
     border-radius: 30px;
 }
-
 .game-area {
     width: 320px;
     height: 400px;
@@ -48,7 +46,6 @@ body {
     overflow: hidden;
     border: 2px solid #444;
 }
-
 .controls {
     display: flex;
     flex-direction: column;
@@ -56,25 +53,21 @@ body {
     width: 100%;
     align-items: center;
 }
-
 .control-group {
     width: 100%;
 }
-
 .control-group p {
     margin: 0 0 5px 0;
     font-size: 14px;
     color: #ccc;
     text-align: center;
 }
-
 .buttons {
     display: flex;
     gap: 5px;
     flex-wrap: wrap;
     justify-content: center;
 }
-
 button {
     padding: 10px 15px;
     border: none;
@@ -85,40 +78,13 @@ button {
     background: #333;
     color: #fff;
 }
-button:hover {
-    background: #f39c12;
-    color: #000;
-}
-button.selected {
-    background: #f39c12;
-    color: #000;
-}
-
-#play {
-    width: 80%;
-    margin-top: 10px;
-    font-size: 16px;
-}
-
-#betCost {
-    font-weight: bold;
-    color: #f39c12;
-}
-
-.ball {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #f39c12;
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-}
-
+button:hover { background: #f39c12; color: #000; }
+button.selected { background: #f39c12; color: #000; }
+#play { width: 80%; margin-top: 10px; font-size: 16px; }
+#betCost { font-weight: bold; color: #f39c12; }
+.ball { width: 20px; height: 20px; border-radius: 50%; background: #f39c12; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
 .prize {
-    width: 60px;
+    width: 50px;
     height: 30px;
     position: absolute;
     bottom: 0;
@@ -130,18 +96,8 @@ button.selected {
     font-size: 12px;
     transition: background 0.3s;
 }
-.prize.win {
-    background: #f39c12;
-}
-
-/* Пины */
-.pin {
-    width: 10px;
-    height: 10px;
-    background: #888;
-    border-radius: 50%;
-    position: absolute;
-}
+.prize.win { background: #f39c12; }
+.pin { width: 10px; height: 10px; background: #888; border-radius: 50%; position: absolute; }
 </style>
 </head>
 <body>
@@ -153,11 +109,11 @@ button.selected {
 
 <div class="game-area" id="gameArea">
     <!-- Призовые зоны -->
-    <div class="prize" style="left: 10%;">x2</div>
-    <div class="prize" style="left: 40%;">x3</div>
-    <div class="prize" style="left: 70%;">x5</div>
-
-    <!-- Пины для отскоков -->
+    <div class="prize" style="left:0%">0x</div>
+    <div class="prize" style="left:20%">0.1x</div>
+    <div class="prize" style="left:40%">0.5x</div>
+    <div class="prize" style="left:60%">0.75x</div>
+    <div class="prize" style="left:80%">1x</div>
 </div>
 
 <div class="controls">
@@ -181,113 +137,103 @@ button.selected {
 const toggle = document.querySelector('.toggle');
 const demo = document.getElementById('demo');
 const balance = document.getElementById('balance');
-let mode = 'demo';
+let mode='demo';
+toggle.addEventListener('click', e=>{
+    if(e.target.id==='demo'){demo.classList.add('active');balance.classList.remove('active');mode='demo'}
+    else if(e.target.id==='balance'){balance.classList.add('active');demo.classList.remove('active');mode='balance'}
+});
 
-toggle.addEventListener('click', e => {
-    if(e.target.id === 'demo') {
-        demo.classList.add('active');
-        balance.classList.remove('active');
-        mode = 'demo';
-    } else if(e.target.id === 'balance') {
-        balance.classList.add('active');
-        demo.classList.remove('active');
-        mode = 'balance';
+document.querySelectorAll('#balls button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#balls button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');}));
+document.querySelectorAll('#bet button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#bet button').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');document.getElementById('betCost').innerText=btn.innerText;}));
+
+const gameArea=document.getElementById('gameArea');
+const prizes=Array.from(document.querySelectorAll('.prize'));
+
+// Треугольная сетка пинов
+const pins=[];
+let rows=6;
+let spacingX=50;
+let spacingY=50;
+for(let r=0;r<rows;r++){
+    let cols=r+1;
+    for(let c=0;c<cols;c++){
+        let pin=document.createElement('div');
+        pin.classList.add('pin');
+        pin.style.left=(gameArea.clientWidth/2-(cols-1)*spacingX/2 + c*spacingX)+'px';
+        pin.style.top=(50+r*spacingY)+'px';
+        gameArea.appendChild(pin);
+        pins.push(pin);
     }
-});
-
-document.querySelectorAll('#balls button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#balls button').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-    });
-});
-
-document.querySelectorAll('#bet button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('#bet button').forEach(b => b.classList.remove('selected'));
-        btn.classList.add('selected');
-        document.getElementById('betCost').innerText = btn.innerText;
-    });
-});
-
-// Пины
-const gameArea = document.getElementById('gameArea');
-const prizes = Array.from(document.querySelectorAll('.prize'));
-
-// Генерируем пины
-const pins = [];
-for(let i=0; i<15; i++) {
-    let pin = document.createElement('div');
-    pin.classList.add('pin');
-    pin.style.left = Math.random() * (gameArea.clientWidth-10) + 'px';
-    pin.style.top = Math.random() * (gameArea.clientHeight-150) + 'px';
-    gameArea.appendChild(pin);
-    pins.push(pin);
 }
 
-function dropBall() {
-    const ballsCount = parseInt(document.querySelector('#balls button.selected')?.innerText || '1');
-    const betAmount = parseInt(document.querySelector('#bet button.selected')?.innerText || '10');
+function dropBall(){
+    const ballsCount=parseInt(document.querySelector('#balls button.selected')?.innerText||'1');
+    const betAmount=parseInt(document.querySelector('#bet button.selected')?.innerText||'10');
 
     for(let i=0;i<ballsCount;i++){
-        const ball = document.createElement('div');
+        const ball=document.createElement('div');
         ball.classList.add('ball');
         gameArea.appendChild(ball);
 
-        let posX = gameArea.clientWidth/2;
-        let posY = 0;
-        let velocityX = (Math.random()-0.5)*4; // случайное движение
-        let velocityY = 2 + Math.random()*3;
+        let posX=gameArea.clientWidth/2-10;
+        let posY=0;
+        let velocityX=(Math.random()-0.5)*2;
+        let velocityY=1;
 
-        let interval = setInterval(()=>{
-            posX += velocityX;
-            posY += velocityY;
+        const gravity=0.2;
+        const friction=0.7;
+
+        let interval=setInterval(()=>{
+            velocityY+=gravity;
+            posX+=velocityX;
+            posY+=velocityY;
 
             // Столкновение с пинами
             pins.forEach(pin=>{
-                let pinX = pin.offsetLeft + pin.offsetWidth/2;
-                let pinY = pin.offsetTop + pin.offsetHeight/2;
-                let dx = posX - pinX;
-                let dy = posY - pinY;
-                let dist = Math.sqrt(dx*dx + dy*dy);
-                if(dist < 15){
-                    velocityY = -velocityY * 0.7;
-                    velocityX = -velocityX + (Math.random()-0.5)*2;
+                let dx=(posX+10)-(pin.offsetLeft+5);
+                let dy=(posY+10)-(pin.offsetTop+5);
+                let dist=Math.sqrt(dx*dx+dy*dy);
+                if(dist<15){
+                    let angle=Math.atan2(dy,dx);
+                    let speed=Math.sqrt(velocityX*velocityX+velocityY*velocityY)*friction;
+                    velocityX=-speed*Math.cos(angle);
+                    velocityY=-speed*Math.sin(angle);
                 }
             });
 
             // Столкновение со стенками
-            if(posX<0 || posX>gameArea.clientWidth-20) velocityX = -velocityX;
-            if(posY>gameArea.clientHeight-20) posY = gameArea.clientHeight-20;
+            if(posX<0){posX=0;velocityX=-velocityX*friction}
+            if(posX>gameArea.clientWidth-20){posX=gameArea.clientWidth-20;velocityX=-velocityX*friction}
+            if(posY>gameArea.clientHeight-20){posY=gameArea.clientHeight-20;velocityY=-velocityY*friction}
 
-            ball.style.transform = `translate(${posX}px, ${posY}px)`;
+            ball.style.transform=`translate(${posX}px,${posY}px)`;
 
-            // Попадание в призовую зону
+            // Попадание в призовые зоны
             prizes.forEach(prize=>{
-                let prizeX = prize.offsetLeft;
-                let prizeY = prize.offsetTop;
-                let prizeW = prize.offsetWidth;
-                let prizeH = prize.offsetHeight;
-                if(posX>prizeX && posX<prizeX+prizeW && posY>prizeY && posY<prizeY+prizeH){
+                let prizeX=prize.offsetLeft;
+                let prizeY=prize.offsetTop;
+                let prizeW=prize.offsetWidth;
+                let prizeH=prize.offsetHeight;
+                if(posX+10>prizeX && posX<prizeX+prizeW && posY+10>prizeY && posY<prizeY+prizeH){
                     prize.classList.add('win');
                     clearInterval(interval);
                     setTimeout(()=>{
                         ball.remove();
                         prize.classList.remove('win');
                     },500);
-                    // Отправка результата
                     if(window.Telegram?.WebApp){
                         Telegram.WebApp.sendData(JSON.stringify({
-                            mode, balls: ballsCount, bet: betAmount, prize: prize.innerText
+                            mode, balls:ballsCount, bet:betAmount, prize:prize.innerText
                         }));
                     }
                 }
             });
+
         },20);
     }
 }
 
-document.getElementById('play').addEventListener('click', dropBall);
+document.getElementById('play').addEventListener('click',dropBall);
 </script>
 
 </body>
