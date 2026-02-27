@@ -83,7 +83,7 @@ button.selected { background: #f39c12; color: #000; }
 #betCost { font-weight: bold; color: #f39c12; }
 .ball { width: 12px; height: 12px; border-radius: 50%; background: #f39c12; position: absolute; top: 0; left: 50%; transform: translateX(-50%); z-index: 2; }
 .prize {
-    width: 45px;
+    width: 40px;
     height: 28px;
     position: absolute;
     bottom: 0;
@@ -151,7 +151,7 @@ document.querySelectorAll('#bet button').forEach(btn=>btn.addEventListener('clic
 const gameArea=document.getElementById('gameArea');
 const prizes=Array.from(document.querySelectorAll('.prize'));
 
-// Сетка пинов
+// Треугольная сетка пинов
 const pins=[];
 const rows=6;
 const spacingX=50;
@@ -177,18 +177,21 @@ function dropBall(){
         ball.classList.add('ball');
         gameArea.appendChild(ball);
 
-        let posX=gameArea.clientWidth/2-6; // по центру
-        let posY=0;
-        let velocityX=(Math.random()-0.5)*1.5;
-        let velocityY=1;
-        const gravity=0.15;
-        const friction=0.7;
+        // Старт по центру игрового поля
+        let posX = gameArea.clientWidth/2 - 6;
+        let posY = 0;
 
-        const interval=setInterval(()=>{
-            velocityY+=gravity;
-            posX+=velocityX;
-            posY+=velocityY;
+        let velocityX = (Math.random()-0.5)*1;
+        let velocityY = 1;
+        const gravity = 0.15;
+        const friction = 0.7;
 
+        const interval = setInterval(()=>{
+            velocityY += gravity;
+            posX += velocityX;
+            posY += velocityY;
+
+            // Отскок от пинов
             pins.forEach(pin=>{
                 let dx=(posX+6)-(pin.offsetLeft+4);
                 let dy=(posY+6)-(pin.offsetTop+4);
@@ -201,12 +204,14 @@ function dropBall(){
                 }
             });
 
+            // Столкновения со стенками
             if(posX<0){posX=0;velocityX=-velocityX*friction}
             if(posX>gameArea.clientWidth-12){posX=gameArea.clientWidth-12;velocityX=-velocityX*friction}
             if(posY>gameArea.clientHeight-12){posY=gameArea.clientHeight-12;velocityY=-velocityY*friction}
 
             ball.style.transform=`translate(${posX}px,${posY}px)`;
 
+            // Проверка попадания в призовые зоны
             prizes.forEach(prize=>{
                 let px=prize.offsetLeft;
                 let py=prize.offsetTop;
@@ -227,5 +232,6 @@ function dropBall(){
 }
 document.getElementById('play').addEventListener('click',dropBall);
 </script>
+
 </body>
 </html>
