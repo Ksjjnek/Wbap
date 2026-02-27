@@ -1,133 +1,212 @@
-<style>
-    /* ... (предыдущие стили остаются) ... */
-
-    /* Эффект вылетающих цифр */
-    .floating-text {
-        position: absolute;
-        pointer-events: none;
-        font-weight: bold;
-        z-index: 1000;
-        animation: floatUp 1.2s ease-out forwards;
-    }
-
-    @keyframes floatUp {
-        0% { transform: translateY(0) scale(1); opacity: 1; }
-        100% { transform: translateY(-50px) scale(1.5); opacity: 0; }
-    }
-
-    .win-effect { color: #32d74b; text-shadow: 0 0 10px rgba(50, 215, 75, 0.8); }
-    .loss-effect { color: #ff453a; opacity: 0.8; }
-    .neutral-effect { color: #ffffff; }
-
-    .cost-notice {
-        margin-top: 8px;
-        font-size: 14px;
-        font-weight: bold;
-        color: #ff9f0a; /* Оранжевый, чтобы бросалось в глаза */
-    }
-</style>
-
-<button class="play-btn" onclick="launchBalls()">ИГРАТЬ</button>
-<div class="cost-notice" id="cost-warning">С баланса спишется: 10 🪙</div>
-
-<script>
-    // ... (начало скрипта как в прошлом ответе) ...
-
-    function updateUI() {
-        if (demoBal < 100) demoBal = 100;
-        const balText = mode === 'demo' ? `${Math.floor(demoBal)} 🪙` : `${realBal.toFixed(2)} USDT`;
-        document.getElementById('current-balance').innerText = balText;
-        
-        const totalCost = balls * bet;
-        const currency = mode === 'demo' ? '🪙' : 'USDT';
-        document.getElementById('cost-warning').innerText = `С баланса спишется: ${totalCost} ${currency}`;
-    }
-
-    // Функция для создания визуального эффекта при падении
-    function spawnEffect(x, y, amount, multiplier) {
-        const el = document.createElement('div');
-        el.className = 'floating-text';
-        
-        if (multiplier > 1) {
-            el.innerText = `+${amount} 🔥`;
-            el.classList.add('win-effect');
-        } else if (multiplier < 1 && multiplier > 0) {
-            el.innerText = `-${(bet - amount).toFixed(1)} 💀`;
-            el.classList.add('loss-effect');
-        } else if (multiplier === 0) {
-            el.innerText = `0! ❌`;
-            el.classList.add('loss-effect');
-        } else {
-            el.innerText = `БЕЗ ПОТЕРЬ ⚖️`;
-            el.classList.add('neutral-effect');
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plinko Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+    <style>
+        :root { --blue: #0a84ff; --green: #32d74b; --red: #ff453a; --gray: #2c2c2e; }
+        body {
+            margin: 0; background: #1c1c1e; color: white;
+            font-family: -apple-system, sans-serif; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center;
         }
 
-        el.style.left = x + 'px';
-        el.style.top = (y + window.scrollY - 30) + 'px';
-        document.body.appendChild(el);
-        
-        setTimeout(() => el.remove(), 1200);
-    }
+        /* Шапка и Профиль */
+        .header { width: 100%; padding: 10px 15px; display: flex; align-items: center; box-sizing: border-box; }
+        .profile { display: flex; align-items: center; background: var(--gray); padding: 4px 12px 4px 4px; border-radius: 25px; cursor: pointer; }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #444; }
+        .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
 
-    // Настройка Matter.js
-    const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
-    const engine = Engine.create();
-    
-    // ВАЖНО: Убираем коллизии между шариками через фильтры
-    const BALL_CATEGORY = 0x0002;
-    const STATIC_CATEGORY = 0x0001;
+        /* Тэглы (Анимация переключения) */
+        .toggle-box {
+            position: relative; width: 90%; background: var(--gray); border-radius: 12px;
+            display: flex; padding: 3px; margin: 10px 0;
+        }
+        .toggle-btn { flex: 1; text-align: center; padding: 8px; z-index: 2; font-size: 13px; font-weight: 600; cursor: pointer; }
+        .slider {
+            position: absolute; top: 3px; left: 3px; width: calc(50% - 3px); height: calc(100% - 6px);
+            background: var(--blue); border-radius: 9px; transition: 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 1;
+        }
+        .active-right .slider { transform: translateX(100%); }
 
-    // ... (создание рендера и пинов) ...
+        /* Игра */
+        #game { width: 100%; height: 320px; }
+        .mults { display: flex; justify-content: center; gap: 3px; width: 100%; padding: 0 5px; box-sizing: border-box; }
+        .m-tile {
+            flex: 1; padding: 6px 0; border-radius: 4px; text-align: center; font-size: 9px;
+            font-weight: bold; transition: 0.5s; opacity: 0; transform: translateY(10px);
+        }
+        .m-tile.show { opacity: 1; transform: translateY(0); }
 
-    // При создании пинов укажите им категорию:
-    // Bodies.circle(x, y, 3, { isStatic: true, collisionFilter: { category: STATIC_CATEGORY }, ... })
+        /* Управление */
+        .panel { width: 90%; margin-top: 15px; }
+        .balls-grid { display: flex; justify-content: space-between; gap: 4px; margin-bottom: 10px; }
+        .b-btn { flex: 1; background: var(--gray); border: none; color: white; padding: 8px 0; border-radius: 8px; font-size: 12px; }
+        .b-btn.active { background: var(--green); }
 
-    Events.on(engine, 'collisionStart', e => {
-        e.pairs.forEach(p => {
-            const b = p.bodyA.label === 'ball' ? p.bodyA : (p.bodyB.label === 'ball' ? p.bodyB : null);
-            const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
-            
-            if(b && s) {
-                const res = cfg[s.label.split('_')[1]];
-                const winAmount = b.bet * res.v;
-                
-                if(b.mode === 'demo') demoBal += winAmount;
-                else realBal += winAmount;
-                
-                // Запускаем эффект там, где находится сенсор
-                spawnEffect(s.position.x, 300, winAmount, res.v);
-                
-                updateUI();
-                Composite.remove(engine.world, b);
-            }
+        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 15px; border-radius: 15px; font-size: 18px; font-weight: bold; }
+        .cost-info { text-align: center; margin-top: 8px; color: #ff9f0a; font-size: 14px; font-weight: 600; }
+
+        /* Эффекты выигрыша */
+        .float {
+            position: fixed; pointer-events: none; font-weight: 800; z-index: 100;
+            animation: floatUp 1s ease-out forwards;
+        }
+        @keyframes floatUp {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-60px); opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="profile" onclick="tg.showAlert('Ваш баланс обновляется мгновенно!')">
+            <img id="avatar" src="" class="avatar">
+            <div class="bal-val" id="top-bal">1000 🪙</div>
+        </div>
+    </div>
+
+    <div class="toggle-box" id="mode-t">
+        <div class="slider"></div>
+        <div class="toggle-btn" onclick="setMode('demo')">Демо</div>
+        <div class="toggle-btn" onclick="setMode('real')">Баланс</div>
+    </div>
+
+    <div id="game"></div>
+    <div class="mults" id="mults-row"></div>
+
+    <div class="panel">
+        <div class="balls-grid">
+            <button class="b-btn active" onclick="setB(1, this)">1</button>
+            <button class="b-btn" onclick="setB(2, this)">2</button>
+            <button class="b-btn" onclick="setB(5, this)">5</button>
+            <button class="b-btn" onclick="setB(10, this)">10</button>
+            <button class="b-btn" onclick="setB(25, this)">25</button>
+            <button class="b-btn" onclick="setB(50, this)">50</button>
+        </div>
+
+        <div class="toggle-box" id="bet-t">
+            <div class="slider"></div>
+            <div class="toggle-btn" onclick="setBet(10)">10</div>
+            <div class="toggle-btn" onclick="setBet(100)">100</div>
+        </div>
+
+        <button class="play-btn" onclick="play()">ИГРАТЬ</button>
+        <div class="cost-info" id="warn">Спишется: 10 🪙</div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let dBal = 1000, rBal = 0, mode = 'demo', balls = 1, bet = 10;
+
+        // Юзер
+        const u = tg.initDataUnsafe?.user;
+        document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=32d74b&color=fff`;
+
+        function update() {
+            if(dBal < 100) dBal = 100;
+            document.getElementById('top-bal').innerText = mode === 'demo' ? `${Math.floor(dBal)} 🪙` : `${rBal.toFixed(2)} USDT`;
+            document.getElementById('warn').innerText = `Спишется: ${balls * bet} ${mode === 'demo' ? '🪙' : 'USDT'}`;
+        }
+
+        function setMode(m) { mode = m; document.getElementById('mode-t').classList.toggle('active-right', m==='real'); update(); }
+        function setBet(b) { bet = b; document.getElementById('bet-t').classList.toggle('active-right', b===100); update(); }
+        function setB(n, el) { balls = n; document.querySelectorAll('.b-btn').forEach(x => x.classList.remove('active')); el.classList.add('active'); update(); }
+
+        // Эффекты
+        function fx(x, y, v, m) {
+            const el = document.createElement('div');
+            el.className = 'float';
+            if(m >= 1.5) { el.innerText = `+${v} 🔥`; el.style.color = '#32d74b'; }
+            else if(m === 1) { el.innerText = `ВОЗВРАТ`; el.style.color = '#fff'; }
+            else { el.innerText = `-${(bet-v).toFixed(0)} 💀`; el.style.color = '#ff453a'; }
+            el.style.left = x + 'px'; el.style.top = y + 'px';
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 1000);
+        }
+
+        // Физика
+        const { Engine, Render, Runner, Bodies, Composite, Events } = Matter;
+        const eng = Engine.create();
+        const ren = Render.create({ element: document.getElementById('game'), engine: eng, options: { width: 400, height: 320, wireframes: false, background: 'transparent' } });
+
+        const conf = [
+            {l:'0x', v:0, c:'#444'}, {l:'0.5x', v:0.5, c:'#ff9f0a'}, {l:'1.5x', v:1.5, c:'#ff9f0a'},
+            {l:'10x', v:10, c:'#32d74b'}, {l:'3x', v:3, c:'#ff9f0a'}, {l:'1x', v:1, c:'#ffd60a'}, {l:'0x', v:0, c:'#444'}
+        ];
+
+        // Категории для отключения коллизий между шарами
+        const CAT_BALL = 0x0002;
+        const CAT_STATIC = 0x0001;
+
+        conf.forEach((m, i) => {
+            const d = document.createElement('div');
+            d.className = 'm-tile'; d.innerText = m.l; d.style.background = m.c;
+            document.getElementById('mults-row').appendChild(d);
+            setTimeout(() => d.classList.add('show'), 300 + i*50);
+
+            const s = Bodies.rectangle(65 + i*45, 310, 35, 20, { isStatic: true, isSensor: true, label: 's_'+i, render: {visible: false} });
+            Composite.add(eng.world, s);
         });
-    });
 
-    function launchBalls() {
-        const cost = balls * bet;
-        if(mode === 'demo' && demoBal < cost) return tg.showAlert("Мало монет!");
-        if(mode === 'real' && realBal < cost) return tg.showAlert("Пополните баланс!");
-
-        if(mode === 'demo') demoBal -= cost; else realBal -= cost;
-        updateUI();
-
-        for(let i=0; i<balls; i++) {
-            setTimeout(() => {
-                const ball = Bodies.circle(200 + (Math.random()*10-5), 10, 6, { 
-                    restitution: 0.5, 
-                    friction: 0.01, 
-                    label: 'ball',
-                    // МАГИЯ ТУТ: шарики не сталкиваются друг с другом
-                    collisionFilter: {
-                        category: BALL_CATEGORY,
-                        mask: STATIC_CATEGORY // Сталкиваться только со статичными объектами (пинами и сенсорами)
-                    },
-                    render: { fillStyle: '#ff3b30' } 
-                });
-                ball.bet = bet; 
-                ball.mode = mode;
-                Composite.add(engine.world, ball);
-            }, i * 150);
+        // Колышки
+        for(let i=2; i<9; i++) {
+            for(let j=0; j<=i; j++) {
+                Composite.add(eng.world, Bodies.circle(200 + (j*34) - (i*17), 40 + (i*30), 3, { 
+                    isStatic: true, 
+                    collisionFilter: { category: CAT_STATIC },
+                    render: { fillStyle: '#fff' } 
+                }));
+            }
         }
-    }
+
+        Events.on(eng, 'collisionStart', e => {
+            e.pairs.forEach(p => {
+                const b = p.bodyA.label === 'b' ? p.bodyA : (p.bodyB.label === 'b' ? p.bodyB : null);
+                const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
+                if(b && s) {
+                    const m = conf[s.label.split('_')[1]];
+                    const win = b.bet * m.v;
+                    if(b.mode === 'demo') dBal += win; else rBal += win;
+                    fx(s.position.x, 280, win, m.v);
+                    update();
+                    Composite.remove(eng.world, b);
+                }
+            });
+        });
+
+        Render.run(ren);
+        Runner.run(Runner.create(), eng);
+
+        function play() {
+            const c = balls * bet;
+            if(mode === 'demo' && dBal < c) return tg.showAlert("Мало монет!");
+            if(mode === 'real' && rBal < c) return tg.showAlert("Пополните баланс!");
+
+            if(mode === 'demo') dBal -= c; else rBal -= c;
+            update();
+
+            for(let i=0; i<balls; i++) {
+                setTimeout(() => {
+                    const ball = Bodies.circle(200 + (Math.random()*4-2), 10, 6, { 
+                        restitution: 0.5, 
+                        friction: 0.01, 
+                        label: 'b',
+                        collisionFilter: { category: CAT_BALL, mask: CAT_STATIC }, // НЕ сталкивается с другими шарами
+                        render: { fillStyle: '#ff3b30' } 
+                    });
+                    ball.bet = bet; ball.mode = mode;
+                    Composite.add(eng.world, ball);
+                }, i * 120);
+            }
+        }
+        update();
     </script>
+</body>
+</html>
