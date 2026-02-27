@@ -3,50 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Plinko: Clean & Chaos</title>
+    <title>Plinko: Blue Chaos</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
     <style>
         :root { 
             --blue: #007aff; --green: #34c759; --red: #ff3b30; --purple: #af52de; --orange: #ff9500;
-            --bg: #ffffff; --text: #000000; --panel: #f2f2f7; --pin: #8e8e93;
+            --bg: #e1f5fe; --text: #01579b; --panel: #b3e5fc; --pin: #0288d1;
         }
         body.dark-mode { 
-            --bg: #121214; --text: #ffffff; --panel: #2c2c2e; --pin: #ffffff;
+            --bg: #0d1117; --text: #c9d1d9; --panel: #161b22; --pin: #58a6ff;
         }
         
-        body { margin: 0; background: var(--bg); color: var(--text); font-family: -apple-system, sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: background 0.3s; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: sans-serif; overflow: hidden; display: flex; flex-direction: column; align-items: center; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         
-        /* Шапка */
         .header { width: 100%; padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; box-sizing: border-box; }
-        .profile { display: flex; align-items: center; background: var(--panel); padding: 5px 12px 5px 5px; border-radius: 20px; }
-        .avatar { width: 30px; height: 30px; border-radius: 50%; background: #ccc; object-fit: cover; }
+        .profile { display: flex; align-items: center; background: var(--panel); padding: 5px 12px 5px 5px; border-radius: 20px; border: 1px solid rgba(0,0,0,0.1); }
+        .avatar { width: 32px; height: 32px; border-radius: 50%; background: #0288d1; object-fit: cover; }
         .bal-val { margin-left: 8px; font-weight: bold; font-size: 14px; }
         
-        .mode-btn { background: var(--blue); border: none; color: white; padding: 8px 15px; border-radius: 12px; font-weight: bold; cursor: pointer; }
+        .mode-btn { background: var(--blue); border: none; color: white; padding: 8px 16px; border-radius: 12px; font-weight: bold; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        /* Поле */
         #game { width: 400px; height: 380px; position: relative; }
-        .portal { position: absolute; border-radius: 50%; border: 2px dashed var(--purple); animation: rotate 2s linear infinite; opacity: 0.6; pointer-events: none; display: none; }
+        .portal { position: absolute; border-radius: 50%; border: 2px dashed var(--purple); animation: rotate 2s linear infinite; opacity: 0.5; pointer-events: none; display: none; }
         @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-        .mults { display: flex; justify-content: center; width: 400px; padding: 0 12px; box-sizing: border-box; }
-        .m-tile { flex: 1; margin: 0 2px; padding: 8px 0; border-radius: 4px; text-align: center; font-size: 10px; font-weight: bold; color: white; }
+        .mults { display: flex; justify-content: center; width: 400px; padding: 0 12px; box-sizing: border-box; margin-top: 5px; }
+        .m-tile { flex: 1; margin: 0 2px; padding: 8px 0; border-radius: 6px; text-align: center; font-size: 10px; font-weight: bold; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }
 
-        /* Управление */
-        .ui-panel { width: 90%; display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 15px; }
+        .ui-panel { width: 90%; display: flex; flex-direction: column; align-items: center; gap: 8px; margin-top: 10px; }
         .bet-box { display: flex; align-items: center; gap: 15px; background: var(--panel); padding: 8px 15px; border-radius: 20px; }
         .bet-input { width: 60px; background: none; border: none; color: var(--text); text-align: center; font-size: 18px; font-weight: bold; outline: none; }
-        .circle-btn { width: 32px; height: 32px; border-radius: 50%; border: none; background: #ddd; color: black; font-size: 18px; font-weight: bold; }
-        body.dark-mode .circle-btn { background: #444; color: white; }
+        .circle-btn { width: 34px; height: 34px; border-radius: 50%; border: none; background: var(--blue); color: white; font-size: 20px; font-weight: bold; }
 
-        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 16px; border-radius: 18px; font-size: 18px; font-weight: bold; transition: 0.2s; }
-        .play-btn:active { transform: scale(0.98); }
-        .play-btn.locked { background: #8e8e93; opacity: 0.5; }
+        .play-btn { width: 100%; background: var(--green); border: none; color: white; padding: 16px; border-radius: 20px; font-size: 20px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .play-btn.locked { background: #607d8b; opacity: 0.5; pointer-events: none; }
 
-        #volcano-cutscene {
+        #v-scene {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+            background: rgba(13, 17, 23, 0.95); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; text-align: center;
         }
     </style>
 </head>
@@ -55,225 +50,185 @@
     <div class="header">
         <div class="profile">
             <img id="avatar" src="" class="avatar">
-            <div class="bal-val" id="bal-display">1000 🪙</div>
+            <div class="bal-val" id="bal-txt">1000 🪙</div>
         </div>
-        <button class="mode-btn" id="mode-toggle" onclick="toggleMode()">ОБЫЧНЫЙ</button>
+        <button class="mode-btn" id="m-toggle" onclick="toggle()">ОБЫЧНЫЙ</button>
     </div>
 
     <div id="game">
-        <div id="portal-l" class="portal" style="width:40px; height:40px; left:80px; top:180px;"></div>
-        <div id="portal-r" class="portal" style="width:40px; height:40px; right:80px; top:180px;"></div>
+        <div id="p-l" class="portal" style="width:40px; height:40px; left:75px; top:175px;"></div>
+        <div id="p-r" class="portal" style="width:40px; height:40px; right:75px; top:175px;"></div>
     </div>
     
-    <div class="mults" id="mults-row"></div>
+    <div class="mults" id="m-row"></div>
 
     <div class="ui-panel">
         <div class="bet-box">
-            <button class="circle-btn" onclick="modifyBet(-1)">−</button>
-            <input type="text" id="bet-field" class="bet-input" value="10" oninput="validateInput(this)">
-            <button class="circle-btn" onclick="modifyBet(1)">+</button>
+            <button class="circle-btn" onclick="chBet(-1)">−</button>
+            <input type="text" id="bet-in" class="bet-input" value="10" oninput="vIn(this)">
+            <button class="circle-btn" onclick="chBet(1)">+</button>
         </div>
-        <button class="mode-btn" style="background:var(--panel); color:var(--text); font-size:10px" id="step-btn" onclick="cycleStep()">ШАГ: 1</button>
         
-        <div id="balls-row" style="display:flex; gap:5px; width:100%"></div>
+        <div id="b-row" style="display:flex; gap:4px; width:100%"></div>
 
-        <button class="play-btn" id="main-play" onclick="handlePlay()">ИГРАТЬ</button>
-        <div id="cost-label" style="font-size:12px; font-weight:bold; color:var(--orange)">Спишется: 10 🪙</div>
+        <button class="play-btn" id="p-btn" onclick="go()">ИГРАТЬ</button>
+        <div id="cost" style="font-size:13px; font-weight:900; color:var(--orange)">Спишется: 10 🪙</div>
     </div>
 
-    <div id="volcano-cutscene">
-        <h1 style="color:var(--red); font-size:40px">🌋 ВУЛКАН!</h1>
-        <p style="color:white">Поглощение проигрышей...</p>
-        <h2 style="color:var(--orange); font-size:50px">80x!</h2>
+    <div id="v-scene">
+        <h1 style="color:var(--red); font-size:50px; margin:0">🌋 JACKPOT</h1>
+        <h2 style="color:var(--orange); font-size:70px; margin:10px">100x</h2>
+        <p style="color:white; letter-spacing: 2px;">VULCANIC POWER ACTIVATED</p>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        let dBal = 1000, bet = 10, step = 1, ballsCount = 1, isInsane = false;
-        let zeroCounter = 0, isLock = false;
-        const steps = [0.5, 1, 2.5, 5, 10];
+        let dBal = 1000, bet = 10, step = 1, balls = 1, insane = false;
+        let zCnt = 0, locked = false;
+        const steps = [0.5, 1, 5, 10, 50];
         
-        // Математика категорий для фильтрации Ghost-шара
-        const CAT_BALL = 0x0002, CAT_PIN = 0x0004, CAT_SENSOR = 0x0008, CAT_WALL = 0x0001;
-
+        const CAT_B = 0x0002, CAT_P = 0x0004, CAT_S = 0x0008, CAT_W = 0x0001;
         const conf = [
             {l:'10x', v:10, c: '#ff3b30'}, {l:'2x', v:2, c: '#ff9500'}, {l:'0.5x', v:0.5, c: '#ffcc00'},
-            {l:'0x', v:0, c: '#8e8e93'}, 
+            {l:'0x', v:0, c: '#90a4ae'}, 
             {l:'0.5x', v:0.5, c: '#ffcc00'}, {l:'2x', v:2, c: '#ff9500'}, {l:'10x', v:10, c: '#ff3b30'}
         ];
 
-        // Инициализация юзера
         const u = tg.initDataUnsafe?.user;
         document.getElementById('avatar').src = u?.photo_url || `https://ui-avatars.com/api/?name=${u?.first_name || 'U'}&background=007aff&color=fff`;
 
-        function updateUI() {
-            if(dBal < 100) dBal = 100; // Пополнение если упал ниже 100
-            document.getElementById('bal-display').innerText = `${Math.floor(dBal)} 🪙`;
-            document.getElementById('cost-label').innerText = `Спишется: ${(ballsCount * bet).toFixed(1)} 🪙`;
-            document.getElementById('main-play').classList.toggle('locked', isLock);
+        function upUI() {
+            if(dBal < 100) dBal = 100;
+            document.getElementById('bal-txt').innerText = `${Math.floor(dBal)} 🪙`;
+            document.getElementById('cost').innerText = `Спишется: ${(balls * bet).toFixed(1)} 🪙`;
+            document.getElementById('p-btn').classList.toggle('locked', locked);
         }
 
-        function toggleMode() {
-            isInsane = !isInsane;
-            document.body.classList.toggle('dark-mode', isInsane);
-            const btn = document.getElementById('mode-toggle');
-            btn.innerText = isInsane ? "БЕЗУМНЫЙ" : "ОБЫЧНЫЙ";
-            btn.style.background = isInsane ? "var(--red)" : "var(--blue)";
-            document.getElementById('portal-l').style.display = isInsane ? 'block' : 'none';
-            document.getElementById('portal-r').style.display = isInsane ? 'block' : 'none';
+        function toggle() {
+            insane = !insane;
+            document.body.classList.toggle('dark-mode', insane);
+            document.getElementById('m-toggle').innerText = insane ? "БЕЗУМНЫЙ" : "ОБЫЧНЫЙ";
+            document.getElementById('m-toggle').style.background = insane ? "var(--red)" : "var(--blue)";
+            document.getElementById('p-l').style.display = insane ? 'block' : 'none';
+            document.getElementById('p-r').style.display = insane ? 'block' : 'none';
         }
 
-        function validateInput(i) { i.value = i.value.replace(/[^0-9.]/g,''); bet = parseFloat(i.value)||1; updateUI(); }
-        function modifyBet(d) { bet = Math.max(1, bet + d*step); document.getElementById('bet-field').value = bet; updateUI(); }
-        function cycleStep() { step = steps[(steps.indexOf(step)+1)%steps.length]; document.getElementById('step-btn').innerText = `ШАГ: ${step}`; }
+        function vIn(i) { i.value = i.value.replace(/[^0-9.]/g,''); bet = parseFloat(i.value)||1; upUI(); }
+        function chBet(d) { bet = Math.max(1, bet + d*step); document.getElementById('bet-in').value = bet; upUI(); }
 
-        // MATTER JS
         const { Engine, Render, Runner, Bodies, Composite, Events, Body } = Matter;
-        const engine = Engine.create();
-        const render = Render.create({ 
+        const eng = Engine.create();
+        const ren = Render.create({ 
             element: document.getElementById('game'), 
-            engine: engine, 
+            engine: eng, 
             options: { width: 400, height: 380, wireframes: false, background: 'transparent' } 
         });
 
-        // Создание лунок (ровно по бортику)
+        // Стены и Лунки
         conf.forEach((m, i) => {
-            const tile = document.createElement('div');
-            tile.className = 'm-tile'; tile.innerText = m.l; tile.style.background = m.c;
-            document.getElementById('mults-row').appendChild(tile);
-            
+            const t = document.createElement('div');
+            t.className = 'm-tile'; t.innerText = m.l; t.style.background = m.c;
+            document.getElementById('m-row').appendChild(t);
             const x = 50 + i * 50; 
-            const sensor = Bodies.rectangle(x, 372, 40, 10, { 
-                isStatic: true, isSensor: true, label: 's_'+i,
-                collisionFilter: { category: CAT_SENSOR },
-                render: { visible: false }
-            });
-            const lWall = Bodies.rectangle(x-25, 355, 2, 40, { isStatic: true, render: {fillStyle: '#444'} });
-            const rWall = Bodies.rectangle(x+25, 355, 2, 40, { isStatic: true, render: {fillStyle: '#444'} });
-            Composite.add(engine.world, [sensor, lWall, rWall]);
+            Composite.add(eng.world, [
+                Bodies.rectangle(x, 372, 40, 10, { isStatic: true, isSensor: true, label: 's_'+i, collisionFilter: { category: CAT_S }, render: { visible: false } }),
+                Bodies.rectangle(x-25, 355, 2, 45, { isStatic: true, render: {fillStyle: '#0288d1'} }),
+                Bodies.rectangle(x+25, 355, 2, 45, { isStatic: true, render: {fillStyle: '#0288d1'} })
+            ]);
         });
 
-        // Границы мира
-        Composite.add(engine.world, [
-            Bodies.rectangle(2, 190, 4, 380, { isStatic: true, collisionFilter: {category: CAT_WALL}, render: {fillStyle: '#444'} }),
-            Bodies.rectangle(398, 190, 4, 380, { isStatic: true, collisionFilter: {category: CAT_WALL}, render: {fillStyle: '#444'} })
+        Composite.add(eng.world, [
+            Bodies.rectangle(2, 190, 4, 380, { isStatic: true, render: {fillStyle: 'transparent'} }),
+            Bodies.rectangle(398, 190, 4, 380, { isStatic: true, render: {fillStyle: 'transparent'} })
         ]);
 
-        // Порталы
-        const pL = Bodies.circle(80, 180, 20, { isStatic: true, isSensor: true, label: 'port' });
-        const pR = Bodies.circle(320, 180, 20, { isStatic: true, isSensor: true, label: 'port' });
-        Composite.add(engine.world, [pL, pR]);
-
-        // Пины (начинаются с 3-х)
+        // Пины
         for(let i=0; i<10; i++) {
             let cnt = 3 + i;
             let sx = 200 - ((cnt-1)*36)/2;
             for(let j=0; j<cnt; j++) {
-                Composite.add(engine.world, Bodies.circle(sx + j*36, 60 + i*30, 3, { 
-                    isStatic: true, label: 'peg', 
-                    collisionFilter: { category: CAT_PIN },
-                    render: { fillStyle: '#8e8e93' } 
-                }));
+                Composite.add(eng.world, Bodies.circle(sx + j*36, 60 + i*30, 3, { isStatic: true, label: 'p', collisionFilter: { category: CAT_P }, render: { fillStyle: '#0288d1' } }));
             }
         }
 
-        Events.on(engine, 'collisionStart', e => {
+        Events.on(eng, 'collisionStart', e => {
             e.pairs.forEach(p => {
                 const b = p.bodyA.label === 'b' ? p.bodyA : (p.bodyB.label === 'b' ? p.bodyB : null);
                 const s = p.bodyA.label.startsWith('s_') ? p.bodyA : (p.bodyB.label.startsWith('s_') ? p.bodyB : null);
-                const peg = p.bodyA.label === 'peg' || p.bodyB.label === 'peg';
-                const port = p.bodyA.label === 'port' || p.bodyB.label === 'port';
+                const pin = p.bodyA.label === 'p' || p.bodyB.label === 'p';
 
-                if(b && peg) {
-                    b.bHits++;
-                    // ОБЫЧНЫЙ: 10% шанс на слабый отскок
-                    if(!isInsane && !b.didSpecial && Math.random() < 0.10) {
-                        b.didSpecial = true;
-                        Body.setVelocity(b, { x: b.velocity.x * 0.1, y: 1.5 });
-                        b.render.fillStyle = '#ffcc00';
-                    }
-                    // БЕЗУМНЫЙ: Ghost Mode на 3-м ударе
-                    if(isInsane && b.bHits === 3) {
-                        b.isGhost = true;
-                        b.render.fillStyle = '#af52de'; b.render.opacity = 0.5;
-                        // Магия фильтра: теперь шар игнорирует только ПИНЫ, но видит СТЕНЫ и СЕНСОРЫ
-                        b.collisionFilter.mask = CAT_WALL | CAT_SENSOR;
-                        setTimeout(() => {
-                            if(!b) return;
-                            b.isGhost = false; b.render.opacity = 1; b.render.fillStyle = b.originColor;
-                            b.collisionFilter.mask = CAT_WALL | CAT_SENSOR | CAT_PIN;
-                        }, 1500);
-                    }
-                }
+                if(b && pin) {
+                    b.hits++;
+                    // Физика "притяжения/силы": небольшой рандомный толчок
+                    const force = (Math.random() - 0.5) * 0.002;
+                    Body.applyForce(b, b.position, { x: force, y: 0 });
 
-                if(b && port && isInsane) {
-                    const dest = Math.random() < 0.8 ? 200 : (Math.random() < 0.5 ? 50 : 350);
-                    Body.setPosition(b, { x: dest, y: 340 });
+                    // Обычный: слабый шар
+                    if(!insane && !b.sp && Math.random() < 0.1) {
+                        b.sp = true; Body.setVelocity(b, { x: b.velocity.x * 0.1, y: 1 });
+                    }
+                    // Безумный: призрак на 2-м отскоке (шанс 10%)
+                    if(insane && b.hits === 2 && Math.random() < 0.1) {
+                        b.ghost = true; b.render.opacity = 0.4; b.render.fillStyle = '#af52de';
+                        b.collisionFilter.mask = CAT_W | CAT_S;
+                        setTimeout(() => { if(b) { b.ghost = false; b.render.opacity = 1; b.render.fillStyle = b.oc; b.collisionFilter.mask = CAT_W | CAT_S | CAT_P; } }, 1500);
+                    }
                 }
 
                 if(b && s) {
                     const m = conf[s.label.split('_')[1]];
-                    let win = b.bet * m.v;
-                    if(m.v === 0) zeroCounter++; else zeroCounter = 0;
-                    
-                    if(zeroCounter >= 25 && Math.random() < 0.05 && !isLock) {
-                        triggerVolcano(); win = b.bet * 80;
-                    }
-                    dBal += win; updateUI();
-                    Composite.remove(engine.world, b);
+                    let w = b.bet * m.v;
+                    if(m.v === 0) zCnt++; else zCnt = 0;
+                    if(zCnt >= 25 && Math.random() < 0.04 && !locked && insane) { vTrigger(); w = b.bet * 100; }
+                    dBal += w; upUI(); Composite.remove(eng.world, b);
                 }
             });
         });
 
-        // Эффект шлейфа
-        Events.on(render, 'afterRender', () => {
-            const ctx = render.context;
-            Composite.allBodies(engine.world).forEach(b => {
-                if(b.isGhost) {
-                    if(!b.trail) b.trail = [];
-                    b.trail.push({x: b.position.x, y: b.position.y});
-                    if(b.trail.length > 6) b.trail.shift();
-                    b.trail.forEach((t, i) => {
-                        ctx.beginPath(); ctx.arc(t.x, t.y, 4, 0, Math.PI*2);
-                        ctx.fillStyle = `rgba(175, 82, 222, ${i/10})`; ctx.fill();
-                    });
+        Events.on(ren, 'afterRender', () => {
+            const ctx = ren.context;
+            Composite.allBodies(eng.world).forEach(b => {
+                if(b.ghost) {
+                    if(!b.tr) b.tr = [];
+                    b.tr.push({x: b.position.x, y: b.position.y});
+                    if(b.tr.length > 5) b.tr.shift();
+                    b.tr.forEach((t, i) => { ctx.beginPath(); ctx.arc(t.x, t.y, 4, 0, Math.PI*2); ctx.fillStyle = `rgba(175, 82, 222, ${i/10})`; ctx.fill(); });
                 }
             });
         });
 
-        function triggerVolcano() {
-            isLock = true; updateUI();
-            const cut = document.getElementById('volcano-cutscene');
-            cut.style.display = 'flex';
-            setTimeout(() => { cut.style.display = 'none'; isLock = false; zeroCounter = 0; updateUI(); }, 3500);
+        function vTrigger() {
+            locked = true; upUI();
+            const sc = document.getElementById('v-scene');
+            sc.style.display = 'flex';
+            setTimeout(() => { sc.style.display = 'none'; locked = false; zCnt = 0; upUI(); }, 3500);
         }
 
-        function handlePlay() {
-            if(isLock || dBal < bet * ballsCount) return;
-            dBal -= bet * ballsCount; updateUI();
-            for(let i=0; i<ballsCount; i++) {
+        function go() {
+            if(locked || dBal < bet * balls) return;
+            dBal -= bet * balls; upUI();
+            for(let i=0; i<balls; i++) {
                 setTimeout(() => {
-                    const ball = Bodies.circle(200 + (Math.random()*4-2), 20, 5, {
-                        restitution: 0.5, friction: 0.01, label: 'b',
-                        collisionFilter: { category: CAT_BALL, mask: CAT_WALL | CAT_SENSOR | CAT_PIN },
-                        render: { fillStyle: isInsane ? '#ff3b30' : '#007aff' }
+                    const b = Bodies.circle(200 + (Math.random()*6-3), 20, 5, {
+                        restitution: 0.4 + Math.random()*0.3, friction: 0.01, label: 'b',
+                        collisionFilter: { category: CAT_B, mask: CAT_W | CAT_S | CAT_P },
+                        render: { fillStyle: insane ? '#ff3b30' : '#ff3b30' } // Всегда красный в обычном
                     });
-                    ball.bet = bet; ball.bHits = 0; ball.originColor = ball.render.fillStyle;
-                    Composite.add(engine.world, ball);
+                    b.bet = bet; b.hits = 0; b.oc = b.render.fillStyle;
+                    Composite.add(eng.world, b);
                 }, i*100);
             }
         }
 
-        // Ряд кнопок выбора количества шаров
         [1, 5, 10, 25, 50].forEach(n => {
             const btn = document.createElement('button');
             btn.className = 'mode-btn'; btn.style.flex = "1"; btn.style.background = "var(--panel)"; btn.style.color = "var(--text)"; btn.innerText = n;
-            btn.onclick = () => { ballsCount = n; updateUI(); };
-            document.getElementById('balls-row').appendChild(btn);
+            btn.onclick = () => { balls = n; upUI(); };
+            document.getElementById('b-row').appendChild(btn);
         });
 
-        Render.run(render); Runner.run(Runner.create(), engine);
-        updateUI();
+        Render.run(ren); Runner.run(Runner.create(), eng);
+        upUI();
     </script>
 </body>
 </html>
