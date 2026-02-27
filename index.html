@@ -1,33 +1,175 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
-
 <meta charset="UTF-8">
-<title>Roulette</title>
-
+<title>Mining Casino</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
-<link rel="stylesheet" href="style.css">
-
+<style>
+body{
+    background:#1e1e1e;
+    color:white;
+    font-family:sans-serif;
+    text-align:center;
+}
+#game{
+    width:400px;
+    height:500px;
+    background:#2a2a2a;
+    margin:auto;
+    position:relative;
+    overflow:hidden;
+    border-radius:10px;
+    border:2px solid #444;
+}
+.block{
+    width:80px;
+    height:80px;
+    background:#555;
+    border:2px solid #333;
+    position:absolute;
+    transition: all 0.3s;
+}
+.pickaxe{
+    width:60px;
+    height:60px;
+    position:absolute;
+    top:-60px;
+}
+#reward{
+    display:none;
+    font-size:24px;
+    margin-top:10px;
+    animation: blink 0.5s infinite alternate;
+}
+@keyframes blink{
+    from{opacity:1;}
+    to{opacity:0.3;}
+}
+button{
+    margin-top:10px;
+    padding:10px 20px;
+    font-size:16px;
+    border:none;
+    border-radius:8px;
+    background:#4caf50;
+    color:white;
+    cursor:pointer;
+}
+button:hover{
+    background:#45a049;
+}
+</style>
 </head>
-
 <body>
 
-<h1>🎰 Telegram Roulette</h1>
+<h2>⛏️ Mining Casino</h2>
+<div id="game"></div>
+<button onclick="dropPickaxe()">Бросить кирку</button>
+<div id="reward">🎁 Сундук! +100 монет</div>
+<div id="coins">💰 Монеты: 0</div>
 
-<div class="wheel-container">
+<script>
+const game = document.getElementById("game");
+const coinsEl = document.getElementById("coins");
 
-<div class="arrow"></div>
+let blocks = [];
+let destroyedRows = 0;
+let coins = 0;
 
-<canvas id="wheel" width="320" height="320"></canvas>
+const pickaxes = [
+    {name:"Деревянная", power:1, src:"https://static.wikia.nocookie.net/minecraft_gamepedia/images/5/5b/Wooden_Pickaxe.png"},
+    {name:"Железная", power:2, src:"https://static.wikia.nocookie.net/minecraft_gamepedia/images/8/80/Iron_Pickaxe.png"},
+    {name:"Алмазная", power:3, src:"https://static.wikia.nocookie.net/minecraft_gamepedia/images/0/02/Diamond_Pickaxe.png"},
+    {name:"Незеритовая", power:4, src:"https://static.wikia.nocookie.net/minecraft_gamepedia/images/e/e3/Netherite_Pickaxe.png"}
+];
 
-</div>
+function createBlocks(){
+    blocks = [];
+    destroyedRows = 0;
+    const rows = 4;
+    const cols = 4;
+    for(let y=0;y<rows;y++){
+        for(let x=0;x<cols;x++){
+            let block = document.createElement("div");
+            block.className="block";
+            block.style.left=(x*90+20)+"px";
+            block.style.top=(y*90+150)+"px";
+            block.dataset.hp = 1; // один удар ломает блок
+            game.appendChild(block);
+            blocks.push(block);
+        }
+    }
+}
 
-<button id="spin">Крутить</button>
+createBlocks();
 
-<p id="result"></p>
+function dropPickaxe(){
+    // выбираем случайную кирку
+    const pickaxe = pickaxes[Math.floor(Math.random()*pickaxes.length)];
 
-<script src="script.js"></script>
+    let pick = document.createElement("img");
+    pick.src = pickaxe.src;
+    pick.className="pickaxe";
+    pick.style.left = (Math.random()*320)+"px";
+    game.appendChild(pick);
+
+    let y = -60;
+
+    let fall = setInterval(()=>{
+        y+=8;
+        pick.style.top = y+"px";
+
+        blocks.forEach(block=>{
+            if(block.style.display!="none"){
+                let bx=block.offsetLeft;
+                let by=block.offsetTop;
+                let px=pick.offsetLeft;
+                let py=pick.offsetTop;
+                if(px>bx-40 && px<bx+80 && py>by-40 && py<by+80){
+                    // уменьшаем hp блока
+                    block.dataset.hp -= pickaxe.power;
+                    if(block.dataset.hp <=0){
+                        block.style.display="none";
+                    }
+                    pick.remove();
+                    checkRows();
+                    clearInterval(fall);
+                }
+            }
+        });
+
+        if(y>500){
+            pick.remove();
+            clearInterval(fall);
+        }
+    },20);
+}
+
+function checkRows(){
+    const rowCount = [0,0,0,0];
+    blocks.forEach(b=>{
+        let row = Math.floor((b.offsetTop-150)/90);
+        if(b.style.display=="none"){
+            rowCount[row]++;
+        }
+    });
+    rowCount.forEach((r,i)=>{
+        if(r>=4){
+            destroyedRows++;
+            // награда за ряд
+            coins += 50;
+            coinsEl.innerText = "💰 Монеты: "+coins;
+        }
+    });
+
+    if(destroyedRows>=2){
+        document.getElementById("reward").style.display="block";
+        coins += 100;
+        coinsEl.innerText = "💰 Монеты: "+coins;
+    }
+}
+
+</script>
 
 </body>
 </html>
