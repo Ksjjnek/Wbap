@@ -2,149 +2,122 @@ const tg = window.Telegram.WebApp;
 tg.expand();
 
 if (!tg.initDataUnsafe.user) {
-    document.body.innerHTML = "Откройте приложение через Telegram бота";
+    document.body.innerHTML = "Откройте через Telegram";
 }
 
 const canvas = document.getElementById("wheel");
 const ctx = canvas.getContext("2d");
 
 const segments = 20;
-let wheelAngle = 0;
 
+let angle = 0;
 let speed = 0;
 let spinning = false;
 
 let phase = "idle";
 let lastPin = 0;
 
-function draw() {
-
-    ctx.clearRect(0,0,320,320);
-
-    drawWheel();
-    drawArrow();
-
-}
-
 function drawWheel(){
 
-    const cx = 160;
-    const cy = 160;
-    const r = 140;
+ctx.clearRect(0,0,320,320);
 
-    ctx.save();
-    ctx.translate(cx,cy);
-    ctx.rotate(wheelAngle);
+const cx = 160;
+const cy = 160;
+const r = 140;
 
-    for(let i=0;i<segments;i++){
+for(let i=0;i<segments;i++){
 
-        let start = (i/segments)*Math.PI*2;
-        let end = ((i+1)/segments)*Math.PI*2;
+let start = (i/segments)*Math.PI*2 + angle;
+let end = ((i+1)/segments)*Math.PI*2 + angle;
 
-        ctx.beginPath();
-        ctx.moveTo(0,0);
-        ctx.arc(0,0,r,start,end);
+ctx.beginPath();
+ctx.moveTo(cx,cy);
+ctx.arc(cx,cy,r,start,end);
 
-        ctx.fillStyle = i%2 ? "#e53935" : "#43a047";
-        ctx.fill();
-
-    }
-
-    // пины
-    for(let i=0;i<segments;i++){
-
-        let a = (i/segments)*Math.PI*2;
-
-        let x = Math.cos(a)*150;
-        let y = Math.sin(a)*150;
-
-        ctx.beginPath();
-        ctx.arc(x,y,4,0,Math.PI*2);
-        ctx.fillStyle="white";
-        ctx.fill();
-
-    }
-
-    ctx.restore();
+ctx.fillStyle = i%2 ? "#e53935" : "#43a047";
+ctx.fill();
 
 }
 
-function drawArrow(){
+// пины
+for(let i=0;i<segments;i++){
 
-    ctx.beginPath();
+let a = (i/segments)*Math.PI*2 + angle;
 
-    ctx.moveTo(160,15);
-    ctx.lineTo(150,45);
-    ctx.lineTo(170,45);
+let x = cx + Math.cos(a)*150;
+let y = cy + Math.sin(a)*150;
 
-    ctx.fillStyle="yellow";
-    ctx.fill();
+ctx.beginPath();
+ctx.arc(x,y,4,0,Math.PI*2);
+ctx.fillStyle="white";
+ctx.fill();
 
 }
 
-draw();
+}
+
+drawWheel();
 
 document.getElementById("spin").onclick = ()=>{
 
-    if(spinning) return;
+if(spinning) return;
 
-    spinning = true;
+spinning = true;
 
-    phase = "accelerate";
+phase = "accelerate";
 
-    speed = 0.01;
+speed = 0.01;
 
-    requestAnimationFrame(update);
+requestAnimationFrame(update);
 
 };
 
 function update(){
 
-    if(!spinning) return;
+if(!spinning) return;
 
-    if(phase === "accelerate"){
+if(phase === "accelerate"){
 
-        speed += 0.002;
+speed += 0.003;
 
-        if(speed > 0.5){
-            phase = "decelerate";
-        }
+if(speed > 0.5){
+phase = "decelerate";
+}
 
-    }
+}
 
-    if(phase === "decelerate"){
+if(phase === "decelerate"){
 
-        speed *= 0.992;
+speed *= 0.994;
 
-    }
+}
 
-    wheelAngle += speed;
+angle += speed;
 
-    // удары по пинам
-    let pinIndex = Math.floor((wheelAngle%(Math.PI*2))/(Math.PI*2/segments));
+let pinIndex = Math.floor((angle%(Math.PI*2))/(Math.PI*2/segments));
 
-    if(pinIndex !== lastPin){
+if(pinIndex !== lastPin){
 
-        speed *= 0.97;
+speed *= 0.96;
 
-        lastPin = pinIndex;
+lastPin = pinIndex;
 
-    }
+}
 
-    if(speed < 0.002){
+if(speed < 0.002){
 
-        spinning = false;
+spinning = false;
 
-        let sector = Math.floor((wheelAngle%(Math.PI*2))/(Math.PI));
+let sector = Math.floor((angle%(Math.PI*2))/(Math.PI));
 
-        let result = sector === 0 ? "Выигрыш 🎉" : "Проигрыш 😢";
+let result = sector === 0 ? "Выигрыш 🎉" : "Проигрыш 😢";
 
-        document.getElementById("result").innerText = result;
+document.getElementById("result").innerText = result;
 
-    }
+}
 
-    draw();
+drawWheel();
 
-    requestAnimationFrame(update);
+requestAnimationFrame(update);
 
 }
