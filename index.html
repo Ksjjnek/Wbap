@@ -2,124 +2,23 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>NovaChat</title>
+<title>Roulette App</title>
+<link rel="stylesheet" href="style.css">
+
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-body { font-family: Arial; background:#0f172a; color:white; margin:0; text-align:center; }
-#registration, #chat { display:none; height:100vh; flex-direction:column; }
-#start { display:none; margin-top:150px; }
-button { padding:15px 30px; font-size:18px; border:none; border-radius:10px; background:#3b82f6; color:white; cursor:pointer; }
-#messages { flex:1; overflow:auto; padding:20px; text-align:left; }
-#input { display:flex; padding:10px; background:#1e293b; }
-#input input { flex:1; padding:10px; border:none; border-radius:8px; }
-#input button { margin-left:10px; }
-h2 { margin-top:30px; }
-</style>
 </head>
+
 <body>
 
-<div id="start">
-  <h1>NovaChat 💬</h1>
-  <p>Нажмите START, чтобы начать</p>
-  <button onclick="openRegistration()">START</button>
-</div>
+<h1>🎰 Рулетка</h1>
 
-<div id="registration">
-  <h2>Выберите ник для чата</h2>
-  <input id="nickname" placeholder="Ваш ник" style="padding:10px; font-size:16px;">
-  <button onclick="register()">Войти в чат</button>
-</div>
+<canvas id="wheel" width="300" height="300"></canvas>
 
-<div id="chat">
-  <div id="messages"></div>
-  <div id="input">
-    <input id="text" placeholder="Написать сообщение">
-    <button onclick="send()">Отправить</button>
-  </div>
-</div>
+<button onclick="spin()">Крутить</button>
 
-<script>
-const tg = window.Telegram.WebApp;
-tg.expand();
+<p id="result"></p>
 
-const ALLOWED_BOT_ID = 8250250632; // твой бот
+<script src="script.js"></script>
 
-// Рандомные уведомления
-const registerMessages = [
-  "зарегистрировался!",
-  "только что создал ник!",
-  "готов к общению!",
-  "присоединился к чату!"
-];
-
-let nickname = null;
-
-// ----------------------
-// Тщательная проверка Telegram
-// ----------------------
-function checkTelegramAccess() {
-    if(!tg.initData || !tg.initDataUnsafe){
-        return false;
-    }
-    const user = tg.initDataUnsafe.user;
-    const botId = tg.initDataUnsafe.bot_id;
-    if(!user || !botId){
-        return false;
-    }
-    if(botId != ALLOWED_BOT_ID){
-        return false;
-    }
-    return true;
-}
-
-if(!checkTelegramAccess()){
-    document.body.innerHTML = "<h2 style='color:red; margin-top:50px;'>❌ Доступ разрешён только через Telegram и официального бота</h2>";
-} else {
-    document.getElementById("start").style.display = "block";
-}
-
-// ----------------------
-// Функции
-// ----------------------
-function openRegistration(){
-    document.getElementById("start").style.display="none";
-    document.getElementById("registration").style.display="block";
-}
-
-function register(){
-    const nickInput = document.getElementById("nickname").value.trim();
-    if(nickInput === ""){
-        alert("Ник обязателен");
-        return;
-    }
-    nickname = nickInput;
-
-    const showAnnouncement = confirm("Хотите, чтобы о вашем входе в чат было объявлено?");
-    document.getElementById("registration").style.display="none";
-    document.getElementById("chat").style.display="flex";
-
-    if(showAnnouncement){
-        const msg = registerMessages[Math.floor(Math.random()*registerMessages.length)];
-        addMessage("Система", `${nickname} ${msg}`);
-        tg.sendData(`SYSTEM_ANNOUNCE: ${nickname} ${msg}`);
-    }
-}
-
-function send(){
-    const textInput = document.getElementById("text");
-    let text = textInput.value.trim();
-    if(!text || !nickname) return;
-    addMessage(nickname, text);
-    textInput.value="";
-    tg.sendData(text);
-}
-
-function addMessage(name,text){
-    const msg = document.createElement("div");
-    msg.innerHTML = `<b>${name}:</b> ${text}`;
-    document.getElementById("messages").appendChild(msg);
-    document.getElementById("messages").scrollTop = document.getElementById("messages").scrollHeight;
-}
-</script>
 </body>
 </html>
