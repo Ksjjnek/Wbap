@@ -9,149 +9,132 @@
             --bg-color: #1c1c1d;
             --card-bg: #2c2c2e;
             --accent-color: #0088cc;
+            --accent-hover: #0077b3;
             --text-main: #ffffff;
             --text-secondary: #aaaaaa;
+            --win-color: #4cd964;
+            --loss-color: #ff3b30;
         }
 
         body {
-            margin: 0;
-            padding: 0;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
+            margin: 0; padding: 0; background-color: var(--bg-color); color: var(--text-main);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            overflow: hidden; user-select: none; -webkit-tap-highlight-color: transparent;
         }
+
+        button { font-family: inherit; cursor: pointer; }
 
         /* --- HEADER --- */
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px 20px;
-            position: relative;
-            z-index: 100;
+        header { display: flex; justify-content: space-between; align-items: center; padding: 15px 20px; position: relative; z-index: 100; }
+        .mode-btn { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600; transition: 0.3s; }
+        .profile-trigger { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+        
+        /* Аватар */
+        .avatar-container { position: relative; width: 38px; height: 38px; z-index: 101; transition: all 0.5s ease; }
+        .avatar { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid rgba(255,255,255,0.1); display: none; }
+        .avatar-fallback { 
+            width: 100%; height: 100%; border-radius: 50%; background: linear-gradient(135deg, #0088cc, #004466); 
+            display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; border: 2px solid rgba(255,255,255,0.1);
         }
 
-        .mode-btn {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .profile-trigger {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background: #444;
-            object-fit: cover;
-            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            z-index: 101;
-            border: 2px solid rgba(255,255,255,0.1);
-        }
+        /* --- SCREENS --- */
+        .screen { display: none; flex-direction: column; align-items: center; width: 100%; height: calc(100vh - 70px); position: absolute; top: 70px; left: 0; }
+        .screen.active { display: flex; }
 
         /* --- PROFILE SCREEN --- */
-        #profile-screen {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity 0.4s ease; z-index: 90;
-        }
-
-        .profile-bg {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background-size: cover; background-position: center;
-            filter: blur(25px) brightness(0.3); transform: scale(1.2);
-        }
-
+        #profile-screen { justify-content: center; top: 0; height: 100vh; z-index: 90; opacity: 0; pointer-events: none; display: flex; transition: opacity 0.4s ease; }
+        .profile-bg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-size: cover; background-position: center; filter: blur(25px) brightness(0.3); transform: scale(1.2); }
         .profile-content { position: relative; text-align: center; z-index: 92; width: 100%; }
         .user-nick { color: var(--accent-color); font-size: 16px; margin-bottom: 5px; display: block; }
         .user-name { font-size: 28px; font-weight: 800; margin-bottom: 25px; }
+        .balance-card { background: rgba(255,255,255,0.08); padding: 20px; border-radius: 20px; backdrop-filter: blur(15px); margin: 10px 40px; border: 1px solid rgba(255,255,255,0.1); }
 
-        .balance-card {
-            background: rgba(255,255,255,0.08); padding: 20px; border-radius: 20px;
-            backdrop-filter: blur(15px); margin: 10px 40px; border: 1px solid rgba(255,255,255,0.1);
-        }
+        /* --- MENU SCREEN --- */
+        #menu-screen { padding: 20px; display: block; top: 70px; }
+        .game-card { background: var(--card-bg); border-radius: 24px; padding: 20px; display: flex; align-items: center; gap: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4); margin-bottom: 15px;}
+        .game-preview { width: 70px; height: 70px; border-radius: 18px; font-size: 35px; background: linear-gradient(135deg, #0088cc, #005588); display: flex; align-items: center; justify-content: center; }
 
-        /* --- MENU --- */
-        #menu-screen { padding: 20px; transition: opacity 0.3s; }
-        .game-card {
-            background: var(--card-bg); border-radius: 24px; padding: 20px;
-            display: flex; align-items: center; gap: 18px; box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-        }
-        .game-preview {
-            width: 70px; height: 70px; border-radius: 18px; font-size: 35px;
-            background: linear-gradient(135deg, #0088cc, #005588);
-            display: flex; align-items: center; justify-content: center;
-        }
-
-        /* --- GAME SCREEN (CUBE) --- */
-        #game-screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 70vh; }
-        .jump-box { position: relative; transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .scene { width: 100px; height: 100px; perspective: 1000px; }
-        .cube { 
-            width: 100%; height: 100%; position: relative; transform-style: preserve-3d; 
-            transition: transform 1.5s cubic-bezier(0.15, 0.8, 0.4, 1); 
-            transform: rotateX(-20deg) rotateY(20deg); 
-        }
-        .cube__face { 
-            position: absolute; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.3); 
-            line-height: 100px; font-size: 40px; font-weight: bold; text-align: center; 
-            background: rgba(255,255,255,0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; 
-        }
-        .cube__face.winner { background: #fff !important; color: #000 !important; box-shadow: 0 0 40px #fff; }
+        /* --- GAME SCREEN --- */
+        .top-notify { background: rgba(0, 136, 204, 0.2); border: 1px solid var(--accent-color); padding: 8px 15px; border-radius: 15px; font-size: 14px; font-weight: bold; margin-top: 10px; transition: 0.3s; }
         
-        /* Раскладка куба */
+        .jump-box { position: relative; transition: transform 1.5s cubic-bezier(0.4, 0, 0.2, 1); margin-top: 40px; }
+        .scene { width: 100px; height: 100px; perspective: 1000px; }
+        .cube { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 1.5s cubic-bezier(0.15, 0.8, 0.4, 1); transform: rotateX(-20deg) rotateY(20deg); }
+        .cube__face { position: absolute; width: 100px; height: 100px; border: 2px solid rgba(255,255,255,0.3); line-height: 100px; font-size: 40px; font-weight: bold; text-align: center; background: rgba(255,255,255,0.1); border-radius: 20px; display: flex; align-items: center; justify-content: center; transition: background 0.4s, color 0.4s, box-shadow 0.4s, border-color 0.4s; }
+        .cube__face.winner { background: #fff !important; color: #000 !important; box-shadow: 0 0 40px #fff; }
+        .cube__face.loser { background: #ff3b30 !important; color: #fff !important; box-shadow: 0 0 20px #ff3b30; border-color: #ff3b30; }
         .cube__face--1 { transform: rotateY(0deg) translateZ(50px); }
         .cube__face--2 { transform: rotateY(180deg) translateZ(50px); }
         .cube__face--3 { transform: rotateY(90deg) translateZ(50px); }
         .cube__face--4 { transform: rotateY(-90deg) translateZ(50px); }
         .cube__face--5 { transform: rotateX(90deg) translateZ(50px); }
         .cube__face--6 { transform: rotateX(-90deg) translateZ(50px); }
+        .shadow { position: absolute; bottom: -30px; left: 10px; width: 80px; height: 10px; background: rgba(0,0,0,0.6); border-radius: 50%; filter: blur(5px); transition: 1.5s; }
 
-        .shadow { 
-            position: absolute; bottom: -30px; left: 10px; width: 80px; height: 10px; 
-            background: rgba(0,0,0,0.6); border-radius: 50%; filter: blur(5px); transition: 1.5s; 
-        }
+        /* Игровой интерфейс (Ставки) */
+        .controls-panel { width: 90%; background: var(--card-bg); border-radius: 20px; padding: 15px; margin-top: auto; margin-bottom: 20px; box-shadow: 0 -5px 20px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 15px; }
+        
+        .controls-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+        
+        .btn-icon { background: rgba(255,255,255,0.1); border: none; color: white; border-radius: 12px; width: 45px; height: 45px; font-size: 20px; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-icon:active { transform: scale(0.9); background: rgba(255,255,255,0.2); }
+        
+        .bet-input-wrap { flex: 1; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,0.3); border-radius: 12px; height: 45px; }
+        .bet-input { background: transparent; border: none; color: white; font-size: 20px; font-weight: bold; text-align: center; width: 100%; outline: none; }
+        
+        .step-toggles { display: flex; justify-content: center; gap: 10px; }
+        .step-btn { background: transparent; border: 1px solid rgba(255,255,255,0.2); color: var(--text-secondary); padding: 5px 15px; border-radius: 10px; font-size: 14px; transition: 0.2s; }
+        .step-btn.active { background: rgba(255,255,255,0.1); color: white; border-color: white; }
 
-        /* Classes for Profile Open */
-        body.profile-open .avatar { transform: scale(4.5) translateY(45px); border-color: transparent; }
+        .play-btn { background: var(--accent-color); color: white; border: none; border-radius: 15px; padding: 15px; font-size: 18px; font-weight: bold; width: 100%; transition: 0.2s; }
+        .play-btn:active { transform: scale(0.98); }
+        .play-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .play-btn.auto-stop { background: var(--loss-color); }
+
+        .condition-select { background: rgba(255,255,255,0.1); border: none; color: white; padding: 10px 15px; border-radius: 12px; font-size: 14px; font-weight: bold; flex: 1; display: flex; justify-content: center; align-items: center; gap: 5px; }
+
+        /* Модальные окна */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 200; display: none; align-items: flex-end; opacity: 0; transition: opacity 0.3s; }
+        .modal-overlay.active { display: flex; opacity: 1; }
+        .modal-content { background: var(--card-bg); width: 100%; border-radius: 25px 25px 0 0; padding: 25px 20px; box-sizing: border-box; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .modal-overlay.active .modal-content { transform: translateY(0); }
+        
+        .modal-title { font-size: 18px; font-weight: bold; margin-bottom: 20px; text-align: center; }
+        .modal-option { background: rgba(255,255,255,0.05); border-radius: 15px; padding: 15px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: bold; transition: 0.2s; border: 1px solid transparent; }
+        .modal-option.selected { border-color: var(--accent-color); background: rgba(0, 136, 204, 0.1); }
+        .modal-input-row { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .modal-input { flex: 1; background: rgba(0,0,0,0.3); border: none; color: white; padding: 10px; border-radius: 10px; text-align: center; font-size: 16px; outline: none; }
+
+        /* Анимации профиля */
+        body.profile-open .avatar-container { transform: scale(4) translateY(45px); }
         body.profile-open #header-balance, body.profile-open #mode-toggle { opacity: 0; pointer-events: none; }
         .back-btn { display: none; }
         body.profile-open .back-btn, body.game-open .back-btn { display: block; }
+        body.profile-open #profile-screen { opacity: 1; pointer-events: all; }
+        body.profile-open #menu-screen, body.profile-open #game-screen { display: none !important; }
+
     </style>
 </head>
-<body>
+<body id="body">
 
     <header>
         <button class="mode-btn" id="mode-toggle" onclick="toggleMode()">Демо</button>
         <div class="profile-trigger" onclick="toggleProfile()">
-            <span id="header-balance">1000🍬</span>
-            <img src="" alt="" id="user-photo" class="avatar">
+            <span id="header-balance">1000 🍬</span>
+            <div class="avatar-container" id="avatar-container">
+                <img src="" alt="" id="user-photo" class="avatar">
+                <div id="user-fallback" class="avatar-fallback">?</div>
+            </div>
             <button class="mode-btn back-btn">Назад</button>
         </div>
     </header>
 
-    <div id="menu-screen">
+    <div id="menu-screen" class="screen active">
         <div class="game-card">
             <div class="game-preview">🎲</div>
-            <div class="game-info">
-                <div class="game-title">Кубик</div>
-                <div style="color: var(--text-secondary); font-size: 13px;">Испытай удачу</div>
+            <div class="game-info" style="flex: 1;">
+                <div style="font-size: 20px; font-weight: 700;">Кубик</div>
+                <div style="color: var(--text-secondary); font-size: 13px;">Угадай Чёт / Нечет</div>
             </div>
             <button class="mode-btn" style="background: var(--accent-color);" onclick="openGame()">Играть</button>
         </div>
@@ -168,12 +151,14 @@
             </div>
             <div class="balance-card">
                 <div style="color: var(--text-secondary); font-size: 12px;">РЕАЛЬНЫЙ СЧЕТ</div>
-                <div style="font-size: 24px; font-weight: 800;">0.00 $</div>
+                <div id="real-val" style="font-size: 24px; font-weight: 800;">0.00 $</div>
             </div>
         </div>
     </div>
 
-    <div id="game-screen">
+    <div id="game-screen" class="screen">
+        <div class="top-notify" id="win-notify">Возможный выигрыш: 19 🍬</div>
+        
         <div class="jump-box" id="jump-box">
             <div class="shadow" id="shadow"></div>
             <div class="scene">
@@ -187,7 +172,71 @@
                 </div>
             </div>
         </div>
-        <button id="roll-button" class="mode-btn" style="margin-top: 80px; padding: 20px 60px; background: var(--accent-color); font-size: 18px;" onclick="rollDice()">БРОСИТЬ 🎲</button>
+
+        <div class="controls-panel">
+            <div class="controls-row">
+                <button class="btn-icon" onclick="openMenuModal()">☰</button>
+                <button class="condition-select" onclick="openConditionModal()">
+                    <span id="current-condition-text">Чёт (1.9x)</span> ▼
+                </button>
+            </div>
+
+            <div class="controls-row">
+                <button class="btn-icon" onclick="changeBet(-1)">-</button>
+                <div class="bet-input-wrap">
+                    <input type="number" id="bet-input" class="bet-input" value="10" onchange="manualBetChange()">
+                </div>
+                <button class="btn-icon" onclick="changeBet(1)">+</button>
+            </div>
+            
+            <div class="step-toggles">
+                <button class="step-btn active" id="step-5" onclick="setStep(5)">± 5</button>
+                <button class="step-btn" id="step-10" onclick="setStep(10)">± 10</button>
+            </div>
+
+            <button id="roll-button" class="play-btn" onclick="handleRollClick()">БРОСИТЬ 🎲</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="condition-modal" onclick="closeModals(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">Условие победы</div>
+            <div class="modal-option selected" id="cond-even" onclick="selectCondition('even')">
+                <span>Чётные (2, 4, 6)</span>
+                <span style="color: var(--win-color);">1.9x</span>
+            </div>
+            <div class="modal-option" id="cond-odd" onclick="selectCondition('odd')">
+                <span>Нечетные (1, 3, 5)</span>
+                <span style="color: var(--win-color);">1.9x</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="menu-modal" onclick="closeModals(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-title">Настройки Автоигры</div>
+            
+            <div class="modal-option" id="auto-inf" onclick="selectAutoMode('infinite')">
+                <span>Бесконечная автоигра</span>
+                <span id="check-inf" style="display:none;">✅</span>
+            </div>
+            
+            <div class="modal-option" style="flex-direction: column; align-items: stretch;" id="auto-limit" onclick="selectAutoMode('limit')">
+                <div style="display: flex; justify-content: space-between;">
+                    <span>Остановить при профите/лузе</span>
+                    <span id="check-limit" style="display:none;">✅</span>
+                </div>
+                <div class="modal-input-row" onclick="event.stopPropagation()">
+                    <select id="limit-type" class="modal-input" style="flex: 0.5;">
+                        <option value="profit">Плюс</option>
+                        <option value="loss">Минус</option>
+                    </select>
+                    <input type="number" id="limit-amount" class="modal-input" value="50" placeholder="Сумма">
+                </div>
+            </div>
+
+            <button class="play-btn" style="margin-top: 15px;" onclick="startAutoPlay()">Запустить автоигру</button>
+        </div>
     </div>
 
     <script>
@@ -195,94 +244,236 @@
         tg.ready();
         tg.expand();
 
+        // --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
         let state = {
-            mode: 'demo',
+            mode: 'demo', // 'demo' или 'real'
             demoBalance: 1000,
+            realBalance: 0,
+            
             isProfileOpen: false,
             isGameOpen: false,
+            
+            // Настройки кубика
             currentRotationX: -20,
-            currentRotationY: 20
+            currentRotationY: 20,
+            isRolling: false,
+            
+            // Ставки
+            betAmount: 10,
+            betStep: 5,
+            winCondition: 'even', // 'even' или 'odd'
+            multiplier: 1.9,
+            
+            // Автоигра
+            autoMode: 'none', // 'none', 'infinite', 'limit'
+            autoActive: false,
+            startBalance: 0,
+            autoTimeout: null
         };
 
-        // --- ГЛАВНАЯ ЧАСТЬ: ПОЛУЧЕНИЕ ДАННЫХ ---
+        // --- ПОЛУЧЕНИЕ ДАННЫХ ПОЛЬЗОВАТЕЛЯ (УЛУЧШЕННОЕ) ---
         function setupUser() {
             const user = tg.initDataUnsafe?.user;
             
             const nameElem = document.getElementById('user-full-name');
             const nickElem = document.getElementById('user-nick');
-            const photoElem = document.getElementById('user-photo');
+            const photoImg = document.getElementById('user-photo');
+            const photoFallback = document.getElementById('user-fallback');
             const blurElem = document.getElementById('profile-blur-bg');
 
             if (user) {
-                nameElem.innerText = [user.first_name, user.last_name].filter(Boolean).join(' ');
+                const firstName = user.first_name || "Игрок";
+                const lastName = user.last_name || "";
+                nameElem.innerText = `${firstName} ${lastName}`.trim();
                 nickElem.innerText = user.username ? `@${user.username}` : '';
                 
                 if (user.photo_url) {
-                    photoElem.src = user.photo_url;
+                    photoImg.src = user.photo_url;
+                    photoImg.style.display = 'block';
+                    photoFallback.style.display = 'none';
                     blurElem.style.backgroundImage = `url(${user.photo_url})`;
                 } else {
-                    // Если фото нет, ставим заглушку с инициалом
-                    photoElem.src = `https://ui-avatars.com/api/?name=${user.first_name}&background=0088cc&color=fff`;
+                    // НАДЕЖНЫЙ ЛОКАЛЬНЫЙ ФОЛЛБЭК
+                    photoImg.style.display = 'none';
+                    photoFallback.style.display = 'flex';
+                    photoFallback.innerText = firstName.charAt(0).toUpperCase();
+                    blurElem.style.backgroundColor = '#004466'; // Темно-синий фон вместо фото
                 }
             } else {
-                nameElem.innerText = "Игрок (Offline)";
-                nickElem.innerText = "@offline";
-                photoElem.src = "https://ui-avatars.com/api/?name=User&background=444&color=fff";
+                nameElem.innerText = "Игрок (Вне ТГ)";
+                nickElem.innerText = "@test_mode";
+                photoImg.style.display = 'none';
+                photoFallback.style.display = 'flex';
+                photoFallback.innerText = "T";
             }
+            updateUI();
         }
 
-        // --- ЛОГИКА ИНТЕРФЕЙСА ---
+        // --- НАВИГАЦИЯ И БАЛАНС ---
         function toggleMode() {
+            if(state.isRolling || state.autoActive) return; // Блокировка во время игры
             state.mode = state.mode === 'demo' ? 'real' : 'demo';
             document.getElementById('mode-toggle').innerText = state.mode === 'demo' ? 'Демо' : 'Баланс';
-            updateBalanceUI();
             tg.HapticFeedback.selectionChanged();
-        }
-
-        function updateBalanceUI() {
-            const bal = state.mode === 'demo' ? `${state.demoBalance}🍬` : `0.00$`;
-            document.getElementById('header-balance').innerText = bal;
-            document.getElementById('demo-val').innerText = `${state.demoBalance} 🍬`;
+            updateUI();
         }
 
         function toggleProfile() {
+            if(state.isRolling || state.autoActive) return;
             if (state.isGameOpen) return closeGame();
+            
             state.isProfileOpen = !state.isProfileOpen;
             document.body.classList.toggle('profile-open', state.isProfileOpen);
-            document.getElementById('profile-screen').style.opacity = state.isProfileOpen ? '1' : '0';
-            document.getElementById('profile-screen').style.pointerEvents = state.isProfileOpen ? 'all' : 'none';
-            document.getElementById('menu-screen').style.opacity = state.isProfileOpen ? '0' : '1';
             tg.HapticFeedback.impactOccurred('light');
         }
 
         function openGame() {
             state.isGameOpen = true;
-            document.getElementById('menu-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'flex';
+            document.getElementById('menu-screen').classList.remove('active');
+            document.getElementById('game-screen').classList.add('active');
             document.body.classList.add('game-open');
+            updateUI();
         }
 
         function closeGame() {
+            if(state.autoActive) stopAutoPlay();
             state.isGameOpen = false;
-            document.getElementById('menu-screen').style.display = 'block';
-            document.getElementById('game-screen').style.display = 'none';
+            document.getElementById('menu-screen').classList.add('active');
+            document.getElementById('game-screen').classList.remove('active');
             document.body.classList.remove('game-open');
         }
 
-        function rollDice() {
-            const btn = document.getElementById('roll-button');
-            if (btn.disabled) return;
-            if (state.mode === 'demo' && state.demoBalance > 100) {
-                state.demoBalance -= 10; updateBalanceUI();
+        // --- ЛОГИКА СТАВОК ---
+        function getBalance() { return state.mode === 'demo' ? state.demoBalance : state.realBalance; }
+        function setBalance(val) { 
+            if(state.mode === 'demo') state.demoBalance = val; 
+            else state.realBalance = val; 
+            updateUI();
+        }
+
+        function updateUI() {
+            const bal = getBalance();
+            const curr = state.mode === 'demo' ? '🍬' : '$';
+            
+            // Обновляем шапку и профиль
+            document.getElementById('header-balance').innerText = `${bal.toFixed(0)} ${curr}`;
+            document.getElementById('demo-val').innerText = `${state.demoBalance.toFixed(0)} 🍬`;
+            document.getElementById('real-val').innerText = `${state.realBalance.toFixed(2)} $`;
+
+            // Обновляем инпут ставки
+            document.getElementById('bet-input').value = state.betAmount;
+            
+            // Обновляем уведомление о выигрыше
+            const winAmt = (state.betAmount * state.multiplier).toFixed(1);
+            document.getElementById('win-notify').innerText = `Возможный выигрыш: ${winAmt} ${curr}`;
+            
+            // Обновляем кнопку
+            const rollBtn = document.getElementById('roll-button');
+            if(state.autoActive) {
+                rollBtn.innerText = "ОСТАНОВИТЬ АВТОИГРУ";
+                rollBtn.classList.add('auto-stop');
+            } else {
+                rollBtn.innerText = "БРОСИТЬ 🎲";
+                rollBtn.classList.remove('auto-stop');
+            }
+        }
+
+        function setStep(val) {
+            state.betStep = val;
+            document.getElementById('step-5').classList.toggle('active', val === 5);
+            document.getElementById('step-10').classList.toggle('active', val === 10);
+            tg.HapticFeedback.selectionChanged();
+        }
+
+        function changeBet(direction) {
+            if(state.isRolling || state.autoActive) return;
+            let newBet = state.betAmount + (state.betStep * direction);
+            if(newBet < 1) newBet = 1;
+            if(newBet > getBalance()) newBet = getBalance();
+            state.betAmount = newBet;
+            tg.HapticFeedback.impactOccurred('light');
+            updateUI();
+        }
+
+        function manualBetChange() {
+            if(state.isRolling || state.autoActive) return;
+            let val = parseInt(document.getElementById('bet-input').value) || 1;
+            if(val < 1) val = 1;
+            if(val > getBalance()) val = getBalance();
+            state.betAmount = val;
+            updateUI();
+        }
+
+        // --- МОДАЛКИ ---
+        function openConditionModal() { document.getElementById('condition-modal').classList.add('active'); }
+        function openMenuModal() { document.getElementById('menu-modal').classList.add('active'); }
+        function closeModals(e) { if(e.target.classList.contains('modal-overlay')) e.target.classList.remove('active'); }
+
+        function selectCondition(cond) {
+            state.winCondition = cond;
+            document.getElementById('cond-even').classList.toggle('selected', cond === 'even');
+            document.getElementById('cond-odd').classList.toggle('selected', cond === 'odd');
+            document.getElementById('current-condition-text').innerText = cond === 'even' ? 'Чёт (1.9x)' : 'Нечет (1.9x)';
+            document.getElementById('condition-modal').classList.remove('active');
+            tg.HapticFeedback.selectionChanged();
+        }
+
+        function selectAutoMode(mode) {
+            state.autoMode = mode;
+            document.getElementById('auto-inf').classList.toggle('selected', mode === 'infinite');
+            document.getElementById('auto-limit').classList.toggle('selected', mode === 'limit');
+            document.getElementById('check-inf').style.display = mode === 'infinite' ? 'block' : 'none';
+            document.getElementById('check-limit').style.display = mode === 'limit' ? 'block' : 'none';
+        }
+
+        // --- ИГРА И АВТОИГРА ---
+        function handleRollClick() {
+            if(state.autoActive) {
+                stopAutoPlay();
+            } else {
+                executeRoll();
+            }
+        }
+
+        function startAutoPlay() {
+            if(state.autoMode === 'none') return alert('Выберите режим автоигры!');
+            if(getBalance() < state.betAmount) return alert('Недостаточно средств!');
+            
+            state.autoActive = true;
+            state.startBalance = getBalance();
+            document.getElementById('menu-modal').classList.remove('active');
+            updateUI();
+            executeRoll();
+        }
+
+        function stopAutoPlay() {
+            state.autoActive = false;
+            clearTimeout(state.autoTimeout);
+            updateUI();
+        }
+
+        function executeRoll() {
+            if(state.isRolling || getBalance() < state.betAmount) {
+                if(state.autoActive) stopAutoPlay();
+                return;
             }
 
-            btn.disabled = true;
-            document.querySelectorAll('.cube__face').forEach(f => f.classList.remove('winner'));
-            const res = Math.floor(Math.random() * 6) + 1;
+            state.isRolling = true;
+            document.getElementById('roll-button').disabled = true;
+            
+            // Списываем ставку
+            setBalance(getBalance() - state.betAmount);
+            
+            // Сброс стилей куба
+            document.querySelectorAll('.cube__face').forEach(f => {
+                f.classList.remove('winner', 'loser');
+            });
+
+            const result = Math.floor(Math.random() * 6) + 1;
             const rots = { 1:{x:0,y:0}, 2:{x:0,y:180}, 3:{x:0,y:-90}, 4:{x:0,y:90}, 5:{x:-90,y:0}, 6:{x:90,y:0} };
 
-            state.currentRotationX += 1440 + (rots[res].x - (state.currentRotationX % 360));
-            state.currentRotationY += 1440 + (rots[res].y - (state.currentRotationY % 360));
+            state.currentRotationX += 1440 + (rots[result].x - (state.currentRotationX % 360));
+            state.currentRotationY += 1440 + (rots[result].y - (state.currentRotationY % 360));
 
             const jBox = document.getElementById('jump-box');
             jBox.style.transform = 'translateY(-180px) scale(1.1)';
@@ -294,15 +485,48 @@
                 document.getElementById('shadow').style.transform = 'scale(1)';
             }, 750);
 
+            // Обработка результата
             setTimeout(() => {
-                document.querySelector(`.cube__face--${res}`).classList.add('winner');
-                tg.HapticFeedback.notificationOccurred('success');
-                btn.disabled = false;
+                state.isRolling = false;
+                document.getElementById('roll-button').disabled = false;
+                
+                const targetFace = document.querySelector(`.cube__face--${result}`);
+                
+                // Проверка на победу
+                const isEven = result % 2 === 0;
+                const isWin = (isEven && state.winCondition === 'even') || (!isEven && state.winCondition === 'odd');
+
+                if(isWin) {
+                    targetFace.classList.add('winner');
+                    setBalance(getBalance() + (state.betAmount * state.multiplier));
+                    tg.HapticFeedback.notificationOccurred('success');
+                } else {
+                    targetFace.classList.add('loser');
+                    tg.HapticFeedback.notificationOccurred('error');
+                }
+
+                // Логика автоигры
+                if(state.autoActive) {
+                    let shouldStop = false;
+                    if(state.autoMode === 'limit') {
+                        const limitType = document.getElementById('limit-type').value;
+                        const limitAmt = parseFloat(document.getElementById('limit-amount').value) || 0;
+                        const currentBal = getBalance();
+                        
+                        if(limitType === 'profit' && currentBal >= state.startBalance + limitAmt) shouldStop = true;
+                        if(limitType === 'loss' && currentBal <= state.startBalance - limitAmt) shouldStop = true;
+                    }
+                    
+                    if(shouldStop || getBalance() < state.betAmount) {
+                        stopAutoPlay();
+                    } else {
+                        state.autoTimeout = setTimeout(executeRoll, 1000); // Пауза 1 сек перед следующим броском
+                    }
+                }
             }, 1500);
         }
 
-        // Запуск инициализации при загрузке
         window.onload = setupUser;
     </script>
 </body>
-</html>
+                </html>
