@@ -5,15 +5,137 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Casino Web App</title>
 <style>
-body { font-family: Arial, sans-serif; background: #111; color: #fff; display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
-.toggle { display: flex; width: 200px; border-radius: 30px; background: #333; margin-bottom: 20px; cursor: pointer; }
-.toggle div { flex: 1; text-align: center; padding: 10px 0; transition: all 0.3s; }
-.toggle .active { background: #f39c12; color: #000; border-radius: 30px; }
-.game-area { width: 300px; height: 400px; background: #222; margin-bottom: 20px; border-radius: 10px; position: relative; overflow: hidden; }
-.controls { display: flex; flex-direction: column; gap: 10px; width: 100%; align-items: center; }
-.buttons { display: flex; gap: 5px; }
-button { padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer; transition: 0.3s; }
-button:hover { background: #f39c12; color: #000; }
+body {
+    font-family: Arial, sans-serif;
+    background: #111;
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0;
+    padding: 20px;
+}
+
+.toggle {
+    display: flex;
+    width: 220px;
+    border-radius: 30px;
+    background: #333;
+    margin-bottom: 20px;
+    cursor: pointer;
+    user-select: none;
+}
+.toggle div {
+    flex: 1;
+    text-align: center;
+    padding: 12px 0;
+    transition: all 0.3s;
+    font-weight: bold;
+}
+.toggle .active {
+    background: #f39c12;
+    color: #000;
+    border-radius: 30px;
+}
+
+.game-area {
+    width: 300px;
+    height: 400px;
+    background: #222;
+    margin-bottom: 20px;
+    border-radius: 10px;
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #444;
+}
+
+.controls {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    align-items: center;
+}
+
+.control-group {
+    width: 100%;
+}
+
+.control-group p {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+    color: #ccc;
+    text-align: center;
+}
+
+.buttons {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+button {
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: bold;
+    background: #333;
+    color: #fff;
+}
+button:hover {
+    background: #f39c12;
+    color: #000;
+}
+button.selected {
+    background: #f39c12;
+    color: #000;
+}
+
+#play {
+    width: 80%;
+    margin-top: 10px;
+    font-size: 16px;
+}
+
+#betCost {
+    font-weight: bold;
+    color: #f39c12;
+}
+
+/* Шарики */
+.ball {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #f39c12;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    transition: transform 0.5s ease-in-out;
+    z-index: 2;
+}
+
+/* Призовые зоны */
+.prize {
+    width: 60px;
+    height: 30px;
+    position: absolute;
+    bottom: 0;
+    border-radius: 5px;
+    background: #444;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    transition: background 0.3s;
+}
+.prize.win {
+    background: #f39c12;
+}
 </style>
 </head>
 <body>
@@ -26,16 +148,25 @@ button:hover { background: #f39c12; color: #000; }
 
 <!-- Игровая зона -->
 <div class="game-area" id="gameArea">
-    <p style="text-align:center; padding-top: 180px;">Здесь будет игра</p>
+    <!-- Призовые зоны -->
+    <div class="prize" style="left: 10%;">x2</div>
+    <div class="prize" style="left: 40%;">x3</div>
+    <div class="prize" style="left: 70%;">x5</div>
 </div>
 
 <!-- Управление ставками и шариками -->
 <div class="controls">
-    <div class="buttons" id="balls">
-        <button>1</button><button>2</button><button>5</button><button>10</button><button>25</button><button>50</button>
+    <div class="control-group">
+        <p>Количество шариков</p>
+        <div class="buttons" id="balls">
+            <button>1</button><button>2</button><button>5</button><button>10</button><button>25</button><button>50</button>
+        </div>
     </div>
-    <div class="buttons" id="bet">
-        <button>10</button><button>50</button><button>100</button>
+    <div class="control-group">
+        <p>Выбор ставки</p>
+        <div class="buttons" id="bet">
+            <button>10</button><button>50</button><button>100</button>
+        </div>
     </div>
     <button id="play">Играть</button>
     <p>Стоимость ставки: <span id="betCost">10</span>₽</p>
@@ -59,32 +190,68 @@ toggle.addEventListener('click', e => {
     }
 });
 
+// Выбор количества шариков
 document.querySelectorAll('#balls button').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('#balls button').forEach(b => b.style.background = '');
-        btn.style.background = '#f39c12';
+        document.querySelectorAll('#balls button').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
     });
 });
 
+// Выбор ставки
 document.querySelectorAll('#bet button').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('#bet button').forEach(b => b.style.background = '');
-        btn.style.background = '#f39c12';
+        document.querySelectorAll('#bet button').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
         document.getElementById('betCost').innerText = btn.innerText;
     });
 });
 
-document.getElementById('play').addEventListener('click', () => {
-    const balls = document.querySelector('#balls button[style*="background"]').innerText || '1';
-    const bet = document.querySelector('#bet button[style*="background"]').innerText || '10';
-    // Здесь можно вызвать API Telegram через tg.WebApp.sendData
-    if(window.Telegram.WebApp) {
-        Telegram.WebApp.sendData(JSON.stringify({mode, balls, bet}));
-        alert('Ставка отправлена в бота!');
-    } else {
-        alert(`Игра: ${mode}, Шариков: ${balls}, Ставка: ${bet}`);
+// Игровая механика
+const gameArea = document.getElementById('gameArea');
+const prizes = Array.from(document.querySelectorAll('.prize'));
+
+function dropBall() {
+    const ballsCount = parseInt(document.querySelector('#balls button.selected')?.innerText || '1');
+    const betAmount = parseInt(document.querySelector('#bet button.selected')?.innerText || '10');
+
+    for (let i=0; i<ballsCount; i++) {
+        const ball = document.createElement('div');
+        ball.classList.add('ball');
+        gameArea.appendChild(ball);
+
+        // Анимация падения с рандомным смещением
+        let targetPrize = prizes[Math.floor(Math.random() * prizes.length)];
+        let targetX = targetPrize.offsetLeft + targetPrize.offsetWidth/2 - 10; // Центр шара
+        let targetY = targetPrize.offsetTop;
+
+        setTimeout(() => {
+            ball.style.transform = `translate(${targetX - gameArea.offsetWidth/2 + 10}px, ${targetY}px)`;
+        }, 50 + i*300); // задержка между шариками
+
+        // Подсветка выигрышной зоны
+        setTimeout(() => {
+            targetPrize.classList.add('win');
+        }, 500 + i*300);
+
+        // Отправка результата в Telegram бот через WebApp API
+        setTimeout(() => {
+            if(window.Telegram?.WebApp) {
+                Telegram.WebApp.sendData(JSON.stringify({
+                    mode, balls: ballsCount, bet: betAmount, prize: targetPrize.innerText
+                }));
+            }
+        }, 800 + i*300);
+
+        // Убираем шарик через секунду
+        setTimeout(() => {
+            ball.remove();
+            targetPrize.classList.remove('win');
+        }, 2000 + i*300);
     }
-});
+}
+
+document.getElementById('play').addEventListener('click', dropBall);
 </script>
 
 </body>
