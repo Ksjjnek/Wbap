@@ -7,58 +7,55 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        body { margin: 0; overflow: hidden; background: #121212; font-family: 'Inter', sans-serif; color: white; }
+        body { margin: 0; overflow: hidden; background: #0f0f0f; font-family: 'Inter', sans-serif; color: white; }
         
-        /* Профиль пользователя */
         #user-header {
             position: absolute; top: 20px; left: 20px;
             display: flex; align-items: center; gap: 10px;
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(15px);
-            padding: 10px 20px; border-radius: 40px; z-index: 100;
-            transition: opacity 0.5s;
+            background: rgba(255, 255, 255, 0.07); backdrop-filter: blur(15px);
+            padding: 8px 16px; border-radius: 40px; z-index: 100;
+            transition: opacity 0.5s; border: 1px solid rgba(255,255,255,0.1);
         }
-        #user-photo { width: 35px; height: 35px; border-radius: 50%; border: 1.5px solid #fff; }
+        #user-photo { width: 32px; height: 32px; border-radius: 50%; border: 1px solid #fff; }
 
-        /* Результат - теперь сверху и крупно */
         #result-screen {
             position: absolute; top: 15%; width: 100%; text-align: center;
-            z-index: 10; pointer-events: none; opacity: 0; transform: translateY(-20px);
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10; pointer-events: none; opacity: 0; 
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #result-screen.show { opacity: 1; transform: translateY(0); }
-        #result-label { font-size: 14px; text-transform: uppercase; letter-spacing: 3px; opacity: 0.7; }
-        #result-value { font-size: 80px; font-weight: 900; display: block; margin-top: -10px; }
+        #result-screen.show { opacity: 1; transform: scale(1.2); }
+        #result-label { font-size: 12px; text-transform: uppercase; letter-spacing: 4px; opacity: 0.5; }
+        #result-value { font-size: 100px; font-weight: 900; display: block; line-height: 1; text-shadow: 0 0 20px rgba(255,255,255,0.3); }
 
-        /* Кнопка */
         #roll-button {
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-            padding: 18px 60px; font-size: 16px; font-weight: bold; border-radius: 50px;
-            border: none; background: #fff; color: #000; cursor: pointer;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 100;
-            transition: all 0.4s;
+            padding: 20px 70px; font-size: 16px; font-weight: bold; border-radius: 50px;
+            border: none; background: #ffffff; color: #000; cursor: pointer;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.6); z-index: 100;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #roll-button.hide { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(50px); }
+        #roll-button:active { transform: translateX(-50%) scale(0.9); }
+        #roll-button.hide { opacity: 0; pointer-events: none; transform: translateX(-50%) translateY(100px); }
     </style>
 </head>
 <body>
 
     <div id="user-header">
         <img id="user-photo" src="" alt="" style="display:none;">
-        <div id="user-name">...</div>
+        <div id="user-name">Загрузка...</div>
     </div>
 
     <div id="result-screen">
-        <span id="result-label">Результат</span>
+        <span id="result-label">Выпало</span>
         <span id="result-value">0</span>
     </div>
 
-    <button id="roll-button">БРОСИТЬ КОСТЬ</button>
+    <button id="roll-button">КРУТИТЬ</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
         
-        // Данные пользователя
         if (tg.initDataUnsafe?.user) {
             const user = tg.initDataUnsafe.user;
             document.getElementById('user-name').innerText = user.first_name;
@@ -68,62 +65,50 @@
             }
         }
 
-        // --- THREE.JS ---
         let scene, camera, renderer, dice;
         let isRolling = false;
 
         function init() {
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.set(0, 5, 10);
-            camera.lookAt(0, 0, 0);
+            camera.position.set(0, 5, 12);
 
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             document.body.appendChild(renderer.domElement);
 
-            // Свет
-            const light1 = new THREE.DirectionalLight(0xffffff, 1);
+            const light1 = new THREE.DirectionalLight(0xffffff, 1.2);
             light1.position.set(5, 10, 5);
             scene.add(light1);
-            scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
 
-            // Создаем скругленный кубик вручную через текстуру и шейдинг
-            const geometry = new THREE.BoxGeometry(2, 2, 2, 10, 10, 10); // Добавляем сегментов для мягкости
+            const geometry = new THREE.BoxGeometry(2, 2, 2, 8, 8, 8);
             
-            // "Трюк" для скругления: слегка раздуем сферу из куба (Spherize)
-            const positionAttribute = geometry.attributes.position;
-            const vertex = new THREE.Vector3();
-            for (let i = 0; i < positionAttribute.count; i++) {
-                vertex.fromBufferAttribute(positionAttribute, i);
-                // Математическое скругление углов
-                const radius = 1.0; 
-                if (Math.abs(vertex.x) > 0.8 && Math.abs(vertex.y) > 0.8 && Math.abs(vertex.z) > 0.8) {
-                   // точка угла
-                }
-            }
-
             const createFace = (text) => {
                 const canvas = document.createElement('canvas');
                 canvas.width = 256; canvas.height = 256;
                 const ctx = canvas.getContext('2d');
                 
-                // Рисуем фон со скруглением
-                ctx.fillStyle = '#2a2a2a'; 
+                // Фон грани (темно-серый скругленный квадрат)
+                ctx.fillStyle = '#222222';
                 ctx.beginPath();
-                ctx.roundRect(10, 10, 236, 236, 40);
+                ctx.roundRect(5, 5, 246, 246, 50);
                 ctx.fill();
                 
-                // Рисуем цифру
+                // Белая цифра
                 ctx.fillStyle = '#ffffff';
-                ctx.font = 'bold 140px sans-serif';
+                ctx.font = 'bold 150px Inter, sans-serif';
                 ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
                 ctx.fillText(text, 128, 128);
                 
+                const texture = new THREE.CanvasTexture(canvas);
                 return new THREE.MeshStandardMaterial({ 
-                    map: new THREE.CanvasTexture(canvas),
-                    roughness: 0.2, metalness: 0.1
+                    map: texture, 
+                    roughness: 0.1, 
+                    metalness: 0.1,
+                    transparent: true,
+                    opacity: 0.9
                 });
             };
 
@@ -141,86 +126,87 @@
 
         function animate() {
             requestAnimationFrame(animate);
-            if (isRolling) {
-                dice.rotation.x += 0.3;
-                dice.rotation.y += 0.25;
-                dice.rotation.z += 0.1;
-            }
             renderer.render(scene, camera);
         }
 
-        // Логика броска
         const btn = document.getElementById('roll-button');
         const resScreen = document.getElementById('result-screen');
         const resVal = document.getElementById('result-value');
-        const header = document.getElementById('user-header');
 
         btn.onclick = () => {
             if (isRolling) return;
             isRolling = true;
             
-            // Прячем UI
             btn.classList.add('hide');
-            header.style.opacity = '0';
             resScreen.classList.remove('show');
-            
-            tg.HapticFeedback.impactOccurred('medium');
+            tg.HapticFeedback.impactOccurred('heavy');
 
-            let startPos = { y: 0, z: 10 };
-            let startTime = Date.now();
-            let duration = 2000;
-
-            const rollProcess = setInterval(() => {
-                let elapsed = Date.now() - startTime;
-                let t = elapsed / duration;
-
-                if (t < 1) {
-                    // Парабола прыжка: y = -4 * height * (t - 0.5)^2 + height
-                    dice.position.y = Math.sin(t * Math.PI) * 4; 
-                    // Камера следит за кубиком, но немного отстает для динамики
-                    camera.position.z = 10 - t * 5;
-                    camera.position.y = 5 + t * 2;
-                    camera.lookAt(dice.position);
-                } else {
-                    clearInterval(rollProcess);
-                    stopDice();
-                }
-            }, 16);
-        };
-
-        function stopDice() {
-            isRolling = false;
             const result = Math.floor(Math.random() * 6) + 1;
             
-            const rotations = {
-                1: [0, Math.PI/2, 0],
-                6: [0, -Math.PI/2, 0],
-                2: [-Math.PI/2, 0, 0],
-                5: [Math.PI/2, 0, 0],
-                3: [0, 0, 0],
-                4: [0, Math.PI, 0]
+            // Целевые углы для каждой цифры
+            const targetRotations = {
+                1: { x: 0, y: Math.PI/2, z: 0 },
+                6: { x: 0, y: -Math.PI/2, z: 0 },
+                2: { x: -Math.PI/2, y: 0, z: 0 },
+                5: { x: Math.PI/2, y: 0, z: 0 },
+                3: { x: 0, y: 0, z: 0 },
+                4: { x: 0, y: Math.PI, z: 0 }
             };
 
-            dice.rotation.set(...rotations[result]);
-            dice.position.y = 0;
+            const target = targetRotations[result];
             
-            // Финальный подлет камеры прямо к кубику
-            camera.position.set(0, 4, 1);
-            camera.lookAt(0, 0, 0);
+            // Добавляем случайное количество полных оборотов (от 4 до 8), чтобы крутилось сильно
+            const extraSpins = {
+                x: (Math.floor(Math.random() * 3) + 4) * Math.PI * 2,
+                y: (Math.floor(Math.random() * 3) + 4) * Math.PI * 2,
+                z: (Math.floor(Math.random() * 3) + 4) * Math.PI * 2
+            };
 
-            // Показываем результат
+            const finalX = target.x + extraSpins.x;
+            const finalY = target.y + extraSpins.y;
+            const finalZ = target.z + extraSpins.z;
+
+            const startTime = Date.now();
+            const duration = 2500; // Длительность анимации
+
+            const rollAnimation = () => {
+                const now = Date.now();
+                const t = (now - startTime) / duration;
+
+                if (t < 1) {
+                    // Используем easing функцию (выход на плато), чтобы в конце замедлялось
+                    const easeOut = 1 - Math.pow(1 - t, 4); 
+                    
+                    // Вращение
+                    dice.rotation.x = finalX * easeOut;
+                    dice.rotation.y = finalY * easeOut;
+                    dice.rotation.z = finalZ * easeOut;
+
+                    // Прыжок (парабола)
+                    dice.position.y = Math.sin(t * Math.PI) * 5;
+
+                    // Приближение камеры
+                    camera.position.z = 12 - (t * 8);
+                    camera.lookAt(dice.position);
+
+                    requestAnimationFrame(rollAnimation);
+                } else {
+                    finishRoll(result);
+                }
+            };
+
+            requestAnimationFrame(rollAnimation);
+        };
+
+        function finishRoll(result) {
+            isRolling = false;
             resVal.innerText = result;
             resScreen.classList.add('show');
-            
             tg.HapticFeedback.notificationOccurred('success');
 
-            // Возвращаем кнопку через 2 секунды
             setTimeout(() => {
                 btn.classList.remove('hide');
-                header.style.opacity = '1';
-                // Возвращаем камеру плавно
-                // (Для идеальной плавности тут нужен Tween.js, но оставим так для легкости кода)
-            }, 2500);
+            }, 1500);
         }
 
         window.addEventListener('resize', () => {
