@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dice Pro VIP</title>
+    <title>Dice Pro VIP & Balloon</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -14,114 +14,94 @@
             --accent: #4ade80;
             --danger: #ff4757;
             --demo: #a78bfa;
+            --blue: #3b82f6;
         }
 
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Inter', -apple-system, sans-serif; color: white; user-select: none; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Inter', sans-serif; color: white; user-select: none; }
         
         /* === ВЕРХНЯЯ ПАНЕЛЬ === */
-        #top-bar {
-            position: absolute; top: 15px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 100;
-        }
-        
-        /* Профиль и Назад в одну строку */
+        #top-bar { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .nav-left { display: flex; flex-direction: row; gap: 8px; align-items: center; }
-        
-        #btn-back {
-            display: none; width: 40px; height: 40px; border-radius: 50%;
-            background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border);
-            color: white; font-size: 20px; font-weight: 900; cursor: pointer; align-items: center; justify-content: center;
-        }
-        
-        .glass-pill {
-            background: var(--glass); backdrop-filter: blur(15px);
-            padding: 6px 14px; border-radius: 40px; border: 1px solid var(--border);
-            display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s;
-        }
+        #btn-back { display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); color: white; font-size: 20px; font-weight: 900; cursor: pointer; align-items: center; justify-content: center; }
+        .glass-pill { background: var(--glass); backdrop-filter: blur(15px); padding: 6px 14px; border-radius: 40px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
         .glass-pill:active { transform: scale(0.95); }
-        
         #user-photo { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); object-fit: cover; }
         #user-name { font-weight: 800; font-size: 13px; }
-
-        /* Фикс вылезающего плюса */
         .balance-wrapper { display: flex; align-items: center; gap: 6px; }
         #balance-container { text-align: right; padding: 6px 12px; }
         #balance-mode { font-size: 9px; opacity: 0.6; text-transform: uppercase; letter-spacing: 1px; }
         #balance-value { font-weight: 900; font-size: 14px; display: block; white-space: nowrap; }
-        
-        #btn-deposit {
-            width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #000;
-            border: none; font-size: 20px; font-weight: bold; cursor: pointer;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-        }
+        #btn-deposit { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #000; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
         /* === УВЕДОМЛЕНИЯ === */
-        #toast {
-            position: absolute; top: 90px; left: 50%; transform: translateX(-50%);
-            background: #fff; color: #000; padding: 10px 24px; border-radius: 30px; 
-            font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none;
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
-        }
+        #toast { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 24px; border-radius: 30px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 200; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
         /* === ЭКРАНЫ === */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg); z-index: 50; transition: 0.4s; }
-        #game-screen { display: none; background: transparent; }
+        #game-screen, #balloon-screen { display: none; background: transparent; }
         #profile-screen { display: none; align-items: center; justify-content: center; z-index: 80; }
 
         /* === ГЛАВНОЕ МЕНЮ === */
         #menu-screen { align-items: center; justify-content: center; z-index: 90; }
-        .game-card { width: 280px; background: linear-gradient(145deg, #1e1e1e, #111); border-radius: 32px; border: 1px solid var(--border); overflow: hidden; }
-        .card-preview { height: 200px; background: #151515; display: flex; align-items: center; justify-content: center; font-size: 100px; }
-        .card-info { padding: 25px; display: flex; justify-content: space-between; align-items: center; }
-        .play-btn { background: #fff; color: #000; border: none; padding: 14px 28px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 16px; }
+        .games-grid { display: flex; flex-direction: column; gap: 20px; width: 280px; }
+        .game-card { width: 100%; background: linear-gradient(145deg, #1e1e1e, #111); border-radius: 32px; border: 1px solid var(--border); overflow: hidden; }
+        .card-preview { height: 140px; background: #151515; display: flex; align-items: center; justify-content: center; font-size: 70px; }
+        .card-info { padding: 20px; display: flex; justify-content: space-between; align-items: center; }
+        .play-btn { background: #fff; color: #000; border: none; padding: 12px 24px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 14px; }
 
         /* === ПРОФИЛЬ === */
         .profile-card { width: 90%; max-width: 320px; background: #111; border-radius: 30px; padding: 30px; border: 1px solid var(--border); text-align: center; }
         .profile-card img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; }
         .stat-box { background: #1a1a1a; padding: 15px; border-radius: 20px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* === ИГРОВОЙ ЭКРАН === */
+        /* === КУБИК ЭКРАН === */
         #three-container { position: absolute; width: 100%; height: 100%; z-index: -1; }
-        
-        #result-display { position: absolute; top: 25%; width: 100%; text-align: center; pointer-events: none; opacity: 0; transform: scale(0.5); transition: 0.3s; }
+        #dice-history { position: absolute; top: 75px; width: 100%; text-align: center; font-size: 14px; letter-spacing: 3px; z-index: 55; text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        #result-display { position: absolute; top: 30%; width: 100%; text-align: center; pointer-events: none; opacity: 0; transform: scale(0.5); transition: 0.3s; }
         #result-display.show { opacity: 1; transform: scale(1); }
-        #result-text { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.2); }
+        #result-text { font-size: 70px; font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.2); }
 
-        /* === НИЖНЯЯ ПАНЕЛЬ С МЕНЮ === */
-        #ui-panel {
+        /* === ШАРИК ЭКРАН === */
+        #balloon-area { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding-bottom: 80px; }
+        #balloon-history { position: absolute; top: 75px; width: 100%; text-align: center; font-size: 14px; letter-spacing: 3px; z-index: 55; }
+        #the-balloon { font-size: 80px; transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-origin: bottom center; text-shadow: 0 10px 30px rgba(255,0,0,0.3); }
+        #balloon-mult { font-size: 40px; font-weight: 900; margin-top: 20px; color: #fff; transition: 0.2s; }
+
+        /* === ПАНЕЛИ МЕНЮ (ОБЩЕЕ) === */
+        .ui-panel {
             position: absolute; bottom: 0; left: 0; width: 100%;
             background: rgba(15, 15, 15, 0.65); backdrop-filter: blur(25px);
             border-top: 1px solid var(--border); border-radius: 30px 30px 0 0;
             padding: 0 20px 30px; box-sizing: border-box; display: flex; flex-direction: column;
             transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 60;
         }
+        .ui-panel.collapsed { transform: translateY(calc(100% - 60px)); }
         
-        /* Расширенный хитбокс стрелки (теперь 60px) */
-        #ui-panel.collapsed { transform: translateY(calc(100% - 60px)); }
-
-        #panel-toggle {
-            width: 100%; height: 60px; display: flex; align-items: center; justify-content: center;
-            background: none; border: none; color: #888; font-size: 24px; cursor: pointer; outline: none;
+        /* Хедер панели (Стрелка + Мини-кнопка) */
+        .panel-header { width: 100%; height: 60px; display: flex; align-items: center; position: relative; }
+        .panel-toggle { flex: 1; height: 100%; background: none; border: none; color: #888; font-size: 16px; cursor: pointer; outline: none; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .ui-panel:not(.collapsed) .panel-toggle { transform: rotate(180deg); }
+        
+        .mini-play-btn {
+            position: absolute; right: 0; height: 40px; padding: 0 20px;
+            border-radius: 14px; border: none; background: var(--accent); color: #000;
+            font-size: 14px; font-weight: 900; cursor: pointer;
+            opacity: 0; pointer-events: none; transition: 0.3s;
         }
-        #panel-toggle::before { content: "▼"; font-size: 16px; transition: 0.3s; }
-        #ui-panel.collapsed #panel-toggle::before { content: "▲"; }
+        .ui-panel.collapsed .mini-play-btn { opacity: 1; pointer-events: all; }
 
         .ui-content { display: flex; flex-direction: column; gap: 15px; opacity: 1; transition: 0.3s; }
-        #ui-panel.collapsed .ui-content { opacity: 0; pointer-events: none; }
-        
+        .ui-panel.collapsed .ui-content { opacity: 0; pointer-events: none; }
         .locked { opacity: 0.4; pointer-events: none; }
 
-        /* Сетка условий победы */
+        /* Сетки и кнопки */
         .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .bet-grid.sectors { grid-template-columns: repeat(3, 1fr); }
         .bet-grid.numbers { grid-template-columns: repeat(6, 1fr); }
-
         .choice-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 0; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; }
         .choice-btn.active { background: #fff; color: #000 !important; border-color: #fff; }
         .choice-btn.mult-1-9 { color: #a78bfa; } .choice-btn.mult-2-8 { color: #60a5fa; } .choice-btn.mult-4-5 { color: #facc15; }
 
-        /* Ввод ставки */
         .bet-box { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 20px; padding: 6px; border: 1px solid var(--border); }
         .bet-box button { width: 50px; height: 50px; border-radius: 15px; border: none; background: rgba(255,255,255,0.08); color: #fff; font-size: 24px; cursor: pointer; }
         .bet-box input { flex: 1; background: none; border: none; color: #fff; text-align: center; font-size: 20px; font-weight: 800; outline: none; }
@@ -129,16 +109,8 @@
         .sys-row { display: flex; gap: 10px; }
         .sys-btn { flex: 1; padding: 16px; border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; cursor: pointer; }
         .sys-btn.active { border-color: #facc15; color: #facc15; background: rgba(250, 204, 21, 0.1); }
-
-        #main-roll-btn { width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--accent); color: #000; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-
-        /* Кнопка "ИГРАТЬ" в свернутом виде */
-        #mini-roll-btn {
-            position: absolute; bottom: 15px; left: 15px; width: calc(100% - 30px);
-            padding: 15px; border-radius: 16px; border: none; background: var(--accent);
-            color: #000; font-size: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer;
-            display: none; z-index: 55; box-shadow: 0 5px 15px rgba(0,0,0,0.5);
-        }
+        
+        .main-action-btn { width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--accent); color: #000; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 
         /* === МОДАЛКИ === */
         .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 300; display: none; align-items: center; justify-content: center; }
@@ -171,11 +143,20 @@
     <div id="toast"></div>
 
     <div id="menu-screen" class="screen">
-        <div class="game-card">
-            <div class="card-preview">🎲</div>
-            <div class="card-info">
-                <h2 style="margin: 0; font-size: 24px; font-weight: 900;">Кубик</h2>
-                <button class="play-btn" id="start-game-btn">Играть</button>
+        <div class="games-grid">
+            <div class="game-card">
+                <div class="card-preview">🎲</div>
+                <div class="card-info">
+                    <h2 style="margin: 0; font-size: 22px; font-weight: 900;">Кубик</h2>
+                    <button class="play-btn" onclick="openGame('dice')">Играть</button>
+                </div>
+            </div>
+            <div class="game-card">
+                <div class="card-preview" style="font-size: 70px;">🎈</div>
+                <div class="card-info">
+                    <h2 style="margin: 0; font-size: 22px; font-weight: 900;">Шарик</h2>
+                    <button class="play-btn" onclick="openGame('balloon')">Играть</button>
+                </div>
             </div>
         </div>
     </div>
@@ -199,15 +180,17 @@
     </div>
 
     <div id="game-screen" class="screen">
+        <div id="dice-history"></div>
         <div id="three-container"></div>
         <div id="result-display"><span id="result-text"></span></div>
 
-        <button id="mini-roll-btn">ИГРАТЬ</button>
-
-        <div id="ui-panel">
-            <button id="panel-toggle"></button>
+        <div id="ui-panel-dice" class="ui-panel">
+            <div class="panel-header">
+                <button class="panel-toggle" onclick="document.getElementById('ui-panel-dice').classList.toggle('collapsed')">▼</button>
+                <button class="mini-play-btn" id="dice-mini-btn" onclick="btnRollClick()">ИГРАТЬ</button>
+            </div>
             
-            <div class="ui-content" id="lock-zone">
+            <div class="ui-content" id="dice-lock-zone">
                 <div style="font-size: 11px; color: #888; font-weight: bold; margin-bottom: 5px;">СТАНДАРТ (1.9x)</div>
                 <div class="bet-grid">
                     <button class="choice-btn mult-1-9 active" data-cond="even">ЧЕТ</button>
@@ -215,14 +198,12 @@
                     <button class="choice-btn mult-1-9" data-cond="gt3">> 3</button>
                     <button class="choice-btn mult-1-9" data-cond="lt4">< 4</button>
                 </div>
-
                 <div style="font-size: 11px; color: #888; font-weight: bold; margin-top: 10px; margin-bottom: 5px;">СЕКТОРА (2.8x)</div>
                 <div class="bet-grid sectors">
                     <button class="choice-btn mult-2-8" data-cond="sec1">1 - 2</button>
                     <button class="choice-btn mult-2-8" data-cond="sec2">3 - 4</button>
                     <button class="choice-btn mult-2-8" data-cond="sec3">5 - 6</button>
                 </div>
-
                 <div style="font-size: 11px; color: #888; font-weight: bold; margin-top: 10px; margin-bottom: 5px;">ЧИСЛО (4.5x)</div>
                 <div class="bet-grid numbers">
                     <button class="choice-btn mult-4-5" data-cond="num1">1</button>
@@ -234,9 +215,9 @@
                 </div>
 
                 <div class="bet-box" style="margin-top: 15px;">
-                    <button id="bet-down">−</button>
+                    <button onclick="changeBet(false)">−</button>
                     <input type="number" id="bet-val" step="0.05">
-                    <button id="bet-up">+</button>
+                    <button onclick="changeBet(true)">+</button>
                 </div>
 
                 <div class="sys-row" style="margin-top: 15px;">
@@ -244,7 +225,42 @@
                     <button class="sys-btn" id="auto-open" style="flex: 0.3;">☰</button>
                 </div>
 
-                <button id="main-roll-btn" style="margin-top: 15px;">БРОСИТЬ КУБИК</button>
+                <button class="main-action-btn" id="dice-main-btn" onclick="btnRollClick()" style="margin-top: 15px;">БРОСИТЬ КУБИК</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="balloon-screen" class="screen">
+        <div id="balloon-history"></div>
+        <div id="balloon-area">
+            <div id="the-balloon">🎈</div>
+            <div id="balloon-mult">1.00x</div>
+        </div>
+
+        <div id="ui-panel-balloon" class="ui-panel">
+            <div class="panel-header">
+                <button class="panel-toggle" onclick="document.getElementById('ui-panel-balloon').classList.toggle('collapsed')">▼</button>
+                <button class="mini-play-btn" id="ball-mini-btn" onclick="handleBalloonAction()">ИГРАТЬ</button>
+            </div>
+            
+            <div class="ui-content" id="balloon-lock-zone">
+                <div style="font-size: 11px; color: #888; font-weight: bold; margin-bottom: 5px;">ВЫБЕРИТЕ РИСК (Множитель за надув)</div>
+                <div class="bet-grid sectors">
+                    <button class="choice-btn risk-btn active" style="color:var(--accent)" data-risk="low">Малый<br>(x1.2)</button>
+                    <button class="choice-btn risk-btn" style="color:#facc15" data-risk="med">Средний<br>(x1.5)</button>
+                    <button class="choice-btn risk-btn" style="color:var(--danger)" data-risk="high">Высокий<br>(x2.0)</button>
+                </div>
+
+                <div class="bet-box" style="margin-top: 15px;">
+                    <button onclick="changeBet(false)">−</button>
+                    <input type="number" id="bet-val-bal" step="0.05" readonly>
+                    <button onclick="changeBet(true)">+</button>
+                </div>
+
+                <div class="sys-row" style="margin-top: 15px;">
+                    <button class="sys-btn" id="ball-cashout-btn" onclick="cashoutBalloon()" style="display:none; background: var(--blue); border-color: var(--blue);">ВЫВЕСТИ</button>
+                    <button class="main-action-btn" id="ball-main-btn" onclick="handleBalloonAction()">ИГРАТЬ</button>
+                </div>
             </div>
         </div>
     </div>
@@ -254,7 +270,7 @@
             <h2 style="margin: 0 0 10px;">Пополнение</h2>
             <p style="font-size: 13px; color: #888;">Минимум 0.1 USDT</p>
             <input type="number" id="dep-amount" value="1.0" step="0.1" min="0.1">
-            <button class="modal-btn" id="pay-crypto-btn" style="background: #2b6bf3; color: #fff;">ОПЛАТИТЬ ЧЕРЕЗ CRYPTO BOT</button>
+            <button class="modal-btn" id="pay-crypto-btn" style="background: #2b6bf3; color: #fff;">ОПЛАТИТЬ</button>
             <button class="modal-btn close-modal" style="background: #222; color: #fff;">ОТМЕНА</button>
         </div>
     </div>
@@ -272,38 +288,22 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
+        // --- ГЛОБАЛЬНЫЙ СТЕЙТ ---
         let st = {
             isDemo: true, demoBal: 1000, realBal: 0.00,
             betDemo: 1, betReal: 0.05, currentBet: 1,
-            cond: 'even', mult: 1.9, fast: false, auto: false, autoCount: 0, rolling: false
+            activeGame: null
         };
 
-        const rules = {
-            'even': { m: 1.9, check: (r) => r % 2 === 0 },
-            'odd':  { m: 1.9, check: (r) => r % 2 !== 0 },
-            'gt3':  { m: 1.9, check: (r) => r > 3 },
-            'lt4':  { m: 1.9, check: (r) => r < 4 },
-            'sec1': { m: 2.8, check: (r) => r === 1 || r === 2 },
-            'sec2': { m: 2.8, check: (r) => r === 3 || r === 4 },
-            'sec3': { m: 2.8, check: (r) => r === 5 || r === 6 },
-            'num1': { m: 4.5, check: (r) => r === 1 },
-            'num2': { m: 4.5, check: (r) => r === 2 },
-            'num3': { m: 4.5, check: (r) => r === 3 },
-            'num4': { m: 4.5, check: (r) => r === 4 },
-            'num5': { m: 4.5, check: (r) => r === 5 },
-            'num6': { m: 4.5, check: (r) => r === 6 },
-        };
-
+        // --- ИНИЦИАЛИЗАЦИЯ ПОЛЬЗОВАТЕЛЯ ---
         if (tg.initDataUnsafe?.user) {
             const u = tg.initDataUnsafe.user;
             document.getElementById('user-name').innerText = u.first_name;
             document.getElementById('profile-name-large').innerText = u.first_name;
-            if (u.photo_url) {
-                document.getElementById('user-photo').src = u.photo_url;
-                document.getElementById('profile-img-large').src = u.photo_url;
-            }
+            if (u.photo_url) { document.getElementById('user-photo').src = u.photo_url; document.getElementById('profile-img-large').src = u.photo_url; }
         }
 
+        // --- БАЛАНС И UI ---
         function updateBal() {
             const m = document.getElementById('balance-mode'); const v = document.getElementById('balance-value');
             if (st.isDemo) {
@@ -313,125 +313,100 @@
             }
             document.getElementById('prof-real-bal').innerText = st.realBal.toFixed(2);
             document.getElementById('prof-demo-bal').innerText = st.demoBal.toFixed(0);
-        }
-
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.opacity = '1';
-            setTimeout(() => t.style.opacity = '0', 2500);
+            document.getElementById('bet-val').value = st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2);
+            document.getElementById('bet-val-bal').value = document.getElementById('bet-val').value;
         }
 
         function switchBalance() {
-            if (st.rolling) return;
+            if (diceSt.rolling || ballSt.playing) return;
             st.isDemo = !st.isDemo;
             st.currentBet = st.isDemo ? st.betDemo : st.betReal;
-            document.getElementById('bet-val').value = st.currentBet.toFixed(st.isDemo ? 0 : 2);
             updateBal(); tg.HapticFeedback.selectionChanged();
         }
 
         function changeBet(isUp) {
+            if (diceSt.rolling || ballSt.playing) return;
             const step = st.isDemo ? st.betDemo : st.betReal;
             const min = st.isDemo ? 1 : 0.05;
             if (isUp) st.currentBet += step; else st.currentBet = Math.max(min, st.currentBet - step);
             st.currentBet = parseFloat(st.currentBet.toFixed(2)); 
-            document.getElementById('bet-val').value = st.isDemo ? st.currentBet : st.currentBet.toFixed(2);
-            showToast(`Возможный выигрыш: ${(st.currentBet * st.mult).toFixed(2)}`);
-            tg.HapticFeedback.selectionChanged();
+            updateBal(); tg.HapticFeedback.selectionChanged();
         }
 
         document.getElementById('balance-container').onclick = switchBalance;
-        document.getElementById('bet-up').onclick = () => changeBet(true);
-        document.getElementById('bet-down').onclick = () => changeBet(false);
-        document.getElementById('bet-val').onchange = (e) => {
-            const min = st.isDemo ? 1 : 0.05;
-            st.currentBet = Math.max(min, parseFloat(e.target.value) || min);
-            e.target.value = st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2);
+
+        // --- НАВИГАЦИЯ ---
+        function openGame(game) {
+            document.getElementById('menu-screen').style.display = 'none';
+            document.getElementById('btn-back').style.display = 'flex';
+            if (game === 'dice') {
+                document.getElementById('game-screen').style.display = 'flex';
+                st.activeGame = 'dice';
+                if(!scene) init3D();
+            } else if (game === 'balloon') {
+                document.getElementById('balloon-screen').style.display = 'flex';
+                st.activeGame = 'balloon';
+            }
+        }
+
+        document.getElementById('btn-back').onclick = () => {
+            if(diceSt.rolling || ballSt.playing) return;
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById('menu-screen').style.display = 'flex';
+            document.getElementById('btn-back').style.display = 'none';
+            st.activeGame = null;
         };
 
-        document.querySelectorAll('.choice-btn').forEach(btn => {
+        document.getElementById('btn-profile').onclick = () => {
+            if(diceSt.rolling || ballSt.playing) return;
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById('profile-screen').style.display = 'flex';
+            document.getElementById('btn-back').style.display = 'flex';
+        };
+
+        // --- ИСТОРИЯ ИГР ---
+        let dHist = [], bHist = [];
+        function addHist(game, win) {
+            const arr = game === 'dice' ? dHist : bHist;
+            const elId = game === 'dice' ? 'dice-history' : 'balloon-history';
+            arr.push(win ? '🟩' : '🟥');
+            if(arr.length > 10) arr.shift();
+            document.getElementById(elId).innerText = arr.join(' ');
+        }
+
+        // ==========================================
+        //               ИГРА: КУБИК
+        // ==========================================
+        let diceSt = { cond: 'even', mult: 1.9, fast: false, auto: false, autoCount: 0, rolling: false };
+        
+        const dRules = {
+            'even': { m: 1.9, check: r => r%2===0 }, 'odd': { m: 1.9, check: r => r%2!==0 },
+            'gt3': { m: 1.9, check: r => r>3 }, 'lt4': { m: 1.9, check: r => r<4 },
+            'sec1': { m: 2.8, check: r => r===1||r===2 }, 'sec2': { m: 2.8, check: r => r===3||r===4 }, 'sec3': { m: 2.8, check: r => r===5||r===6 },
+            'num1': { m: 4.5, check: r => r===1 }, 'num2': { m: 4.5, check: r => r===2 }, 'num3': { m: 4.5, check: r => r===3 },
+            'num4': { m: 4.5, check: r => r===4 }, 'num5': { m: 4.5, check: r => r===5 }, 'num6': { m: 4.5, check: r => r===6 },
+        };
+
+        document.querySelectorAll('#game-screen .choice-btn').forEach(btn => {
             btn.onclick = (e) => {
-                document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('#game-screen .choice-btn').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-                st.cond = e.target.dataset.cond; st.mult = rules[st.cond].m;
-                showToast(`Множитель: ${st.mult}x\nВыигрыш: ${(st.currentBet * st.mult).toFixed(2)}`);
+                diceSt.cond = e.target.dataset.cond; diceSt.mult = dRules[diceSt.cond].m;
                 tg.HapticFeedback.selectionChanged();
             };
         });
 
-        const screens = { menu: 'menu-screen', game: 'game-screen', prof: 'profile-screen' };
-        function showScreen(id) {
-            Object.values(screens).forEach(s => document.getElementById(s).style.display = 'none');
-            document.getElementById(id).style.display = 'flex';
-            document.getElementById('btn-back').style.display = id === screens.menu ? 'none' : 'flex';
-            // Скрываем мини-кнопку если ушли из игры
-            if (id !== screens.game) document.getElementById('mini-roll-btn').style.display = 'none';
-            else if (document.getElementById('ui-panel').classList.contains('collapsed')) {
-                document.getElementById('mini-roll-btn').style.display = 'block';
-            }
-        }
-
-        document.getElementById('btn-back').onclick = () => showScreen(screens.menu);
-        document.getElementById('btn-profile').onclick = () => showScreen(screens.prof);
-        document.getElementById('start-game-btn').onclick = () => { showScreen(screens.game); if(!scene) init3D(); };
-
-        // Логика сворачивания меню
-        document.getElementById('panel-toggle').onclick = () => {
-            const p = document.getElementById('ui-panel');
-            const mBtn = document.getElementById('mini-roll-btn');
-            p.classList.toggle('collapsed');
-            if(p.classList.contains('collapsed')) {
-                setTimeout(() => { mBtn.style.display = 'block'; }, 200);
-            } else {
-                mBtn.style.display = 'none';
-            }
-        };
-
-        document.getElementById('fast-toggle').onclick = (e) => { st.fast = !st.fast; e.target.classList.toggle('active'); tg.HapticFeedback.impactOccurred('light'); };
-        document.querySelectorAll('.close-modal').forEach(b => b.onclick = (e) => e.target.closest('.modal-overlay').style.display = 'none');
-        
-        const openDep = () => document.getElementById('deposit-modal').style.display = 'flex';
-        document.getElementById('btn-deposit').onclick = openDep; document.getElementById('prof-deposit-btn').onclick = openDep;
-        
-        document.getElementById('pay-crypto-btn').onclick = () => {
-            const amt = parseFloat(document.getElementById('dep-amount').value);
-            if (amt < 0.1) { showToast("Минимум 0.1 USDT!"); return; }
-            tg.HapticFeedback.notificationOccurred('success');
-            document.getElementById('deposit-modal').style.display = 'none';
-            
-            // Отправляем данные в бота и закрываем web app
-            tg.sendData(JSON.stringify({ action: "deposit", amount: amt })); 
-            tg.close();
-        };
-
-        document.getElementById('auto-open').onclick = () => document.getElementById('auto-modal').style.display = 'flex';
-        document.getElementById('auto-start').onclick = () => {
-            st.autoCount = parseInt(document.getElementById('auto-rounds').value) || 5;
-            st.auto = true;
-            document.getElementById('auto-modal').style.display = 'none';
-            
-            // Настраиваем кнопки
-            const rb = document.getElementById('main-roll-btn');
-            const mb = document.getElementById('mini-roll-btn');
-            rb.innerText = "СТОП (АВТО)"; rb.style.background = "var(--danger)"; rb.style.color = "#fff";
-            mb.innerText = "СТОП (АВТО)"; mb.style.background = "var(--danger)"; mb.style.color = "#fff";
-            
-            rollDice();
-        };
+        document.getElementById('fast-toggle').onclick = (e) => { diceSt.fast = !diceSt.fast; e.target.classList.toggle('active'); tg.HapticFeedback.impactOccurred('light'); };
 
         let scene, camera, renderer, dice;
-        const rots = {
-            1: {x:0, y:-Math.PI/2, z:0}, 6: {x:0, y:Math.PI/2, z:0},
-            2: {x:Math.PI/2, y:0, z:0}, 5: {x:-Math.PI/2, y:0, z:0},
-            3: {x:0, y:0, z:0}, 4: {x:0, y:Math.PI, z:0}
-        };
+        const rots = { 1:{x:0,y:-Math.PI/2,z:0}, 6:{x:0,y:Math.PI/2,z:0}, 2:{x:Math.PI/2,y:0,z:0}, 5:{x:-Math.PI/2,y:0,z:0}, 3:{x:0,y:0,z:0}, 4:{x:0,y:Math.PI,z:0} };
 
         function init3D() {
             scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100); camera.position.z = 8;
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('three-container').appendChild(renderer.domElement);
-            const light = new THREE.DirectionalLight(0xffffff, 1.3); light.position.set(2,5,5); scene.add(light, new THREE.AmbientLight(0xffffff, 0.7));
+            scene.add(new THREE.DirectionalLight(0xffffff, 1.3), new THREE.AmbientLight(0xffffff, 0.7));
 
-            const geom = new THREE.BoxGeometry(1.6, 1.6, 1.6);
             const makeFace = (n) => {
                 const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const ctx = cv.getContext('2d');
                 ctx.fillStyle = '#181818'; ctx.beginPath(); ctx.roundRect(0,0,256,256,50); ctx.fill(); ctx.fillStyle = '#fff';
@@ -439,92 +414,208 @@
                 p[n].forEach(c => { ctx.beginPath(); ctx.arc(c[0],c[1],22,0,7); ctx.fill(); });
                 return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: 0.2 });
             };
-            dice = new THREE.Mesh(geom, [makeFace(1), makeFace(6), makeFace(2), makeFace(5), makeFace(3), makeFace(4)]);
-            dice.rotation.x = 0.2; scene.add(dice); animate();
+            dice = new THREE.Mesh(new THREE.BoxGeometry(1.6,1.6,1.6), [makeFace(1), makeFace(6), makeFace(2), makeFace(5), makeFace(3), makeFace(4)]);
+            dice.rotation.x = 0.2; scene.add(dice);
+            const anim = () => { requestAnimationFrame(anim); renderer.render(scene, camera); }; anim();
         }
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
-
-        document.getElementById('main-roll-btn').onclick = btnRollClick;
-        document.getElementById('mini-roll-btn').onclick = btnRollClick;
 
         function btnRollClick() {
-            if (st.auto && !st.rolling) { stopAuto(); return; }
-            if (st.auto && st.rolling) { stopAuto(); return; } // Позволяет отжать кнопку "Стоп" во время анимации
+            if (diceSt.auto) { diceSt.auto = false; updateDiceBtns(); return; }
+            if (diceSt.rolling) return;
             rollDice();
         }
 
-        function stopAuto() {
-            st.auto = false; // Авто-игра отключится после завершения текущего броска
-            const rb = document.getElementById('main-roll-btn');
-            const mb = document.getElementById('mini-roll-btn');
-            rb.innerText = "БРОСИТЬ КУБИК"; rb.style.background = "var(--accent)"; rb.style.color = "#000";
-            mb.innerText = "ИГРАТЬ"; mb.style.background = "var(--accent)"; mb.style.color = "#000";
+        function updateDiceBtns() {
+            const txt = diceSt.auto ? "СТОП (АВТО)" : "БРОСИТЬ КУБИК";
+            const bg = diceSt.auto ? "var(--danger)" : "var(--accent)";
+            const c = diceSt.auto ? "#fff" : "#000";
+            const m = document.getElementById('dice-main-btn'), mini = document.getElementById('dice-mini-btn');
+            m.innerText = txt; m.style.background = bg; m.style.color = c;
+            mini.innerText = diceSt.auto ? "СТОП" : "ИГРАТЬ"; mini.style.background = bg; mini.style.color = c;
         }
 
         function rollDice() {
-            if (st.rolling) return;
-
-            if (st.isDemo) {
-                st.demoBal = Math.max(100, st.demoBal - st.currentBet);
-            } else {
-                if (st.realBal < st.currentBet) { showToast("Недостаточно USDT!"); stopAuto(); return; }
-                st.realBal -= st.currentBet;
-            }
+            if (st.isDemo) { st.demoBal = Math.max(100, st.demoBal - st.currentBet); } 
+            else { if(st.realBal < st.currentBet) { alert("Недостаточно баланса!"); diceSt.auto = false; updateDiceBtns(); return; } st.realBal -= st.currentBet; }
             updateBal();
 
-            st.rolling = true;
-            document.getElementById('lock-zone').classList.add('locked');
+            diceSt.rolling = true;
+            document.getElementById('dice-lock-zone').classList.add('locked');
             document.getElementById('result-display').classList.remove('show');
 
             const res = Math.floor(Math.random() * 6) + 1;
-            const target = rots[res];
-            const startRot = { x: dice.rotation.x, y: dice.rotation.y, z: dice.rotation.z };
-            const spins = st.fast ? 2 : 6;
-            const dur = st.fast ? 500 : 1600;
-            const startT = Date.now();
+            const target = rots[res]; const sRot = { x: dice.rotation.x, y: dice.rotation.y, z: dice.rotation.z };
+            const spins = diceSt.fast ? 2 : 6, dur = diceSt.fast ? 500 : 1600, startT = Date.now();
 
-            const rollAnim = () => {
-                const t = Math.min((Date.now() - startT) / dur, 1);
-                const ease = 1 - Math.pow(1 - t, 3);
-                dice.rotation.x = startRot.x + (target.x + spins*Math.PI*2 - startRot.x) * ease;
-                dice.rotation.y = startRot.y + (target.y + spins*Math.PI*2 - startRot.y) * ease;
-                dice.rotation.z = startRot.z + (target.z + spins*Math.PI*2 - startRot.z) * ease;
-                if (t < 1) requestAnimationFrame(rollAnim); else finishRoll(res);
-            };
-            requestAnimationFrame(rollAnim); tg.HapticFeedback.impactOccurred('medium');
+            const anim = () => {
+                const t = Math.min((Date.now() - startT) / dur, 1); const ease = 1 - Math.pow(1 - t, 3);
+                dice.rotation.x = sRot.x + (target.x + spins*Math.PI*2 - sRot.x) * ease;
+                dice.rotation.y = sRot.y + (target.y + spins*Math.PI*2 - sRot.y) * ease;
+                dice.rotation.z = sRot.z + (target.z + spins*Math.PI*2 - sRot.z) * ease;
+                if (t < 1) requestAnimationFrame(anim); else finishDice(res);
+            }; requestAnimationFrame(anim); tg.HapticFeedback.impactOccurred('medium');
         }
 
-        function finishRoll(res) {
+        function finishDice(res) {
             dice.rotation.set(rots[res].x, rots[res].y, rots[res].z);
-            const isWin = rules[st.cond].check(res);
-            const resTxt = document.getElementById('result-text');
+            const isWin = dRules[diceSt.cond].check(res);
+            const rTxt = document.getElementById('result-text');
             
+            addHist('dice', isWin);
+
             if (isWin) {
-                const prize = st.currentBet * st.mult;
-                if (st.isDemo) st.demoBal += prize; else st.realBal += prize;
-                resTxt.innerText = `+${prize.toFixed(st.isDemo?0:2)}`; resTxt.style.color = "var(--accent)";
+                const pz = st.currentBet * diceSt.mult;
+                if(st.isDemo) st.demoBal += pz; else st.realBal += pz;
+                rTxt.innerText = `+${pz.toFixed(st.isDemo?0:2)}`; rTxt.style.color = "var(--accent)";
                 tg.HapticFeedback.notificationOccurred('success');
             } else {
-                resTxt.innerText = `−${st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2)}`; resTxt.style.color = "var(--danger)";
+                rTxt.innerText = `−${st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2)}`; rTxt.style.color = "var(--danger)";
                 tg.HapticFeedback.notificationOccurred('error');
             }
             
             document.getElementById('result-display').classList.add('show'); updateBal();
 
             setTimeout(() => {
-                st.rolling = false;
-                
-                if (st.auto) {
-                    st.autoCount--;
-                    if (st.autoCount > 0) setTimeout(rollDice, 500);
-                    else stopAuto();
-                } else {
-                    document.getElementById('lock-zone').classList.remove('locked');
-                }
-            }, st.fast ? 500 : 1200);
+                diceSt.rolling = false;
+                if (diceSt.auto) { diceSt.autoCount--; if(diceSt.autoCount>0) rollDice(); else { diceSt.auto = false; updateDiceBtns(); document.getElementById('dice-lock-zone').classList.remove('locked'); } }
+                else { document.getElementById('dice-lock-zone').classList.remove('locked'); }
+            }, diceSt.fast ? 500 : 1200);
         }
+
+        // Авто-игра кубик
+        document.getElementById('auto-open').onclick = () => document.getElementById('auto-modal').style.display = 'flex';
+        document.getElementById('auto-start').onclick = () => {
+            diceSt.autoCount = parseInt(document.getElementById('auto-rounds').value) || 5; diceSt.auto = true;
+            document.getElementById('auto-modal').style.display = 'none'; updateDiceBtns(); rollDice();
+        };
+
+
+        // ==========================================
+        //               ИГРА: ШАРИК
+        // ==========================================
+        let ballSt = { playing: false, pumping: false, risk: 'low', mult: 1.0, popChance: 0.05, pumps: 0 };
+        const bParams = { 
+            'low': { step: 1.2, basePop: 0.03, popStep: 0.03 }, 
+            'med': { step: 1.5, basePop: 0.10, popStep: 0.06 }, 
+            'high':{ step: 2.0, basePop: 0.20, popStep: 0.12 } 
+        };
+
+        document.querySelectorAll('.risk-btn').forEach(btn => {
+            btn.onclick = (e) => {
+                if(ballSt.playing) return;
+                document.querySelectorAll('.risk-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                ballSt.risk = e.target.dataset.risk;
+                tg.HapticFeedback.selectionChanged();
+            };
+        });
+
+        function handleBalloonAction() {
+            if(ballSt.pumping) return;
+            if(!ballSt.playing) {
+                // Старт игры (Первый надув)
+                if (st.isDemo) { st.demoBal = Math.max(100, st.demoBal - st.currentBet); } 
+                else { if(st.realBal < st.currentBet) { alert("Недостаточно!"); return; } st.realBal -= st.currentBet; }
+                updateBal();
+                
+                ballSt.playing = true; ballSt.mult = 1.0; ballSt.pumps = 0;
+                const prm = bParams[ballSt.risk]; ballSt.popChance = prm.basePop;
+                
+                document.getElementById('the-balloon').innerText = '🎈';
+                document.getElementById('the-balloon').style.transform = 'scale(1)';
+                document.getElementById('balloon-mult').innerText = '1.00x';
+                document.getElementById('balloon-mult').style.color = '#fff';
+                
+                document.getElementById('ball-main-btn').innerText = 'НАДУТЬ ПУЗЫРЬ';
+                document.getElementById('ball-mini-btn').innerText = 'НАДУТЬ';
+                document.getElementById('ball-cashout-btn').style.display = 'block';
+                
+                // Блокируем смену ставки и риска
+                Array.from(document.getElementById('balloon-lock-zone').children).forEach(el => {
+                    if(!el.classList.contains('sys-row')) el.classList.add('locked');
+                });
+                
+                pumpBalloon();
+            } else {
+                // Продолжение надува
+                pumpBalloon();
+            }
+        }
+
+        function pumpBalloon() {
+            ballSt.pumping = true;
+            document.getElementById('ball-main-btn').classList.add('locked');
+            document.getElementById('ball-cashout-btn').classList.add('locked');
+            
+            tg.HapticFeedback.impactOccurred('heavy');
+            
+            setTimeout(() => {
+                const rng = Math.random();
+                if (rng < ballSt.popChance) {
+                    // Лопнул
+                    document.getElementById('the-balloon').innerText = '💥';
+                    document.getElementById('balloon-mult').innerText = 'ЛОПНУЛ!';
+                    document.getElementById('balloon-mult').style.color = 'var(--danger)';
+                    addHist('balloon', false);
+                    tg.HapticFeedback.notificationOccurred('error');
+                    resetBalloonUI();
+                } else {
+                    // Успешный надув
+                    ballSt.pumps++;
+                    const prm = bParams[ballSt.risk];
+                    ballSt.mult *= prm.step;
+                    ballSt.popChance += prm.popStep;
+                    
+                    document.getElementById('balloon-mult').innerText = ballSt.mult.toFixed(2) + 'x';
+                    document.getElementById('the-balloon').style.transform = `scale(${1 + ballSt.pumps * 0.3})`;
+                    tg.HapticFeedback.notificationOccurred('success');
+                    
+                    ballSt.pumping = false;
+                    document.getElementById('ball-main-btn').classList.remove('locked');
+                    document.getElementById('ball-cashout-btn').classList.remove('locked');
+                }
+            }, 400);
+        }
+
+        function cashoutBalloon() {
+            if(!ballSt.playing || ballSt.pumping) return;
+            const win = st.currentBet * ballSt.mult;
+            if(st.isDemo) st.demoBal += win; else st.realBal += win;
+            
+            document.getElementById('balloon-mult').innerText = `+${win.toFixed(2)}`;
+            document.getElementById('balloon-mult').style.color = 'var(--accent)';
+            addHist('balloon', true);
+            tg.HapticFeedback.notificationOccurred('success');
+            updateBal();
+            resetBalloonUI();
+        }
+
+        function resetBalloonUI() {
+            ballSt.playing = false; ballSt.pumping = false;
+            setTimeout(() => {
+                document.getElementById('the-balloon').style.transform = 'scale(1)';
+                document.getElementById('ball-main-btn').innerText = 'ИГРАТЬ';
+                document.getElementById('ball-mini-btn').innerText = 'ИГРАТЬ';
+                document.getElementById('ball-cashout-btn').style.display = 'none';
+                document.getElementById('ball-main-btn').classList.remove('locked');
+                Array.from(document.getElementById('balloon-lock-zone').children).forEach(el => el.classList.remove('locked'));
+            }, 1500);
+        }
+
+        // --- МОДАЛКИ (Закрытие и Депозит) ---
+        document.querySelectorAll('.close-modal').forEach(b => b.onclick = e => e.target.closest('.modal-overlay').style.display = 'none');
+        const openDep = () => document.getElementById('deposit-modal').style.display = 'flex';
+        document.getElementById('btn-deposit').onclick = openDep; document.getElementById('prof-deposit-btn').onclick = openDep;
+        
+        document.getElementById('pay-crypto-btn').onclick = () => {
+            const amt = parseFloat(document.getElementById('dep-amount').value);
+            if (amt < 0.1) return alert("Минимум 0.1 USDT!");
+            document.getElementById('deposit-modal').style.display = 'none';
+            tg.sendData(JSON.stringify({ action: "deposit", amount: amt })); 
+            tg.close();
+        };
 
         updateBal();
     </script>
 </body>
-    </html>
+</html>
