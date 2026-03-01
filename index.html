@@ -3,23 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dice Pro VIP & Rocket</title>
+    <title>Dice Pro VIP</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
         :root {
-            --bg: #0a0a0a; --glass: rgba(20, 20, 20, 0.6); --border: rgba(255, 255, 255, 0.1);
-            --accent: #4ade80; --danger: #ff4757; --demo: #a78bfa; --rocket: #ff9f43;
+            --bg: #0a0a0a;
+            --glass: rgba(20, 20, 20, 0.6);
+            --border: rgba(255, 255, 255, 0.1);
+            --accent: #4ade80;
+            --danger: #ff4757;
+            --demo: #a78bfa;
         }
 
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Inter', sans-serif; color: white; user-select: none; }
+        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Inter', -apple-system, sans-serif; color: white; user-select: none; }
         
         /* === ВЕРХНЯЯ ПАНЕЛЬ === */
         #top-bar { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 100; }
         .nav-left { display: flex; flex-direction: row; gap: 8px; align-items: center; }
+        
         #btn-back { display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); color: white; font-size: 20px; font-weight: 900; cursor: pointer; align-items: center; justify-content: center; }
         .glass-pill { background: var(--glass); backdrop-filter: blur(15px); padding: 6px 14px; border-radius: 40px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; transition: 0.2s; }
         .glass-pill:active { transform: scale(0.95); }
+        
         #user-photo { width: 28px; height: 28px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.3); object-fit: cover; }
         #user-name { font-weight: 800; font-size: 13px; }
 
@@ -29,76 +35,89 @@
         #balance-value { font-weight: 900; font-size: 14px; display: block; white-space: nowrap; }
         #btn-deposit { width: 34px; height: 34px; border-radius: 50%; background: var(--accent); color: #000; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-        #toast { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 24px; border-radius: 30px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none; transition: 0.3s; z-index: 200; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+        #toast { position: absolute; top: 90px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 24px; border-radius: 30px; font-weight: 800; font-size: 14px; opacity: 0; pointer-events: none; transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); z-index: 200; box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
 
         /* === ЭКРАНЫ === */
         .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; background: var(--bg); z-index: 50; transition: 0.4s; }
-        #game-screen, #rocket-screen { display: none; background: transparent; }
+        #game-screen { display: none; background: transparent; }
         #profile-screen { display: none; align-items: center; justify-content: center; z-index: 80; }
 
-        /* === ГЛАВНОЕ МЕНЮ === */
-        #menu-screen { align-items: center; justify-content: center; z-index: 90; }
-        .games-container { display: flex; gap: 20px; overflow-x: auto; padding: 20px; width: 100%; box-sizing: border-box; justify-content: center; }
-        .game-card { width: 160px; background: linear-gradient(145deg, #1e1e1e, #111); border-radius: 24px; border: 1px solid var(--border); flex-shrink: 0; overflow: hidden; }
-        .card-preview { height: 140px; background: #151515; display: flex; align-items: center; justify-content: center; font-size: 60px; }
-        .card-info { padding: 15px; text-align: center; }
-        .play-btn { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 15px; font-weight: 900; cursor: pointer; font-size: 14px; width: 100%; margin-top: 10px; }
+        /* === ГЛАВНОЕ МЕНЮ И ЛЕНТА === */
+        #menu-screen { align-items: center; justify-content: center; z-index: 90; padding-top: 60px; }
+        .game-card { width: 280px; background: linear-gradient(145deg, #1e1e1e, #111); border-radius: 32px; border: 1px solid var(--border); overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
+        .card-preview { height: 180px; background: #151515; display: flex; align-items: center; justify-content: center; font-size: 90px; }
+        .card-info { padding: 25px; display: flex; justify-content: space-between; align-items: center; }
+        .play-btn { background: #fff; color: #000; border: none; padding: 14px 28px; border-radius: 20px; font-weight: 900; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .play-btn:active { transform: scale(0.95); }
+
+        /* Лента выигрышей (Live Feed) */
+        .live-feed-wrapper { width: 280px; margin-top: 30px; }
+        .live-feed-title { font-size: 12px; color: #888; font-weight: 900; text-transform: uppercase; margin-bottom: 10px; padding-left: 5px; letter-spacing: 1px; }
+        .live-feed-container { display: flex; flex-direction: column; gap: 8px; height: 160px; overflow: hidden; position: relative; mask-image: linear-gradient(to bottom, black 40%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%); }
+        .feed-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; animation: slideInFeed 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .feed-user { display: flex; align-items: center; gap: 10px; font-size: 13px; font-weight: bold; }
+        .feed-user img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+        .feed-win { color: var(--accent); font-weight: 900; font-size: 14px; }
+        
+        @keyframes slideInFeed {
+            from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
 
         /* === ПРОФИЛЬ === */
         .profile-card { width: 90%; max-width: 320px; background: #111; border-radius: 30px; padding: 30px; border: 1px solid var(--border); text-align: center; }
         .profile-card img { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; }
         .stat-box { background: #1a1a1a; padding: 15px; border-radius: 20px; margin-top: 20px; display: flex; justify-content: space-between; align-items: center; }
 
-        /* === 3D === */
+        /* === ИГРОВОЙ ЭКРАН === */
         #three-container { position: absolute; width: 100%; height: 100%; z-index: -1; }
-        
-        /* === КУБИК UI === */
         #result-display { position: absolute; top: 25%; width: 100%; text-align: center; pointer-events: none; opacity: 0; transform: scale(0.5); transition: 0.3s; }
         #result-display.show { opacity: 1; transform: scale(1); }
         #result-text { font-size: 80px; font-weight: 900; text-shadow: 0 0 30px rgba(255,255,255,0.2); }
 
-        /* Шторка кубика */
+        /* === НИЖНЯЯ ПАНЕЛЬ С МЕНЮ === */
         #ui-panel { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(15, 15, 15, 0.65); backdrop-filter: blur(25px); border-top: 1px solid var(--border); border-radius: 30px 30px 0 0; padding: 0 20px 30px; box-sizing: border-box; display: flex; flex-direction: column; transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); z-index: 60; }
         #ui-panel.collapsed { transform: translateY(calc(100% - 60px)); }
+
         #panel-toggle { width: 100%; height: 60px; display: flex; align-items: center; justify-content: center; background: none; border: none; color: #888; font-size: 24px; cursor: pointer; outline: none; }
         #panel-toggle::before { content: "▼"; font-size: 16px; transition: 0.3s; }
         #ui-panel.collapsed #panel-toggle::before { content: "▲"; }
+
         .ui-content { display: flex; flex-direction: column; gap: 15px; opacity: 1; transition: 0.3s; }
         #ui-panel.collapsed .ui-content { opacity: 0; pointer-events: none; }
+        .locked { opacity: 0.4; pointer-events: none; }
 
-        /* Кнопка сбоку */
-        #mini-roll-btn { position: absolute; bottom: 15px; right: 15px; padding: 15px 30px; border-radius: 16px; border: none; background: var(--accent); color: #000; font-size: 16px; font-weight: 900; cursor: pointer; display: none; z-index: 65; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-
-        .locked { opacity: 0.4; pointer-events: none !important; }
-
+        /* Сетка условий */
         .bet-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
         .bet-grid.sectors { grid-template-columns: repeat(3, 1fr); }
         .bet-grid.numbers { grid-template-columns: repeat(6, 1fr); }
         .choice-btn { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 12px 0; border-radius: 14px; font-weight: 800; font-size: 13px; cursor: pointer; }
         .choice-btn.active { background: #fff; color: #000 !important; border-color: #fff; }
+        .choice-btn.mult-1-9 { color: #a78bfa; } .choice-btn.mult-2-8 { color: #60a5fa; } .choice-btn.mult-4-5 { color: #facc15; }
+
         .bet-box { display: flex; align-items: center; background: rgba(0,0,0,0.4); border-radius: 20px; padding: 6px; border: 1px solid var(--border); }
         .bet-box button { width: 50px; height: 50px; border-radius: 15px; border: none; background: rgba(255,255,255,0.08); color: #fff; font-size: 24px; cursor: pointer; }
         .bet-box input { flex: 1; background: none; border: none; color: #fff; text-align: center; font-size: 20px; font-weight: 800; outline: none; }
+
+        .sys-row { display: flex; gap: 10px; }
         .sys-btn { flex: 1; padding: 16px; border-radius: 18px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; font-weight: 800; cursor: pointer; }
-        #main-roll-btn, #rocket-btn { width: 100%; padding: 20px; border-radius: 20px; border: none; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
-        #main-roll-btn { background: var(--accent); color: #000; }
+        .sys-btn.active { border-color: #facc15; color: #facc15; background: rgba(250, 204, 21, 0.1); }
 
-        /* === РАКЕТА UI === */
-        #rocket-ui { position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(15, 15, 15, 0.8); backdrop-filter: blur(20px); padding: 20px; box-sizing: border-box; border-top: 1px solid var(--border); border-radius: 30px 30px 0 0; z-index: 60; }
-        #rocket-mult { position: absolute; top: 20%; left: 0; width: 100%; text-align: center; font-size: 60px; font-weight: 900; text-shadow: 0 0 20px rgba(255,159,67,0.5); color: #fff; z-index: 40; }
-        .rocket-crashed { color: var(--danger) !important; text-shadow: 0 0 20px rgba(255,71,87,0.5) !important; }
-        
-        #rocket-btn { background: var(--rocket); color: #000; margin-top: 15px; transition: 0.2s; }
-        #rocket-btn.cashout { background: var(--accent); }
-        
-        /* Список игроков */
-        #players-live { position: absolute; top: 80px; left: 15px; width: 140px; bottom: 220px; overflow-y: hidden; display: flex; flex-direction: column; gap: 8px; z-index: 40; pointer-events: none; mask-image: linear-gradient(to bottom, black 70%, transparent 100%); -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%); }
-        .player-row { background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 8px; font-size: 11px; display: flex; flex-direction: column; }
-        .pr-top { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 4px; color: #ccc;}
-        .pr-bot { display: flex; justify-content: space-between; }
-        .pr-win { color: var(--accent); font-weight: 900; }
-        .pr-fly { color: var(--rocket); font-weight: 900; }
+        #main-roll-btn { width: 100%; padding: 20px; border-radius: 20px; border: none; background: var(--accent); color: #000; font-size: 18px; font-weight: 900; text-transform: uppercase; cursor: pointer; }
 
+        /* Плавающая кнопка "ИГРАТЬ" справа в свернутом виде */
+        #mini-roll-btn {
+            position: absolute; bottom: 80px; /* Выше свернутой панели (60px) */
+            right: 20px; /* В правой части экрана */
+            padding: 16px 28px; border-radius: 30px; border: none;
+            background: var(--accent); color: #000; font-size: 16px; font-weight: 900;
+            cursor: pointer; display: none; z-index: 70;
+            box-shadow: 0 10px 25px rgba(74, 222, 128, 0.4);
+            transition: transform 0.2s;
+        }
+        #mini-roll-btn:active { transform: scale(0.95); }
+
+        /* === МОДАЛКИ === */
         .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 300; display: none; align-items: center; justify-content: center; }
         .modal { background: #151515; padding: 30px; border-radius: 30px; width: 280px; text-align: center; border: 1px solid var(--border); }
         .modal input { width: 100%; padding: 15px; margin: 15px 0; border-radius: 15px; border: none; background: #000; color: #fff; text-align: center; font-size: 20px; font-weight: 800; box-sizing: border-box; }
@@ -111,13 +130,16 @@
         <div class="nav-left">
             <button id="btn-back">&lt;</button>
             <div class="glass-pill" id="btn-profile">
-                <img id="user-photo" src="https://via.placeholder.com/100" alt="Av">
+                <img id="user-photo" src="https://via.placeholder.com/100" alt="Avatar">
                 <span id="user-name">Игрок</span>
             </div>
         </div>
         <div class="balance-wrapper">
             <div id="balance-container" class="glass-pill">
-                <div><span id="balance-mode">Демо Счет</span><span id="balance-value">1000 🍬</span></div>
+                <div>
+                    <span id="balance-mode">Демо Счет</span>
+                    <span id="balance-value">1000 🍬</span>
+                </div>
             </div>
             <button id="btn-deposit">+</button>
         </div>
@@ -126,22 +148,18 @@
     <div id="toast"></div>
 
     <div id="menu-screen" class="screen">
-        <h1 style="margin-top: 80px; font-weight: 900;">ИГРЫ</h1>
-        <div class="games-container">
-            <div class="game-card">
-                <div class="card-preview">🎲</div>
-                <div class="card-info">
-                    <h3 style="margin: 0;">Кубик</h3>
-                    <button class="play-btn" onclick="openGame('dice')">Играть</button>
-                </div>
+        <div class="game-card">
+            <div class="card-preview">🎲</div>
+            <div class="card-info">
+                <h2 style="margin: 0; font-size: 24px; font-weight: 900;">Кубик</h2>
+                <button class="play-btn" id="start-game-btn">Играть</button>
             </div>
-            <div class="game-card">
-                <div class="card-preview" style="color: var(--rocket);">🚀</div>
-                <div class="card-info">
-                    <h3 style="margin: 0;">Ракета</h3>
-                    <button class="play-btn" onclick="openGame('rocket')">Играть</button>
+        </div>
+
+        <div class="live-feed-wrapper">
+            <div class="live-feed-title">🔥 Выигрыши сейчас</div>
+            <div class="live-feed-container" id="live-feed">
                 </div>
-            </div>
         </div>
     </div>
 
@@ -150,349 +168,390 @@
             <h2 style="margin-top:0;">Мой Профиль</h2>
             <img id="profile-img-large" src="https://via.placeholder.com/100" alt="">
             <h3 id="profile-name-large">Игрок</h3>
-            <div class="stat-box"><span style="color:#aaa; font-weight:bold;">USDT Баланс:</span><span id="prof-real-bal" style="color:var(--accent); font-weight:900; font-size:18px;">0.00</span></div>
-            <div class="stat-box"><span style="color:#aaa; font-weight:bold;">Демо Баланс:</span><span id="prof-demo-bal" style="color:var(--demo); font-weight:900; font-size:18px;">1000</span></div>
+            
+            <div class="stat-box">
+                <span style="color:#aaa; font-weight:bold;">USDT Баланс:</span>
+                <span id="prof-real-bal" style="color:var(--accent); font-weight:900; font-size:18px;">0.00</span>
+            </div>
+            <div class="stat-box">
+                <span style="color:#aaa; font-weight:bold;">Демо Баланс:</span>
+                <span id="prof-demo-bal" style="color:var(--demo); font-weight:900; font-size:18px;">1000</span>
+            </div>
             <button class="modal-btn" id="prof-deposit-btn" style="background:#fff; color:#000; margin-top: 20px;">ПОПОЛНИТЬ USDT</button>
         </div>
     </div>
 
-    <div id="three-container"></div>
-
     <div id="game-screen" class="screen">
+        <div id="three-container"></div>
         <div id="result-display"><span id="result-text"></span></div>
-        <button id="mini-roll-btn">ИГРАТЬ</button>
+
+        <button id="mini-roll-btn">🎲 ИГРАТЬ</button>
+
         <div id="ui-panel">
             <button id="panel-toggle"></button>
+            
             <div class="ui-content" id="lock-zone">
+                <div style="font-size: 11px; color: #888; font-weight: bold; margin-bottom: 5px;">СТАНДАРТ (1.9x)</div>
                 <div class="bet-grid">
                     <button class="choice-btn mult-1-9 active" data-cond="even">ЧЕТ</button>
                     <button class="choice-btn mult-1-9" data-cond="odd">НЕЧЕТ</button>
                     <button class="choice-btn mult-1-9" data-cond="gt3">> 3</button>
                     <button class="choice-btn mult-1-9" data-cond="lt4">< 4</button>
                 </div>
-                <div class="bet-grid sectors" style="margin-top:5px;">
+
+                <div style="font-size: 11px; color: #888; font-weight: bold; margin-top: 10px; margin-bottom: 5px;">СЕКТОРА (2.8x)</div>
+                <div class="bet-grid sectors">
                     <button class="choice-btn mult-2-8" data-cond="sec1">1 - 2</button>
                     <button class="choice-btn mult-2-8" data-cond="sec2">3 - 4</button>
                     <button class="choice-btn mult-2-8" data-cond="sec3">5 - 6</button>
                 </div>
-                <div class="bet-grid numbers" style="margin-top:5px;">
-                    <button class="choice-btn mult-4-5" data-cond="num1">1</button><button class="choice-btn mult-4-5" data-cond="num2">2</button><button class="choice-btn mult-4-5" data-cond="num3">3</button>
-                    <button class="choice-btn mult-4-5" data-cond="num4">4</button><button class="choice-btn mult-4-5" data-cond="num5">5</button><button class="choice-btn mult-4-5" data-cond="num6">6</button>
+
+                <div style="font-size: 11px; color: #888; font-weight: bold; margin-top: 10px; margin-bottom: 5px;">ЧИСЛО (4.5x)</div>
+                <div class="bet-grid numbers">
+                    <button class="choice-btn mult-4-5" data-cond="num1">1</button>
+                    <button class="choice-btn mult-4-5" data-cond="num2">2</button>
+                    <button class="choice-btn mult-4-5" data-cond="num3">3</button>
+                    <button class="choice-btn mult-4-5" data-cond="num4">4</button>
+                    <button class="choice-btn mult-4-5" data-cond="num5">5</button>
+                    <button class="choice-btn mult-4-5" data-cond="num6">6</button>
                 </div>
+
                 <div class="bet-box" style="margin-top: 15px;">
-                    <button onclick="changeBet(false, 'dice')">−</button><input type="number" id="bet-val" step="0.05"><button onclick="changeBet(true, 'dice')">+</button>
+                    <button id="bet-down">−</button>
+                    <input type="number" id="bet-val" step="0.05">
+                    <button id="bet-up">+</button>
                 </div>
+
+                <div class="sys-row" style="margin-top: 15px;">
+                    <button class="sys-btn" id="fast-toggle">БЫСТРО ⚡</button>
+                    <button class="sys-btn" id="auto-open" style="flex: 0.3;">☰</button>
+                </div>
+
                 <button id="main-roll-btn" style="margin-top: 15px;">БРОСИТЬ КУБИК</button>
             </div>
-        </div>
-    </div>
-
-    <div id="rocket-screen" class="screen">
-        <div id="rocket-mult">1.00x</div>
-        <div id="players-live"></div>
-        <div id="rocket-ui">
-            <div id="r-lock-zone">
-                <div style="font-size: 11px; color: #888; font-weight: bold; margin-bottom: 5px;">СТАВКА</div>
-                <div class="bet-box">
-                    <button onclick="changeBet(false, 'rocket')">−</button><input type="number" id="r-bet-val" step="0.05"><button onclick="changeBet(true, 'rocket')">+</button>
-                </div>
-            </div>
-            <button id="rocket-btn">СТАВКА</button>
         </div>
     </div>
 
     <div id="deposit-modal" class="modal-overlay">
         <div class="modal">
             <h2 style="margin: 0 0 10px;">Пополнение</h2>
+            <p style="font-size: 13px; color: #888;">Минимум 0.1 USDT</p>
             <input type="number" id="dep-amount" value="1.0" step="0.1" min="0.1">
-            <button class="modal-btn" id="pay-crypto-btn" style="background: #2b6bf3; color: #fff;">CRYPTO BOT</button>
+            <button class="modal-btn" id="pay-crypto-btn" style="background: #2b6bf3; color: #fff;">ОПЛАТИТЬ ЧЕРЕЗ CRYPTO BOT</button>
+            <button class="modal-btn close-modal" style="background: #222; color: #fff;">ОТМЕНА</button>
+        </div>
+    </div>
+
+    <div id="auto-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 style="margin: 0 0 10px;">Авто-игра</h2>
+            <input type="number" id="auto-rounds" value="10">
+            <button class="modal-btn" id="auto-start" style="background: #fff; color: #000;">ЗАПУСТИТЬ</button>
             <button class="modal-btn close-modal" style="background: #222; color: #fff;">ОТМЕНА</button>
         </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp; tg.expand();
+        const tg = window.Telegram.WebApp;
+        tg.expand();
 
         let st = {
             isDemo: true, demoBal: 1000, realBal: 0.00,
-            betDemo: 1, betReal: 0.05, cBetD: 1, cBetR: 1, // ставки для кубика и ракеты
-            dCond: 'even', dMult: 1.9, dRolling: false,
-            rState: 'idle', rMult: 1.00, rBetPlaced: false, rBetAmt: 0
+            betDemo: 1, betReal: 0.05, currentBet: 1,
+            cond: 'even', mult: 1.9, fast: false, auto: false, autoCount: 0, rolling: false
         };
 
-        const dRules = {
-            'even': { m: 1.9, check: r => r % 2 === 0 }, 'odd': { m: 1.9, check: r => r % 2 !== 0 },
-            'gt3': { m: 1.9, check: r => r > 3 }, 'lt4': { m: 1.9, check: r => r < 4 },
-            'sec1': { m: 2.8, check: r => r <= 2 }, 'sec2': { m: 2.8, check: r => r==3||r==4 }, 'sec3': { m: 2.8, check: r => r >= 5 },
-            'num1':{m:4.5,check:r=>r==1},'num2':{m:4.5,check:r=>r==2},'num3':{m:4.5,check:r=>r==3},'num4':{m:4.5,check:r=>r==4},'num5':{m:4.5,check:r=>r==5},'num6':{m:4.5,check:r=>r==6}
+        const rules = {
+            'even': { m: 1.9, check: (r) => r % 2 === 0 },
+            'odd':  { m: 1.9, check: (r) => r % 2 !== 0 },
+            'gt3':  { m: 1.9, check: (r) => r > 3 },
+            'lt4':  { m: 1.9, check: (r) => r < 4 },
+            'sec1': { m: 2.8, check: (r) => r === 1 || r === 2 },
+            'sec2': { m: 2.8, check: (r) => r === 3 || r === 4 },
+            'sec3': { m: 2.8, check: (r) => r === 5 || r === 6 },
+            'num1': { m: 4.5, check: (r) => r === 1 },
+            'num2': { m: 4.5, check: (r) => r === 2 },
+            'num3': { m: 4.5, check: (r) => r === 3 },
+            'num4': { m: 4.5, check: (r) => r === 4 },
+            'num5': { m: 4.5, check: (r) => r === 5 },
+            'num6': { m: 4.5, check: (r) => r === 6 },
         };
 
         if (tg.initDataUnsafe?.user) {
-            const u = tg.initDataUnsafe.user; document.getElementById('user-name').innerText = u.first_name;
+            const u = tg.initDataUnsafe.user;
+            document.getElementById('user-name').innerText = u.first_name;
             document.getElementById('profile-name-large').innerText = u.first_name;
-            if (u.photo_url) { document.getElementById('user-photo').src = u.photo_url; document.getElementById('profile-img-large').src = u.photo_url; }
+            if (u.photo_url) {
+                document.getElementById('user-photo').src = u.photo_url;
+                document.getElementById('profile-img-large').src = u.photo_url;
+            }
         }
+
+        // --- РЕАЛЬНАЯ ЛЕНТА ВЫИГРЫШЕЙ (Запрашивает данные с сервера) ---
+        // Укажи здесь адрес своего будущего сервера (API)
+        const API_URL = "https://ТВОЙ_ДОМЕН.com/api/recent_wins"; 
+        let lastWinId = 0; // Чтобы не дублировать старые записи
+
+        async function fetchRealWins() {
+            if(document.getElementById('menu-screen').style.display === 'none') return;
+            
+            try {
+                // Запрашиваем последние победы с сервера
+                const response = await fetch(`${API_URL}?since_id=${lastWinId}`);
+                if (!response.ok) return;
+                
+                const wins = await response.json(); // Ожидаем массив [{id: 1, name: "Иван", amount: 15.5, photo: "url"}]
+                
+                if (wins.length > 0) {
+                    const cont = document.getElementById('live-feed');
+                    
+                    wins.forEach(win => {
+                        const item = document.createElement('div');
+                        item.className = 'feed-item';
+                        item.innerHTML = `
+                            <div class="feed-user">
+                                <img src="${win.photo || 'https://via.placeholder.com/100'}" alt="ava">
+                                <span>${win.name}</span>
+                            </div>
+                            <div class="feed-win">+${win.amount.toFixed(2)} USDT</div>
+                        `;
+                        cont.prepend(item);
+                        
+                        // Сохраняем ID последней победы
+                        if (win.id > lastWinId) lastWinId = win.id;
+                    });
+
+                    // Удаляем лишние элементы, чтобы лента не бесконечно росла (оставляем 4)
+                    while (cont.children.length > 4) {
+                        cont.removeChild(cont.lastChild);
+                    }
+                }
+            } catch (err) {
+                console.log("Ошибка загрузки ленты:", err);
+            }
+        }
+
+        // Опрашиваем сервер каждые 3 секунды
+        setInterval(fetchRealWins, 3000);
+        fetchRealWins(); // Первый вызов при загрузке
+        // ---------------------------------
+
 
         function updateBal() {
-            const m = document.getElementById('balance-mode'), v = document.getElementById('balance-value');
-            if (st.isDemo) { m.innerText = "Демо Счет"; v.innerText = st.demoBal.toFixed(0) + " 🍬"; v.style.color = "var(--demo)"; }
-            else { m.innerText = "USDT Баланс"; v.innerText = st.realBal.toFixed(2) + " USDT"; v.style.color = "var(--accent)"; }
-            document.getElementById('prof-real-bal').innerText = st.realBal.toFixed(2); document.getElementById('prof-demo-bal').innerText = st.demoBal.toFixed(0);
+            const m = document.getElementById('balance-mode'); const v = document.getElementById('balance-value');
+            if (st.isDemo) {
+                m.innerText = "Демо Счет"; v.innerText = st.demoBal.toFixed(0) + " 🍬"; v.style.color = "var(--demo)";
+            } else {
+                m.innerText = "USDT Баланс"; v.innerText = st.realBal.toFixed(2) + " USDT"; v.style.color = "var(--accent)";
+            }
+            document.getElementById('prof-real-bal').innerText = st.realBal.toFixed(2);
+            document.getElementById('prof-demo-bal').innerText = st.demoBal.toFixed(0);
         }
 
-        function showToast(msg) { const t = document.getElementById('toast'); t.innerText = msg; t.style.opacity = '1'; setTimeout(() => t.style.opacity = '0', 2500); }
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg; t.style.opacity = '1';
+            setTimeout(() => t.style.opacity = '0', 2500);
+        }
 
-        document.getElementById('balance-container').onclick = () => {
-            if (st.dRolling || st.rState !== 'idle') return;
+        function switchBalance() {
+            if (st.rolling) return;
             st.isDemo = !st.isDemo;
-            let val = st.isDemo ? st.betDemo : st.betReal;
-            st.cBetD = val; st.cBetR = val;
-            document.getElementById('bet-val').value = val.toFixed(st.isDemo?0:2);
-            document.getElementById('r-bet-val').value = val.toFixed(st.isDemo?0:2);
+            st.currentBet = st.isDemo ? st.betDemo : st.betReal;
+            document.getElementById('bet-val').value = st.currentBet.toFixed(st.isDemo ? 0 : 2);
             updateBal(); tg.HapticFeedback.selectionChanged();
-        };
+        }
 
-        function changeBet(isUp, game) {
-            const step = st.isDemo ? st.betDemo : st.betReal; const min = st.isDemo ? 1 : 0.05;
-            let val = game === 'dice' ? st.cBetD : st.cBetR;
-            if (isUp) val += step; else val = Math.max(min, val - step);
-            val = parseFloat(val.toFixed(2));
-            if (game === 'dice') { st.cBetD = val; document.getElementById('bet-val').value = st.isDemo ? val : val.toFixed(2); }
-            else { st.cBetR = val; document.getElementById('r-bet-val').value = st.isDemo ? val : val.toFixed(2); }
+        function changeBet(isUp) {
+            const step = st.isDemo ? st.betDemo : st.betReal;
+            const min = st.isDemo ? 1 : 0.05;
+            if (isUp) st.currentBet += step; else st.currentBet = Math.max(min, st.currentBet - step);
+            st.currentBet = parseFloat(st.currentBet.toFixed(2)); 
+            document.getElementById('bet-val').value = st.isDemo ? st.currentBet : st.currentBet.toFixed(2);
+            showToast(`Возможный выигрыш: ${(st.currentBet * st.mult).toFixed(2)}`);
             tg.HapticFeedback.selectionChanged();
         }
 
+        document.getElementById('balance-container').onclick = switchBalance;
+        document.getElementById('bet-up').onclick = () => changeBet(true);
+        document.getElementById('bet-down').onclick = () => changeBet(false);
+        document.getElementById('bet-val').onchange = (e) => {
+            const min = st.isDemo ? 1 : 0.05;
+            st.currentBet = Math.max(min, parseFloat(e.target.value) || min);
+            e.target.value = st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2);
+        };
+
         document.querySelectorAll('.choice-btn').forEach(btn => {
             btn.onclick = (e) => {
-                document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('active')); e.target.classList.add('active');
-                st.dCond = e.target.dataset.cond; st.dMult = dRules[st.dCond].m; tg.HapticFeedback.selectionChanged();
+                document.querySelectorAll('.choice-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                st.cond = e.target.dataset.cond; st.mult = rules[st.cond].m;
+                showToast(`Множитель: ${st.mult}x\nВыигрыш: ${(st.currentBet * st.mult).toFixed(2)}`);
+                tg.HapticFeedback.selectionChanged();
             };
         });
 
-        const scr = { menu: 'menu-screen', dice: 'game-screen', rocket: 'rocket-screen', prof: 'profile-screen' };
-        let activeGame = null;
-        
-        function openGame(g) {
-            activeGame = g;
-            Object.values(scr).forEach(s => document.getElementById(s).style.display = 'none');
-            document.getElementById(scr[g]).style.display = 'flex';
-            document.getElementById('btn-back').style.display = 'flex';
-            if (!scene) init3D();
-            switchScene(g);
-            document.getElementById('mini-roll-btn').style.display = (g==='dice' && document.getElementById('ui-panel').classList.contains('collapsed')) ? 'block' : 'none';
+        const screens = { menu: 'menu-screen', game: 'game-screen', prof: 'profile-screen' };
+        function showScreen(id) {
+            Object.values(screens).forEach(s => document.getElementById(s).style.display = 'none');
+            document.getElementById(id).style.display = 'flex';
+            document.getElementById('btn-back').style.display = id === screens.menu ? 'none' : 'flex';
+            
+            if (id !== screens.game) {
+                document.getElementById('mini-roll-btn').style.display = 'none';
+            } else if (document.getElementById('ui-panel').classList.contains('collapsed')) {
+                document.getElementById('mini-roll-btn').style.display = 'block';
+            }
         }
 
-        document.getElementById('btn-back').onclick = () => {
-            if(st.dRolling || st.rState === 'flying') return showToast("Дождитесь окончания игры!");
-            activeGame = null; switchScene('none');
-            Object.values(scr).forEach(s => document.getElementById(s).style.display = 'none');
-            document.getElementById(scr.menu).style.display = 'flex';
-            document.getElementById('btn-back').style.display = 'none';
-            document.getElementById('mini-roll-btn').style.display = 'none';
-        };
-        
-        document.getElementById('btn-profile').onclick = () => { document.getElementById(scr.prof).style.display = 'flex'; };
-        
+        document.getElementById('btn-back').onclick = () => showScreen(screens.menu);
+        document.getElementById('btn-profile').onclick = () => showScreen(screens.prof);
+        document.getElementById('start-game-btn').onclick = () => { showScreen(screens.game); if(!scene) init3D(); };
+
         document.getElementById('panel-toggle').onclick = () => {
-            const p = document.getElementById('ui-panel'), mBtn = document.getElementById('mini-roll-btn');
+            const p = document.getElementById('ui-panel');
+            const mBtn = document.getElementById('mini-roll-btn');
             p.classList.toggle('collapsed');
-            if(p.classList.contains('collapsed')) setTimeout(() => { mBtn.style.display = 'block'; }, 200);
-            else mBtn.style.display = 'none';
+            if(p.classList.contains('collapsed')) {
+                setTimeout(() => { mBtn.style.display = 'block'; }, 200);
+            } else {
+                mBtn.style.display = 'none';
+            }
         };
 
+        document.getElementById('fast-toggle').onclick = (e) => { st.fast = !st.fast; e.target.classList.toggle('active'); tg.HapticFeedback.impactOccurred('light'); };
+        document.querySelectorAll('.close-modal').forEach(b => b.onclick = (e) => e.target.closest('.modal-overlay').style.display = 'none');
+        
         const openDep = () => document.getElementById('deposit-modal').style.display = 'flex';
         document.getElementById('btn-deposit').onclick = openDep; document.getElementById('prof-deposit-btn').onclick = openDep;
-        document.querySelectorAll('.close-modal').forEach(b => b.onclick = e => e.target.closest('.modal-overlay').style.display = 'none');
+        
         document.getElementById('pay-crypto-btn').onclick = () => {
-            const amt = parseFloat(document.getElementById('dep-amount').value); if(amt<0.1) return showToast("Минимум 0.1");
-            tg.sendData(JSON.stringify({ action: "deposit", amount: amt })); tg.close();
+            const amt = parseFloat(document.getElementById('dep-amount').value);
+            if (amt < 0.1) { showToast("Минимум 0.1 USDT!"); return; }
+            tg.HapticFeedback.notificationOccurred('success');
+            document.getElementById('deposit-modal').style.display = 'none';
+            tg.sendData(JSON.stringify({ action: "deposit", amount: amt })); 
+            tg.close();
         };
 
-        // === 3D ENGINE (Общий) ===
-        let scene, camera, renderer, diceObj, rocketObj;
-        
+        document.getElementById('auto-open').onclick = () => document.getElementById('auto-modal').style.display = 'flex';
+        document.getElementById('auto-start').onclick = () => {
+            st.autoCount = parseInt(document.getElementById('auto-rounds').value) || 5;
+            st.auto = true;
+            document.getElementById('auto-modal').style.display = 'none';
+            
+            const rb = document.getElementById('main-roll-btn');
+            const mb = document.getElementById('mini-roll-btn');
+            rb.innerText = "СТОП (АВТО)"; rb.style.background = "var(--danger)"; rb.style.color = "#fff";
+            mb.innerText = "СТОП"; mb.style.background = "var(--danger)"; mb.style.color = "#fff";
+            
+            rollDice();
+        };
+
+        let scene, camera, renderer, dice;
+        const rots = {
+            1: {x:0, y:-Math.PI/2, z:0}, 6: {x:0, y:Math.PI/2, z:0},
+            2: {x:Math.PI/2, y:0, z:0}, 5: {x:-Math.PI/2, y:0, z:0},
+            3: {x:0, y:0, z:0}, 4: {x:0, y:Math.PI, z:0}
+        };
+
         function init3D() {
-            scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100);
-            camera.position.z = 8;
+            scene = new THREE.Scene(); camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 100); camera.position.z = 8;
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); renderer.setSize(window.innerWidth, window.innerHeight);
             document.getElementById('three-container').appendChild(renderer.domElement);
-            
             const light = new THREE.DirectionalLight(0xffffff, 1.3); light.position.set(2,5,5); scene.add(light, new THREE.AmbientLight(0xffffff, 0.7));
 
-            // Кубик
             const geom = new THREE.BoxGeometry(1.6, 1.6, 1.6);
-            const mF = (n) => {
+            const makeFace = (n) => {
                 const cv = document.createElement('canvas'); cv.width = 256; cv.height = 256; const ctx = cv.getContext('2d');
                 ctx.fillStyle = '#181818'; ctx.beginPath(); ctx.roundRect(0,0,256,256,50); ctx.fill(); ctx.fillStyle = '#fff';
                 const p = { 1:[[128,128]], 2:[[70,70],[186,186]], 3:[[70,70],[128,128],[186,186]], 4:[[70,70],[186,70],[70,186],[186,186]], 5:[[70,70],[186,70],[128,128],[70,186],[186,186]], 6:[[70,70],[186,70],[70,128],[186,128],[70,186],[186,186]] };
                 p[n].forEach(c => { ctx.beginPath(); ctx.arc(c[0],c[1],22,0,7); ctx.fill(); });
                 return new THREE.MeshStandardMaterial({ map: new THREE.CanvasTexture(cv), roughness: 0.2 });
             };
-            diceObj = new THREE.Mesh(geom, [mF(1), mF(6), mF(2), mF(5), mF(3), mF(4)]); diceObj.rotation.x = 0.2; scene.add(diceObj);
+            dice = new THREE.Mesh(geom, [makeFace(1), makeFace(6), makeFace(2), makeFace(5), makeFace(3), makeFace(4)]);
+            dice.rotation.x = 0.2; scene.add(dice); animate();
+        }
+        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
 
-            // Ракета
-            rocketObj = new THREE.Group();
-            const body = new THREE.Mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.5, 16), new THREE.MeshStandardMaterial({color: 0xeeeeee}));
-            const nose = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.8, 16), new THREE.MeshStandardMaterial({color: 0xff4757})); nose.position.y = 1.15;
-            const finMat = new THREE.MeshStandardMaterial({color: 0xff4757});
-            const f1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.5), finMat); f1.position.set(0.4, -0.5, 0);
-            const f2 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.5), finMat); f2.position.set(-0.4, -0.5, 0);
-            const fire = new THREE.Mesh(new THREE.ConeGeometry(0.3, 1, 8), new THREE.MeshBasicMaterial({color: 0xff9f43, transparent:true, opacity:0.8})); fire.position.y = -1.2; fire.rotation.x = Math.PI;
-            rocketObj.add(body, nose, f1, f2, fire);
-            rocketObj.rotation.z = -Math.PI/4; rocketObj.position.set(-1, -1, 0);
-            scene.add(rocketObj);
+        document.getElementById('main-roll-btn').onclick = btnRollClick;
+        document.getElementById('mini-roll-btn').onclick = btnRollClick;
 
-            animate();
+        function btnRollClick() {
+            if (st.auto && !st.rolling) { stopAuto(); return; }
+            if (st.auto && st.rolling) { stopAuto(); return; } 
+            rollDice();
         }
 
-        function switchScene(g) {
-            if(!diceObj) return;
-            diceObj.visible = (g === 'dice');
-            rocketObj.visible = (g === 'rocket');
-            rocketObj.position.set(-1, -1, 0); // Сброс позиции
+        function stopAuto() {
+            st.auto = false; 
+            const rb = document.getElementById('main-roll-btn');
+            const mb = document.getElementById('mini-roll-btn');
+            rb.innerText = "БРОСИТЬ КУБИК"; rb.style.background = "var(--accent)"; rb.style.color = "#000";
+            mb.innerText = "🎲 ИГРАТЬ"; mb.style.background = "var(--accent)"; mb.style.color = "#000";
         }
 
-        let clock = new THREE.Clock();
-        function animate() {
-            requestAnimationFrame(animate);
-            const t = clock.getElapsedTime();
-            if(rocketObj.visible && st.rState === 'flying') {
-                // Тряска и движение вверх
-                rocketObj.position.x += (Math.random()-0.5)*0.05 + 0.01;
-                rocketObj.position.y += (Math.random()-0.5)*0.05 + 0.01;
-                // Мигание огня
-                rocketObj.children[4].material.opacity = 0.5 + Math.random()*0.5;
-                rocketObj.children[4].scale.y = 0.8 + Math.random()*0.4;
-            } else if (rocketObj.visible && st.rState === 'idle') {
-                rocketObj.children[4].material.opacity = 0; // нет огня
+        function rollDice() {
+            if (st.rolling) return;
+
+            if (st.isDemo) {
+                st.demoBal = Math.max(100, st.demoBal - st.currentBet);
+            } else {
+                if (st.realBal < st.currentBet) { showToast("Недостаточно USDT!"); stopAuto(); return; }
+                st.realBal -= st.currentBet;
             }
-            renderer.render(scene, camera);
-        }
+            updateBal();
 
-        // === ЛОГИКА КУБИКА ===
-        const rRots = { 1:{x:0,y:-Math.PI/2,z:0}, 6:{x:0,y:Math.PI/2,z:0}, 2:{x:Math.PI/2,y:0,z:0}, 5:{x:-Math.PI/2,y:0,z:0}, 3:{x:0,y:0,z:0}, 4:{x:0,y:Math.PI,z:0} };
-        function btnRoll() {
-            if (st.dRolling) return;
-            if (st.isDemo) { st.demoBal = Math.max(100, st.demoBal - st.cBetD); } else { if(st.realBal < st.cBetD) return showToast("Мало USDT!"); st.realBal -= st.cBetD; }
-            updateBal(); st.dRolling = true;
-            document.getElementById('lock-zone').classList.add('locked'); document.getElementById('result-display').classList.remove('show');
-            
-            const res = Math.floor(Math.random()*6)+1, trg = rRots[res], sRot = {x:diceObj.rotation.x, y:diceObj.rotation.y, z:diceObj.rotation.z};
-            const sT = Date.now();
+            st.rolling = true;
+            document.getElementById('lock-zone').classList.add('locked');
+            document.getElementById('result-display').classList.remove('show');
+
+            const res = Math.floor(Math.random() * 6) + 1;
+            const target = rots[res];
+            const startRot = { x: dice.rotation.x, y: dice.rotation.y, z: dice.rotation.z };
+            const spins = st.fast ? 2 : 6;
+            const dur = st.fast ? 500 : 1600;
+            const startT = Date.now();
+
             const rollAnim = () => {
-                const t = Math.min((Date.now()-sT)/1200, 1), e = 1-Math.pow(1-t,3);
-                diceObj.rotation.set(sRot.x+(trg.x+4*Math.PI*2-sRot.x)*e, sRot.y+(trg.y+4*Math.PI*2-sRot.y)*e, sRot.z+(trg.z+4*Math.PI*2-sRot.z)*e);
-                if(t<1) requestAnimationFrame(rollAnim); else fRoll(res);
-            }; requestAnimationFrame(rollAnim); tg.HapticFeedback.impactOccurred('medium');
-        }
-        function fRoll(res) {
-            diceObj.rotation.set(rRots[res].x, rRots[res].y, rRots[res].z);
-            const isWin = dRules[st.dCond].check(res), txt = document.getElementById('result-text');
-            if (isWin) { const p = st.cBetD*st.dMult; if(st.isDemo) st.demoBal+=p; else st.realBal+=p; txt.innerText = `+${p.toFixed(st.isDemo?0:2)}`; txt.style.color="var(--accent)"; tg.HapticFeedback.notificationOccurred('success'); }
-            else { txt.innerText = `−${st.cBetD.toFixed(st.isDemo?0:2)}`; txt.style.color="var(--danger)"; tg.HapticFeedback.notificationOccurred('error'); }
-            document.getElementById('result-display').classList.add('show'); updateBal();
-            setTimeout(() => { st.dRolling = false; document.getElementById('lock-zone').classList.remove('locked'); }, 1200);
-        }
-        document.getElementById('main-roll-btn').onclick = btnRoll; document.getElementById('mini-roll-btn').onclick = btnRoll;
-
-        // === ЛОГИКА РАКЕТЫ ===
-        const fNames = ["Alex", "Max", "Dima", "CryptoGod", "Oleg99", "Ivan", "Vova_Bet", "LuckyMan", "Tanya", "ProGamer"];
-        let fakePlayers = [], crashPoint = 1.0, rInterval;
-
-        function genPlayers() {
-            fakePlayers = []; const list = document.getElementById('players-live'); list.innerHTML = '';
-            const cnt = Math.floor(Math.random()*5) + 3; // 3-7 фейк игроков
-            for(let i=0; i<cnt; i++) {
-                const b = (Math.random()*50 + 1).toFixed(1);
-                const tgt = 1.05 + Math.random()*4; // когда они "выведут"
-                fakePlayers.push({ name: fNames[Math.floor(Math.random()*fNames.length)], bet: b, tgt: tgt, out: false, el: null });
-            }
-            fakePlayers.forEach(p => {
-                const el = document.createElement('div'); el.className = 'player-row';
-                el.innerHTML = `<div class="pr-top"><span>${p.name}</span><span>${p.bet}</span></div><div class="pr-bot"><span class="pr-fly">Летит</span></div>`;
-                list.appendChild(el); p.el = el;
-            });
+                const t = Math.min((Date.now() - startT) / dur, 1);
+                const ease = 1 - Math.pow(1 - t, 3);
+                dice.rotation.x = startRot.x + (target.x + spins*Math.PI*2 - startRot.x) * ease;
+                dice.rotation.y = startRot.y + (target.y + spins*Math.PI*2 - startRot.y) * ease;
+                dice.rotation.z = startRot.z + (target.z + spins*Math.PI*2 - startRot.z) * ease;
+                if (t < 1) requestAnimationFrame(rollAnim); else finishRoll(res);
+            };
+            requestAnimationFrame(rollAnim); tg.HapticFeedback.impactOccurred('medium');
         }
 
-        document.getElementById('rocket-btn').onclick = () => {
-            if (st.rState === 'idle') {
-                if(st.isDemo) { st.demoBal = Math.max(100, st.demoBal - st.cBetR); } else { if(st.realBal < st.cBetR) return showToast("Мало USDT!"); st.realBal -= st.cBetR; }
-                updateBal();
-                st.rBetPlaced = true; st.rBetAmt = st.cBetR;
-                
-                document.getElementById('r-lock-zone').classList.add('locked');
-                const btn = document.getElementById('rocket-btn');
-                btn.innerText = "ОЖИДАНИЕ..."; btn.style.background = "#555"; btn.style.pointerEvents = 'none';
-                
-                // Предгенерация
-                document.getElementById('rocket-mult').classList.remove('rocket-crashed');
-                document.getElementById('rocket-mult').innerText = "1.00x";
-                genPlayers(); switchScene('rocket');
-                
-                // Шанс краша: используем инверсное распределение
-                crashPoint = Math.max(1.00, 0.99 / Math.random()); 
-                if(crashPoint > 50) crashPoint = 50; // ограничение для теста
-                
-                setTimeout(startFlight, 1500);
-            } else if (st.rState === 'flying' && st.rBetPlaced) {
-                // КЭШАУТ!
-                const win = st.rBetAmt * st.rMult;
-                if(st.isDemo) st.demoBal += win; else st.realBal += win;
-                updateBal(); st.rBetPlaced = false;
-                
-                const btn = document.getElementById('rocket-btn');
-                btn.innerText = `ВЫВЕДЕНО +${win.toFixed(st.isDemo?0:2)}`; btn.style.background = "#555"; btn.style.pointerEvents = 'none';
+        function finishRoll(res) {
+            dice.rotation.set(rots[res].x, rots[res].y, rots[res].z);
+            const isWin = rules[st.cond].check(res);
+            const resTxt = document.getElementById('result-text');
+            
+            if (isWin) {
+                const prize = st.currentBet * st.mult;
+                if (st.isDemo) st.demoBal += prize; else st.realBal += prize;
+                resTxt.innerText = `+${prize.toFixed(st.isDemo?0:2)}`; resTxt.style.color = "var(--accent)";
                 tg.HapticFeedback.notificationOccurred('success');
-            }
-        };
-
-        function startFlight() {
-            st.rState = 'flying'; st.rMult = 1.0;
-            const btn = document.getElementById('rocket-btn');
-            if(st.rBetPlaced) { btn.innerText = "ВЫВЕСТИ"; btn.className = "cashout"; btn.style.pointerEvents = 'auto'; }
-            
-            const sT = Date.now();
-            rInterval = setInterval(() => {
-                // Нелинейный рост (степень)
-                const sec = (Date.now() - sT) / 1000;
-                st.rMult = Math.pow(1.08, sec); // Множитель растет плавно
-                
-                if (st.rMult >= crashPoint) {
-                    crashRocket();
-                } else {
-                    document.getElementById('rocket-mult').innerText = st.rMult.toFixed(2) + "x";
-                    // Проверка фейк-игроков
-                    fakePlayers.forEach(p => {
-                        if(!p.out && st.rMult >= p.tgt) {
-                            p.out = true; const w = (p.bet * st.rMult).toFixed(1);
-                            p.el.querySelector('.pr-bot').innerHTML = `<span style="color:#888;">Вывел</span><span class="pr-win">+${w}</span>`;
-                        }
-                    });
-                }
-            }, 50);
-        }
-
-        function crashRocket() {
-            clearInterval(rInterval); st.rState = 'crashed';
-            const m = document.getElementById('rocket-mult');
-            m.innerText = crashPoint.toFixed(2) + "x"; m.classList.add('rocket-crashed');
-            rocketObj.children[4].material.opacity = 0; // тушим огонь
-            
-            fakePlayers.forEach(p => { if(!p.out) p.el.querySelector('.pr-fly').style.color = 'var(--danger)'; });
-            
-            if(st.rBetPlaced) {
-                st.rBetPlaced = false;
+            } else {
+                resTxt.innerText = `−${st.isDemo ? st.currentBet.toFixed(0) : st.currentBet.toFixed(2)}`; resTxt.style.color = "var(--danger)";
                 tg.HapticFeedback.notificationOccurred('error');
             }
             
-            const btn = document.getElementById('rocket-btn');
-            btn.innerText = "СЛЕДУЮЩИЙ РАУНД..."; btn.style.background = "var(--danger)"; btn.className = ""; btn.style.pointerEvents = 'none';
-            
+            document.getElementById('result-display').classList.add('show'); updateBal();
+
             setTimeout(() => {
-                st.rState = 'idle'; document.getElementById('r-lock-zone').classList.remove('locked');
-                btn.innerText = "СТАВКА"; btn.style.background = "var(--rocket)"; btn.style.pointerEvents = 'auto';
-                rocketObj.position.set(-1, -1, 0);
-            }, 3000);
+                st.rolling = false;
+                
+                if (st.auto) {
+                    st.autoCount--;
+                    if (st.autoCount > 0) setTimeout(rollDice, 500);
+                    else stopAuto();
+                } else {
+                    document.getElementById('lock-zone').classList.remove('locked');
+                }
+            }, st.fast ? 500 : 1200);
         }
 
         updateBal();
