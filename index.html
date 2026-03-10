@@ -2,414 +2,117 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Dice Pro VIP - Multigame</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Покупка звезд</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
-        :root {
-            --bg: #0a0a0a;
-            --glass: rgba(20, 20, 20, 0.7);
-            --border: rgba(255, 255, 255, 0.1);
-            --accent: #4ade80;
-            --danger: #ff4757;
-            --demo: #a78bfa;
-            --gold: #facc15;
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
         }
-
-        body { margin: 0; overflow: hidden; background: var(--bg); font-family: 'Inter', sans-serif; color: white; user-select: none; }
+        .container {
+            background-color: #1e1e1e;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            text-align: center;
+            width: 80%;
+            max-width: 350px;
+        }
+        h2 { margin-top: 0; color: #f5c518; }
+        .info { color: #aaaaaa; font-size: 14px; margin-bottom: 20px; }
+        .input-group { margin: 20px 0; }
         
-        /* === ВЕРХНЯЯ ПАНЕЛЬ === */
-        #top-bar {
-            position: absolute; top: 15px; left: 15px; right: 15px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        input[type="number"] {
+            width: 100%;
+            background-color: #2c2c2c;
+            color: #fff;
+            border: 2px solid #333;
+            padding: 12px;
+            font-size: 18px;
+            border-radius: 10px;
+            box-sizing: border-box;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
         }
-        .nav-left { display: flex; gap: 8px; align-items: center; }
-        #btn-back { display: none; width: 40px; height: 40px; border-radius: 50%; background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); color: white; cursor: pointer; justify-content: center; align-items: center; }
+        input[type="number"]:focus { border-color: #f5c518; }
         
-        .glass-pill { background: var(--glass); backdrop-filter: blur(15px); padding: 8px 14px; border-radius: 40px; border: 1px solid var(--border); display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        #user-photo { width: 26px; height: 26px; border-radius: 50%; }
-        #balance-value { font-weight: 900; font-size: 14px; }
-
-        /* === МЕНЮ ИГР === */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; transition: 0.3s; }
-        #menu-screen { padding: 80px 20px 20px; overflow-y: auto; align-items: center; gap: 15px; }
+        input[type="range"] {
+            width: 100%;
+            margin-top: 15px;
+            accent-color: #f5c518;
+        }
         
-        .game-card { 
-            width: 100%; max-width: 340px; background: linear-gradient(145deg, #1a1a1a, #0a0a0a); 
-            border-radius: 24px; border: 1px solid var(--border); overflow: hidden; position: relative;
-        }
-        .card-img { height: 120px; display: flex; align-items: center; justify-content: center; font-size: 50px; background: rgba(255,255,255,0.03); }
-        .card-body { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
-        .card-body h3 { margin: 0; font-size: 18px; }
-        .btn-play { background: #fff; color: #000; border: none; padding: 10px 20px; border-radius: 12px; font-weight: 800; cursor: pointer; }
-
-        /* === ИГРОВОЙ ИНТЕРФЕЙС === */
-        #game-screen { display: none; }
-        #three-container { position: absolute; width: 100%; height: 100%; z-index: 1; }
-        
-        /* Сетка для Mines */
-        #mines-grid { 
-            position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%);
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; 
-            z-index: 10; display: none;
-        }
-        .mine-cell { 
-            width: 55px; height: 55px; background: var(--glass); border: 1px solid var(--border); 
-            border-radius: 12px; display: flex; align-items: center; justify-content: center;
-            font-size: 20px; cursor: pointer; transition: 0.2s;
-        }
-        .mine-cell.open { background: rgba(255,255,255,0.1); border-color: var(--accent); }
-        .mine-cell.boom { background: var(--danger); }
-
-        #ui-panel {
-            position: absolute; bottom: 0; width: 100%; background: var(--glass); 
-            backdrop-filter: blur(25px); border-top: 1px solid var(--border); 
-            border-radius: 24px 24px 0 0; padding: 20px; box-sizing: border-box; z-index: 20;
-        }
-
-        .bet-box { display: flex; background: rgba(0,0,0,0.3); border-radius: 15px; padding: 5px; margin-bottom: 15px; }
-        .bet-box input { flex: 1; background: none; border: none; color: #fff; text-align: center; font-size: 18px; font-weight: 800; outline: none; }
-        .bet-box button { width: 45px; height: 45px; border-radius: 12px; border: none; background: rgba(255,255,255,0.1); color: #fff; cursor: pointer; }
-
-        .game-controls { display: none; flex-direction: column; gap: 10px; }
-        .active-controls { display: flex; }
-
-        .main-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-weight: 900; font-size: 16px; cursor: pointer; text-transform: uppercase; }
-        .btn-accent { background: var(--accent); color: #000; }
-        .btn-gold { background: var(--gold); color: #000; }
-        
-        #toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: #fff; color: #000; padding: 10px 20px; border-radius: 20px; font-weight: 700; z-index: 1000; opacity: 0; transition: 0.3s; pointer-events: none; }
+        .total { font-size: 18px; font-weight: bold; margin-top: 15px; }
+        .total-price { color: #4caf50; font-size: 22px; }
     </style>
 </head>
 <body>
 
-    <div id="toast"></div>
+<div class="container">
+    <h2>⭐ Магазин звезд</h2>
+    <div class="info">Курс: 1 звезда = 1.25 ₽<br>Минимум 50 звезд</div>
 
-    <div id="top-bar">
-        <div class="nav-left">
-            <button id="btn-back">←</button>
-            <div class="glass-pill" id="btn-profile">
-                <img id="user-photo" src="https://via.placeholder.com/50">
-                <span id="user-name">Player</span>
-            </div>
-        </div>
-        <div class="glass-pill" id="balance-container">
-            <span id="balance-value">1000 🍬</span>
-        </div>
+    <div class="input-group">
+        <input type="number" id="starInput" min="50" max="10000" value="50">
+        <input type="range" id="starSlider" min="50" max="10000" value="50">
     </div>
 
-    <div id="menu-screen" class="screen">
-        <div class="game-card" onclick="startGame('dice')">
-            <div class="card-img">🎲</div>
-            <div class="card-body">
-                <h3>Dice Pro</h3>
-                <button class="btn-play">ИГРАТЬ</button>
-            </div>
-        </div>
-        <div class="game-card" onclick="startGame('coin')">
-            <div class="card-img">🪙</div>
-            <div class="card-body">
-                <h3>Coin Flip</h3>
-                <button class="btn-play">ИГРАТЬ</button>
-            </div>
-        </div>
-        <div class="game-card" onclick="startGame('mines')">
-            <div class="card-img">💣</div>
-            <div class="card-body">
-                <h3>Mines</h3>
-                <button class="btn-play">ИГРАТЬ</button>
-            </div>
-        </div>
+    <div class="total">
+        Итого: <span class="total-price" id="totalPrice">62.50</span> ₽
     </div>
+</div>
 
-    <div id="game-screen" class="screen">
-        <div id="three-container"></div>
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand(); // Расширяем на весь экран
+
+    const input = document.getElementById('starInput');
+    const slider = document.getElementById('starSlider');
+    const total = document.getElementById('totalPrice');
+    const PRICE_PER_STAR = 1.25;
+
+    // Синхронизация полей и подсчет цены
+    function updateValues(value) {
+        let stars = parseInt(value);
+        if (isNaN(stars) || stars < 50) stars = 50; // Защита от ввода меньше 50
         
-        <div id="mines-grid"></div>
+        input.value = stars;
+        slider.value = stars;
+        
+        const price = (stars * PRICE_PER_STAR).toFixed(2);
+        total.innerText = price;
 
-        <div id="ui-panel">
-            <div class="bet-box">
-                <button onclick="adjustBet(-1)">-</button>
-                <input type="number" id="bet-input" value="10">
-                <button onclick="adjustBet(1)">+</button>
-            </div>
+        tg.MainButton.setText(`ОФОРМИТЬ ЗА ${price} ₽`);
+        if (!tg.MainButton.isVisible) tg.MainButton.show();
+    }
 
-            <div id="ctrl-dice" class="game-controls">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <button class="main-btn btn-play" id="dice-cond" onclick="toggleDiceCond()" style="background: rgba(255,255,255,0.1); color: #fff;">ЧЁТ (1.9x)</button>
-                    <button class="main-btn btn-accent" onclick="playDice()">БРОСИТЬ</button>
-                </div>
-            </div>
+    input.addEventListener('input', (e) => updateValues(e.target.value));
+    slider.addEventListener('input', (e) => updateValues(e.target.value));
 
-            <div id="ctrl-coin" class="game-controls">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-                    <button class="main-btn" id="coin-side" onclick="toggleCoinSide()" style="background: rgba(255,255,255,0.1); color: var(--gold);">ОРЁЛ</button>
-                    <button class="main-btn btn-gold" onclick="playCoin()">ПОДБРОСИТЬ</button>
-                </div>
-            </div>
+    // Настройка главной кнопки Telegram
+    tg.MainButton.setText("ОФОРМИТЬ ЗА 62.50 ₽");
+    tg.MainButton.color = "#f5c518";
+    tg.MainButton.textColor = "#000000";
+    tg.MainButton.show();
 
-            <div id="ctrl-mines" class="game-controls">
-                <div id="mines-info" style="display:none; justify-content: space-between; margin-bottom: 10px; font-weight: 800;">
-                    <span id="mine-mult" style="color:var(--accent)">x1.20</span>
-                    <span id="mine-profit">Выигрыш: 12.0</span>
-                </div>
-                <button class="main-btn btn-accent" id="mine-main-btn" onclick="startMines()">ИГРАТЬ</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-
-        let state = {
-            bal: 1000,
-            bet: 10,
-            game: null,
-            rolling: false,
-            // Dice
-            diceCond: 'even',
-            // Coin
-            coinSide: 'heads',
-            // Mines
-            minesActive: false,
-            mineCount: 3,
-            mineStep: 0,
-            mineWin: 0
+    // Отправка данных боту по нажатию
+    tg.onEvent('mainButtonClicked', function() {
+        const data = {
+            stars: parseInt(input.value),
+            price: (parseInt(input.value) * PRICE_PER_STAR).toFixed(2)
         };
+        tg.sendData(JSON.stringify(data)); // Отправляет данные и закрывает Web App
+    });
+</script>
 
-        // --- СИМУЛЯЦИЯ СЕРВЕРА (БЕЗОПАСНОСТЬ) ---
-        // В будущем здесь будет fetch('/api/play')
-        async function callServer(action, data) {
-            return new Promise((res) => {
-                setTimeout(() => {
-                    if (action === 'dice') {
-                        const r = Math.floor(Math.random() * 6) + 1;
-                        const win = (data.cond === 'even' && r % 2 === 0) || (data.cond === 'odd' && r % 2 !== 0);
-                        res({ result: r, win });
-                    }
-                    if (action === 'coin') {
-                        const r = Math.random() > 0.5 ? 'heads' : 'tails';
-                        res({ result: r, win: r === data.side });
-                    }
-                    if (action === 'mine_click') {
-                        const isBomb = Math.random() < (state.mineCount / 15); // Упрощенно
-                        res({ boom: isBomb, mult: 1.2 + (state.mineStep * 0.4) });
-                    }
-                }, 100);
-            });
-        }
-
-        // --- ИНИЦИАЛИЗАЦИЯ 3D ---
-        let scene, camera, renderer, model;
-        function init3D() {
-            scene = new THREE.Scene();
-            camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
-            camera.position.z = 5;
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(window.innerWidth, window.innerHeight);
-            document.getElementById('three-container').appendChild(renderer.domElement);
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-            const point = new THREE.PointLight(0xffffff, 1);
-            point.position.set(5, 5, 5);
-            scene.add(ambient, point);
-            animate();
-        }
-
-        function animate() { requestAnimationFrame(animate); renderer.render(scene, camera); }
-
-        function clearScene() {
-            if (model) scene.remove(model);
-            document.getElementById('mines-grid').style.display = 'none';
-        }
-
-        // --- ЛОГИКА ИГР ---
-        function startGame(type) {
-            state.game = type;
-            document.getElementById('menu-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'flex';
-            document.getElementById('btn-back').style.display = 'flex';
-            
-            document.querySelectorAll('.game-controls').forEach(c => c.classList.remove('active-controls'));
-            document.getElementById(`ctrl-${type}`).classList.add('active-controls');
-
-            clearScene();
-            if(!scene) init3D();
-
-            if (type === 'dice') {
-                const geom = new THREE.BoxGeometry(1.5, 1.5, 1.5);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xffffff });
-                model = new THREE.Mesh(geom, mat);
-                scene.add(model);
-            } else if (type === 'coin') {
-                const geom = new THREE.CylinderGeometry(1.2, 1.2, 0.1, 32);
-                const mat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.2 });
-                model = new THREE.Mesh(geom, mat);
-                model.rotation.x = Math.PI / 2;
-                scene.add(model);
-            } else if (type === 'mines') {
-                setupMinesGrid();
-                document.getElementById('mines-grid').style.display = 'grid';
-            }
-        }
-
-        // DICE LOGIC
-        function toggleDiceCond() {
-            state.diceCond = state.diceCond === 'even' ? 'odd' : 'even';
-            document.getElementById('dice-cond').innerText = state.diceCond === 'even' ? 'ЧЁТ (1.9x)' : 'НЕЧЕТ (1.9x)';
-        }
-
-        async function playDice() {
-            if (state.rolling || state.bal < state.bet) return;
-            state.rolling = true;
-            state.bal -= state.bet; updateBal();
-            
-            const serverRes = await callServer('dice', { cond: state.diceCond });
-            
-            // Анимация вращения
-            const startT = Date.now();
-            const animateDice = () => {
-                const elapsed = Date.now() - startT;
-                model.rotation.x += 0.3; model.rotation.y += 0.2;
-                if (elapsed < 1000) requestAnimationFrame(animateDice);
-                else {
-                    state.rolling = false;
-                    if (serverRes.win) { 
-                        state.bal += state.bet * 1.9; 
-                        showToast("ВЫИГРЫШ!"); 
-                        tg.HapticFeedback.notificationOccurred('success');
-                    } else {
-                        tg.HapticFeedback.notificationOccurred('error');
-                    }
-                    updateBal();
-                }
-            };
-            animateDice();
-        }
-
-        // COIN LOGIC
-        function toggleCoinSide() {
-            state.coinSide = state.coinSide === 'heads' ? 'tails' : 'heads';
-            const btn = document.getElementById('coin-side');
-            btn.innerText = state.coinSide === 'heads' ? 'ОРЁЛ' : 'РЕШКА';
-            btn.style.color = state.coinSide === 'heads' ? 'var(--gold)' : '#fff';
-        }
-
-        async function playCoin() {
-            if (state.rolling || state.bal < state.bet) return;
-            state.rolling = true;
-            state.bal -= state.bet; updateBal();
-
-            const serverRes = await callServer('coin', { side: state.coinSide });
-            
-            const startT = Date.now();
-            const animateCoin = () => {
-                const elapsed = Date.now() - startT;
-                model.rotation.z += 0.4;
-                model.position.y = Math.sin(elapsed/100) * 0.5;
-                if (elapsed < 1000) requestAnimationFrame(animateCoin);
-                else {
-                    state.rolling = false;
-                    model.position.y = 0;
-                    if (serverRes.win) { 
-                        state.bal += state.bet * 1.98; 
-                        showToast("УГАДАЛ!"); 
-                        tg.HapticFeedback.notificationOccurred('success');
-                    } else {
-                        tg.HapticFeedback.notificationOccurred('error');
-                    }
-                    updateBal();
-                }
-            };
-            animateCoin();
-        }
-
-        // MINES LOGIC
-        function setupMinesGrid() {
-            const grid = document.getElementById('mines-grid');
-            grid.innerHTML = '';
-            for (let i = 0; i < 25; i++) {
-                const cell = document.createElement('div');
-                cell.className = 'mine-cell';
-                cell.onclick = () => clickMine(cell, i);
-                grid.appendChild(cell);
-            }
-        }
-
-        function startMines() {
-            if (state.minesActive) {
-                // Cashout logic
-                state.bal += state.mineWin;
-                showToast(`ЗАБРАЛ ${state.mineWin.toFixed(2)}!`);
-                resetMines();
-            } else {
-                if (state.bal < state.bet) return;
-                state.bal -= state.bet;
-                state.minesActive = true;
-                state.mineStep = 0;
-                state.mineWin = state.bet;
-                document.getElementById('mine-main-btn').innerText = 'ЗАБРАТЬ';
-                document.getElementById('mine-main-btn').classList.replace('btn-accent', 'btn-gold');
-                document.getElementById('mines-info').style.display = 'flex';
-                updateBal();
-                setupMinesGrid();
-            }
-        }
-
-        async function clickMine(cell, idx) {
-            if (!state.minesActive || cell.classList.contains('open')) return;
-            
-            const res = await callServer('mine_click', { step: state.mineStep });
-            
-            if (res.boom) {
-                cell.classList.add('boom');
-                cell.innerText = '💣';
-                showToast("БОМБА! СТАВКА СГОРЕЛА");
-                tg.HapticFeedback.notificationOccurred('error');
-                setTimeout(resetMines, 1000);
-            } else {
-                cell.classList.add('open');
-                cell.innerText = '💎';
-                state.mineStep++;
-                state.mineWin = state.bet * res.mult;
-                document.getElementById('mine-mult').innerText = `x${res.mult.toFixed(2)}`;
-                document.getElementById('mine-profit').innerText = `Выигрыш: ${state.mineWin.toFixed(1)}`;
-                tg.HapticFeedback.impactOccurred('light');
-            }
-        }
-
-        function resetMines() {
-            state.minesActive = false;
-            document.getElementById('mine-main-btn').innerText = 'ИГРАТЬ';
-            document.getElementById('mine-main-btn').classList.replace('btn-gold', 'btn-accent');
-            document.getElementById('mines-info').style.display = 'none';
-            setupMinesGrid();
-            updateBal();
-        }
-
-        // --- ВСПОМОГАТЕЛЬНОЕ ---
-        function updateBal() {
-            document.getElementById('balance-value').innerText = `${state.bal.toFixed(state.bal % 1 === 0 ? 0 : 2)} 🍬`;
-        }
-        function adjustBet(dir) {
-            state.bet = Math.max(1, state.bet + (dir * 10));
-            document.getElementById('bet-input').value = state.bet;
-        }
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg; t.style.opacity = 1;
-            setTimeout(() => t.style.opacity = 0, 2000);
-        }
-        document.getElementById('btn-back').onclick = () => {
-            document.getElementById('menu-screen').style.display = 'flex';
-            document.getElementById('game-screen').style.display = 'none';
-            document.getElementById('btn-back').style.display = 'none';
-            state.game = null;
-            if (state.minesActive) resetMines();
-        };
-
-        updateBal();
-    </script>
 </body>
 </html>
