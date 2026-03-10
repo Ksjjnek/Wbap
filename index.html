@@ -6,9 +6,12 @@
     <title>Покупка звезд</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        /* Анимированный градиентный фон */
         body {
-            background-color: #121212;
-            color: #ffffff;
+            background: linear-gradient(-45deg, #050505, #12182b, #1f2229, #000000);
+            background-size: 400% 400%;
+            animation: gradientBG 12s ease infinite;
+            color: #d1d5db; /* Более темный, мягкий цвет текста */
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             justify-content: center;
@@ -17,73 +20,101 @@
             margin: 0;
             user-select: none;
         }
+
+        @keyframes gradientBG {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Контейнер с тенями */
         .container {
-            background-color: #1e1e1e;
+            background-color: rgba(25, 25, 30, 0.85); /* Полупрозрачный темный */
+            backdrop-filter: blur(10px);
             padding: 30px;
             border-radius: 20px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.1);
             text-align: center;
             width: 80%;
             max-width: 350px;
         }
-        h2 { margin-top: 0; color: #f5c518; }
-        .info { color: #aaaaaa; font-size: 14px; margin-bottom: 20px; }
+
+        /* Анимация звездочки */
+        h2 { margin-top: 0; color: #eab308; display: flex; align-items: center; justify-content: center; gap: 8px;}
+        .star-icon {
+            display: inline-block;
+            animation: pulseStar 2s infinite;
+        }
+
+        @keyframes pulseStar {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(15deg); text-shadow: 0 0 15px #eab308; }
+            100% { transform: scale(1) rotate(0deg); }
+        }
+
+        .info { color: #8b92a5; font-size: 14px; margin-bottom: 20px; }
         .input-group { margin: 20px 0; }
         
         input[type="number"] {
             width: 100%;
-            background-color: #2c2c2c;
-            color: #fff;
-            border: 2px solid #333;
+            background-color: #1a1b20;
+            color: #e5e7eb;
+            border: 2px solid #2d3748;
             padding: 12px;
             font-size: 18px;
             border-radius: 10px;
             box-sizing: border-box;
             text-align: center;
             outline: none;
-            transition: border-color 0.2s;
+            transition: border-color 0.3s, box-shadow 0.3s;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.4);
         }
-        input[type="number"]:focus { border-color: #f5c518; }
+        input[type="number"]:focus { 
+            border-color: #eab308; 
+            box-shadow: 0 0 10px rgba(234, 179, 8, 0.2);
+        }
         
         input[type="range"] {
             width: 100%;
-            margin-top: 15px;
-            accent-color: #f5c518;
+            margin-top: 20px;
+            accent-color: #eab308;
+            cursor: pointer;
         }
         
-        .total { font-size: 18px; font-weight: bold; margin-top: 15px; }
-        .total-price { color: #4caf50; font-size: 22px; }
+        .total { font-size: 18px; font-weight: bold; margin-top: 20px; color: #9ca3af; }
+        .total-price { color: #22c55e; font-size: 24px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h2>⭐ Магазин звезд</h2>
-    <div class="info">Курс: 1 звезда = 1.25 ₽<br>Минимум 50 звезд</div>
+    <h2><span class="star-icon">⭐</span> Магазин звезд</h2>
+    <div class="info">Курс: 1 звезда = 1.25 ₽<br>От 50 до 1000 звезд</div>
 
     <div class="input-group">
-        <input type="number" id="starInput" min="50" max="10000" value="50">
-        <input type="range" id="starSlider" min="50" max="10000" value="50">
+        <input type="number" id="starInput" min="50" max="1000" value="50">
+        <input type="range" id="starSlider" min="50" max="1000" value="50"> 
     </div>
 
     <div class="total">
-        Итого: <span class="total-price" id="totalPrice">62.50</span> ₽
+        Итого: <br><span class="total-price" id="totalPrice">62.50</span> ₽
     </div>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand(); // Расширяем на весь экран
+    tg.expand(); 
 
     const input = document.getElementById('starInput');
     const slider = document.getElementById('starSlider');
     const total = document.getElementById('totalPrice');
     const PRICE_PER_STAR = 1.25;
 
-    // Синхронизация полей и подсчет цены
     function updateValues(value) {
         let stars = parseInt(value);
-        if (isNaN(stars) || stars < 50) stars = 50; // Защита от ввода меньше 50
+        if (isNaN(stars)) stars = 50;
+        if (stars < 50) stars = 50;
+        if (stars > 1000) stars = 1000;
         
         input.value = stars;
         slider.value = stars;
@@ -95,22 +126,20 @@
         if (!tg.MainButton.isVisible) tg.MainButton.show();
     }
 
-    input.addEventListener('input', (e) => updateValues(e.target.value));
+    input.addEventListener('change', (e) => updateValues(e.target.value));
     slider.addEventListener('input', (e) => updateValues(e.target.value));
 
-    // Настройка главной кнопки Telegram
     tg.MainButton.setText("ОФОРМИТЬ ЗА 62.50 ₽");
-    tg.MainButton.color = "#f5c518";
+    tg.MainButton.color = "#eab308";
     tg.MainButton.textColor = "#000000";
     tg.MainButton.show();
 
-    // Отправка данных боту по нажатию
     tg.onEvent('mainButtonClicked', function() {
         const data = {
             stars: parseInt(input.value),
             price: (parseInt(input.value) * PRICE_PER_STAR).toFixed(2)
         };
-        tg.sendData(JSON.stringify(data)); // Отправляет данные и закрывает Web App
+        tg.sendData(JSON.stringify(data)); 
     });
 </script>
 
