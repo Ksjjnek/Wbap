@@ -2,288 +2,74 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Покупка звезд</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-dark: linear-gradient(-45deg, #050505, #12182b, #1f2229, #000000);
-            --bg-light: linear-gradient(-45deg, #87CEEB, #e0f6ff, #bde3f4, #87CEEB);
-            --text-dark: #d1d5db;
-            --text-light: #333333;
-            --container-dark: rgba(25, 25, 30, 0.85);
-            --container-light: rgba(255, 255, 255, 0.85);
-            --input-dark: #1a1b20;
-            --input-light: #f0f4f8;
-        }
-
         body {
-            margin: 0;
-            overflow: hidden; /* Скрываем элементы, выходящие за экран */
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            user-select: none;
-            transition: background 1.5s ease, color 1.5s ease;
-            background-size: 400% 400%;
-            animation: gradientBG 12s ease infinite;
+            margin: 0; padding: 0; width: 800px; height: 500px;
+            background: linear-gradient(135deg, #0088cc, #00aaff);
+            font-family: 'Arial', sans-serif; color: white;
+            display: flex; flex-direction: column; justify-content: space-between;
+            overflow: hidden; position: relative;
         }
-
-        body.dark { background: var(--bg-dark); color: var(--text-dark); }
-        body.light { background: var(--bg-light); color: var(--text-light); }
-
-        @keyframes gradientBG {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
+        /* Цена справа */
+        .price-container {
+            position: absolute; right: 50px; top: 150px; text-align: right;
         }
-
-        /* Кнопка смены темы */
-        #themeToggle {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            background: rgba(0,0,0,0.3);
-            border: 2px solid #eab308;
-            border-radius: 50%;
-            width: 45px;
-            height: 45px;
-            font-size: 20px;
-            cursor: pointer;
-            z-index: 100;
-            transition: transform 0.3s;
-        }
-        #themeToggle:active { transform: scale(0.9); }
-
-        /* Контейнер */
-        .container {
-            padding: 30px;
-            border-radius: 20px;
-            text-align: center;
-            width: 80%;
-            max-width: 350px;
-            z-index: 10;
-            transition: background 1.5s ease, box-shadow 1.5s ease;
-            backdrop-filter: blur(10px);
-        }
-        body.dark .container { background-color: var(--container-dark); box-shadow: 0 15px 35px rgba(0,0,0,0.8); }
-        body.light .container { background-color: var(--container-light); box-shadow: 0 15px 35px rgba(0,0,0,0.2); }
-
-        h2 { margin-top: 0; color: #eab308; display: flex; align-items: center; justify-content: center; gap: 8px;}
-        .info { font-size: 14px; margin-bottom: 20px; transition: color 1.5s; }
-        body.dark .info { color: #8b92a5; }
-        body.light .info { color: #555555; }
-
-        input[type="number"] {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            border-radius: 10px;
-            text-align: center;
-            outline: none;
-            transition: all 0.5s;
-            border: 2px solid transparent;
-        }
-        body.dark input[type="number"] { background-color: var(--input-dark); color: #fff; box-shadow: inset 0 3px 6px rgba(0,0,0,0.4); }
-        body.light input[type="number"] { background-color: var(--input-light); color: #000; box-shadow: inset 0 3px 6px rgba(0,0,0,0.1); }
-        input[type="number"]:focus { border-color: #eab308; }
+        .price-label { font-size: 24px; opacity: 0.8; }
+        .price-value { font-size: 80px; font-weight: bold; margin-top: 10px; }
         
-        input[type="range"] { width: 100%; margin-top: 20px; accent-color: #eab308; }
-        
-        .total { font-size: 18px; font-weight: bold; margin-top: 20px; }
-        .total-price { color: #22c55e; font-size: 24px; transition: color 0.3s; }
-        .discount-badge { color: #ff4757; font-size: 16px; display: none; margin-top: 5px; animation: popIn 0.3s; }
+        /* Процент выгоды */
+        .profit-tag {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px; border-radius: 15px;
+            font-size: 20px; margin-top: 20px; display: none;
+        }
 
-        /* Анимации фона (Звезды и Облака) */
-        .anim-element { position: absolute; pointer-events: none; z-index: 1; }
-        
-        .star {
-            width: 4px; height: 4px; background: white; border-radius: 50%;
-            box-shadow: 0 0 10px 2px rgba(255, 255, 255, 0.8);
-            animation: fall linear forwards;
+        /* 3D Логотип TON снизу слева */
+        .ton-logo {
+            position: absolute; bottom: -20px; left: 20px;
+            width: 300px; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.3));
+            transform: perspective(500px) rotateY(10deg);
         }
-        .cloud {
-            width: 80px; height: 30px; background: white; border-radius: 20px;
-            opacity: 0.8; filter: blur(2px);
-            animation: float linear forwards;
-        }
-        .sun {
-            position: absolute; top: 20px; right: 30px; width: 60px; height: 60px;
-            background: #FFD700; border-radius: 50%; box-shadow: 0 0 40px 15px rgba(255, 215, 0, 0.4);
-            z-index: 0; display: none; animation: pulseSun 3s infinite alternate;
-        }
-        body.light .sun { display: block; }
 
-        @keyframes fall { to { transform: translateY(100vh); opacity: 0; } }
-        @keyframes float { to { transform: translateX(100vw); } }
-        @keyframes pulseSun { to { transform: scale(1.1); box-shadow: 0 0 60px 20px rgba(255, 215, 0, 0.6); } }
-        @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-        /* Выпадающая скидка */
-        .discount-drop {
-            position: absolute; background: #ff4757; color: white; padding: 5px 10px;
-            border-radius: 10px; font-weight: bold; cursor: pointer; z-index: 50;
-            pointer-events: auto; animation: popIn 0.5s, floatUp 2s ease-in forwards 3s;
-            box-shadow: 0 4px 10px rgba(255, 71, 87, 0.5); border: 1px solid #fff;
+        /* Блок пользователя снизу */
+        .user-block {
+            position: absolute; bottom: 30px; right: 50px;
+            display: flex; align-items: center; gap: 15px;
         }
-        @keyframes floatUp { to { transform: translateY(-50px); opacity: 0; pointer-events: none; } }
+        .avatar {
+            width: 60px; height: 60px; border-radius: 50%;
+            border: 3px solid white; object-fit: cover;
+        }
+        .username { font-size: 24px; font-weight: 500; }
     </style>
 </head>
-<body class="dark">
-
-<div class="sun"></div>
-<button id="themeToggle">🌙</button>
-
-<div class="container">
-    <h2>⭐ Магазин звезд</h2>
-    <div class="info">Курс: 1 звезда = 1.25 ₽<br>От 50 до 1000 звезд</div>
-
-    <div>
-        <input type="number" id="starInput" min="50" max="1000" value="50">
-        <input type="range" id="starSlider" min="50" max="1000" value="50"> 
+<body>
+    <div class="price-container">
+        <div class="price-label">Курс TON сегодня</div>
+        <div id="price" class="price-value">0.00 ₽</div>
+        <div id="profit" class="profit-tag"></div>
     </div>
 
-    <div class="total">
-        Итого: <br><span class="total-price" id="totalPrice">62.50</span> ₽
-        <div id="discountBadge" class="discount-badge">Применена скидка <span id="discountVal">0</span>%!</div>
+    <img class="ton-logo" src="https://ton.org/download/ton_symbol.png" alt="TON">
+
+    <div class="user-block">
+        <span id="nickname" class="username">@user</span>
+        <img id="avatar" class="avatar" src="" alt="">
     </div>
-</div>
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand(); 
-
-    let isDark = true;
-    let currentDiscount = 0; // В процентах (от 0 до 5)
-    const BASE_PRICE = 1.25;
-
-    // Смена темы
-    document.getElementById('themeToggle').addEventListener('click', (e) => {
-        isDark = !isDark;
-        document.body.className = isDark ? 'dark' : 'light';
-        e.target.innerText = isDark ? '🌙' : '☀️';
-    });
-
-    // Логика цен
-    const input = document.getElementById('starInput');
-    const slider = document.getElementById('starSlider');
-    const total = document.getElementById('totalPrice');
-    const badge = document.getElementById('discountBadge');
-
-    function updateValues() {
-        let stars = parseInt(input.value) || 50;
-        if (stars < 50) stars = 50;
-        if (stars > 1000) stars = 1000;
+    <script>
+        // Получаем параметры из URL
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('price')) document.getElementById('price').innerText = params.get('price') + ' ₽';
+        if(params.get('user')) document.getElementById('nickname').innerText = '@' + params.get('user');
+        if(params.get('avatar')) document.getElementById('avatar').src = params.get('avatar');
         
-        input.value = stars;
-        slider.value = stars;
-        
-        let pricePerStar = BASE_PRICE * (1 - currentDiscount / 100);
-        const finalPrice = (stars * pricePerStar).toFixed(2);
-        
-        total.innerText = finalPrice;
-        if(currentDiscount > 0) {
-            badge.style.display = 'block';
-            document.getElementById('discountVal').innerText = currentDiscount;
-            total.style.color = '#ff4757';
+        const profit = params.get('profit');
+        if(profit) {
+            const p Tag = document.getElementById('profit');
+            pTag.innerText = profit;
+            pTag.style.display = 'inline-block';
         }
-
-        tg.MainButton.setText(`ОФОРМИТЬ ЗА ${finalPrice} ₽`);
-        if (!tg.MainButton.isVisible) tg.MainButton.show();
-    }
-
-    input.addEventListener('change', updateValues);
-    slider.addEventListener('input', () => { input.value = slider.value; updateValues(); });
-    
-    // Инициализация кнопки TG
-    tg.MainButton.setText("ОФОРМИТЬ ЗА 62.50 ₽");
-    tg.MainButton.color = "#eab308";
-    tg.MainButton.textColor = "#000000";
-    tg.MainButton.show();
-
-    tg.onEvent('mainButtonClicked', function() {
-        const data = {
-            stars: parseInt(input.value),
-            price: total.innerText,
-            discount: currentDiscount
-        };
-        tg.sendData(JSON.stringify(data)); 
-    });
-
-    // --- Анимации и генерация скидок ---
-    function spawnDiscount(x, y) {
-        if(currentDiscount > 0) return; // Скидка берется один раз
-        const disc = document.createElement('div');
-        disc.className = 'discount-drop';
-        disc.style.left = `${x}px`;
-        disc.style.top = `${y}px`;
-        
-        const randPercent = Math.floor(Math.random() * 5) + 1; // от 1 до 5%
-        disc.innerText = `-${randPercent}%! Лови!`;
-        
-        disc.onclick = () => {
-            currentDiscount = randPercent;
-            updateValues();
-            disc.remove();
-            tg.HapticFeedback.impactOccurred('heavy'); // Вибрация при ловле
-        };
-        
-        document.body.appendChild(disc);
-        setTimeout(() => { if(disc.parentNode) disc.remove(); }, 4000);
-    }
-
-    function createParticle() {
-        const el = document.createElement('div');
-        el.className = 'anim-element';
-        
-        if (isDark) {
-            // Создаем падающую звезду
-            el.classList.add('star');
-            const startX = Math.random() * window.innerWidth;
-            el.style.left = `${startX}px`;
-            el.style.top = `-10px`;
-            const duration = 2 + Math.random() * 3;
-            el.style.animationDuration = `${duration}s`;
-            document.body.appendChild(el);
-
-            setTimeout(() => {
-                // Взрыв звезды и шанс на скидку 5%
-                const rect = el.getBoundingClientRect();
-                if (Math.random() < 0.05 && rect.y > 0) {
-                    spawnDiscount(rect.x, rect.y);
-                }
-                el.remove();
-            }, duration * 1000 * (0.5 + Math.random() * 0.4)); // Взрывается где-то на пути
-        } else {
-            // Создаем облако
-            el.classList.add('cloud');
-            el.style.left = `-100px`;
-            const startY = 20 + Math.random() * 150;
-            el.style.top = `${startY}px`;
-            const duration = 10 + Math.random() * 10;
-            el.style.animationDuration = `${duration}s`;
-            
-            // Задаем случайный размер облака
-            const scale = 0.5 + Math.random() * 1;
-            el.style.transform = `scale(${scale})`;
-
-            document.body.appendChild(el);
-
-            // Облако может выбросить скидку
-            setTimeout(() => {
-                const rect = el.getBoundingClientRect();
-                if (Math.random() < 0.05) spawnDiscount(rect.x + 30, rect.y + 20);
-            }, duration * 1000 * 0.5);
-
-            setTimeout(() => el.remove(), duration * 1000);
-        }
-    }
-
-    // Запуск генератора частиц
-    setInterval(createParticle, 800);
-</script>
-
+    </script>
 </body>
-            </html>
+</html>
