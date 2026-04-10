@@ -2,74 +2,114 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            margin: 0; padding: 0; width: 800px; height: 500px;
-            background: linear-gradient(135deg, #0088cc, #00aaff);
-            font-family: 'Arial', sans-serif; color: white;
-            display: flex; flex-direction: column; justify-content: space-between;
-            overflow: hidden; position: relative;
-        }
-        /* Цена справа */
-        .price-container {
-            position: absolute; right: 50px; top: 150px; text-align: right;
-        }
-        .price-label { font-size: 24px; opacity: 0.8; }
-        .price-value { font-size: 80px; font-weight: bold; margin-top: 10px; }
-        
-        /* Процент выгоды */
-        .profit-tag {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 10px 20px; border-radius: 15px;
-            font-size: 20px; margin-top: 20px; display: none;
+            background: linear-gradient(135deg, #001f3f 0%, #002b1b 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
         }
 
-        /* 3D Логотип TON снизу слева */
-        .ton-logo {
-            position: absolute; bottom: -20px; left: 20px;
-            width: 300px; filter: drop-shadow(0 20px 50px rgba(0,0,0,0.3));
-            transform: perspective(500px) rotateY(10deg);
+        /* Шапка */
+        .header {
+            width: 90%;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 20px;
+        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ffcc; }
+
+        /* 3D Контейнер */
+        .container {
+            perspective: 1000px;
+            margin-top: 50px;
         }
 
-        /* Блок пользователя снизу */
-        .user-block {
-            position: absolute; bottom: 30px; right: 50px;
-            display: flex; align-items: center; gap: 15px;
+        .card {
+            width: 320px;
+            height: 190px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(15px);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            position: relative;
         }
-        .avatar {
-            width: 60px; height: 60px; border-radius: 50%;
-            border: 3px solid white; object-fit: cover;
-        }
-        .username { font-size: 24px; font-weight: 500; }
+
+        .card h2 { margin: 0; font-size: 18px; color: #00ffcc; text-transform: uppercase; }
+        .card-data { margin-top: 30px; font-family: 'Courier New', monospace; }
+        .card-data div { margin-bottom: 10px; font-size: 14px; }
+        .balance-label { position: absolute; bottom: 20px; right: 20px; text-align: right; }
+        .balance-val { font-size: 24px; font-weight: bold; color: #00ffcc; }
     </style>
 </head>
 <body>
-    <div class="price-container">
-        <div class="price-label">Курс TON сегодня</div>
-        <div id="price" class="price-value">0.00 ₽</div>
-        <div id="profit" class="profit-tag"></div>
+
+    <div class="header">
+        <div class="user-info">
+            <span id="username">User</span>
+            <img id="user-photo" class="avatar" src="https://via.placeholder.com/40" alt="Avatar">
+        </div>
     </div>
 
-    <img class="ton-logo" src="https://ton.org/download/ton_symbol.png" alt="TON">
-
-    <div class="user-block">
-        <span id="nickname" class="username">@user</span>
-        <img id="avatar" class="avatar" src="" alt="">
+    <div class="container">
+        <div class="card" id="card">
+            <h2>Digital Asset Card</h2>
+            <div class="card-data">
+                <div id="user-id">ID: 000000000</div>
+                <div id="card-username">@username</div>
+            </div>
+            <div class="balance-label">
+                <div style="font-size: 10px; opacity: 0.7;">BALANCE</div>
+                <div class="balance-val" id="balance">0 STARS</div>
+            </div>
+        </div>
     </div>
 
     <script>
-        // Получаем параметры из URL
-        const params = new URLSearchParams(window.location.search);
-        if(params.get('price')) document.getElementById('price').innerText = params.get('price') + ' ₽';
-        if(params.get('user')) document.getElementById('nickname').innerText = '@' + params.get('user');
-        if(params.get('avatar')) document.getElementById('avatar').src = params.get('avatar');
-        
-        const profit = params.get('profit');
-        if(profit) {
-            const p Tag = document.getElementById('profit');
-            pTag.innerText = profit;
-            pTag.style.display = 'inline-block';
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Получаем данные из Telegram
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('username').innerText = user.username || user.first_name;
+            document.getElementById('card-username').innerText = '@' + (user.username || 'unknown');
+            document.getElementById('user-id').innerText = 'ID: ' + user.id;
+            if (user.photo_url) {
+                document.getElementById('user-photo').src = user.photo_url;
+            }
         }
+
+        // Получаем баланс из URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const bal = urlParams.get('bal') || 0;
+        document.getElementById('balance').innerText = bal + ' STARS';
+
+        // 3D Анимация карточки
+        const card = document.getElementById('card');
+        document.addEventListener('mousemove', (e) => {
+            let xAxis = (window.innerWidth / 2 - e.pageX) / 15;
+            let yAxis = (window.innerHeight / 2 - e.pageY) / 15;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Сброс при выходе мыши
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        });
     </script>
 </body>
 </html>
