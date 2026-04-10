@@ -2,114 +2,167 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             background: linear-gradient(135deg, #001f3f 0%, #002b1b 100%);
             color: white;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             height: 100vh;
             margin: 0;
             overflow: hidden;
+            touch-action: none;
         }
 
-        /* Шапка */
         .header {
-            width: 90%;
+            width: 100%;
             display: flex;
             justify-content: flex-end;
-            align-items: center;
-            padding: 20px;
+            padding: 15px 25px;
+            box-sizing: border-box;
         }
         .user-info { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #00ffcc; }
+        .avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00ffcc; object-fit: cover; }
 
-        /* 3D Контейнер */
         .container {
-            perspective: 1000px;
-            margin-top: 50px;
+            perspective: 1200px;
+            margin-top: 40px;
+            cursor: grab;
         }
+        .container:active { cursor: grabbing; }
 
         .card {
-            width: 320px;
-            height: 190px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(15px);
+            width: 300px;
+            height: 180px;
+            background: rgba(255, 255, 255, 0.07);
+            backdrop-filter: blur(20px);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            padding: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 25px;
             transform-style: preserve-3d;
-            transition: transform 0.1s ease-out;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
             position: relative;
+            pointer-events: none; /* Чтобы события мыши ловил контейнер */
         }
 
-        .card h2 { margin: 0; font-size: 18px; color: #00ffcc; text-transform: uppercase; }
-        .card-data { margin-top: 30px; font-family: 'Courier New', monospace; }
-        .card-data div { margin-bottom: 10px; font-size: 14px; }
-        .balance-label { position: absolute; bottom: 20px; right: 20px; text-align: right; }
-        .balance-val { font-size: 24px; font-weight: bold; color: #00ffcc; }
+        .card h2 { margin: 0; font-size: 22px; color: #00ffcc; letter-spacing: 2px; }
+        .card-data { margin-top: 35px; font-family: 'Courier New', monospace; }
+        .card-data div { margin-bottom: 8px; font-size: 14px; opacity: 0.9; }
+        
+        .balance-label { position: absolute; bottom: 25px; right: 25px; text-align: right; }
+        .balance-val { font-size: 26px; font-weight: bold; color: #00ffcc; }
+
+        .btn-deposit {
+            margin-top: 60px;
+            padding: 15px 40px;
+            background: #00ffcc;
+            color: #001f3f;
+            border: none;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-deposit:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="user-info">
-            <span id="username">User</span>
-            <img id="user-photo" class="avatar" src="https://via.placeholder.com/40" alt="Avatar">
+            <span id="username">Loading...</span>
+            <img id="user-photo" class="avatar" src="https://via.placeholder.com/40" alt="">
         </div>
     </div>
 
-    <div class="container">
+    <div class="container" id="card-container">
         <div class="card" id="card">
-            <h2>Digital Asset Card</h2>
+            <h2>BPay</h2>
             <div class="card-data">
                 <div id="user-id">ID: 000000000</div>
                 <div id="card-username">@username</div>
             </div>
             <div class="balance-label">
-                <div style="font-size: 10px; opacity: 0.7;">BALANCE</div>
-                <div class="balance-val" id="balance">0 STARS</div>
+                <div style="font-size: 10px; opacity: 0.7;">БАЛАНС</div>
+                <div class="balance-val" id="balance">0.00 ₽</div>
             </div>
         </div>
     </div>
+
+    <button class="btn-deposit" onclick="startDeposit()">Пополнить</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // Получаем данные из Telegram
         const user = tg.initDataUnsafe.user;
         if (user) {
-            document.getElementById('username').innerText = user.username || user.first_name;
-            document.getElementById('card-username').innerText = '@' + (user.username || 'unknown');
+            document.getElementById('username').innerText = user.first_name;
+            document.getElementById('card-username').innerText = '@' + (user.username || 'user');
             document.getElementById('user-id').innerText = 'ID: ' + user.id;
-            if (user.photo_url) {
-                document.getElementById('user-photo').src = user.photo_url;
-            }
+            if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
         }
 
-        // Получаем баланс из URL
         const urlParams = new URLSearchParams(window.location.search);
         const bal = urlParams.get('bal') || 0;
-        document.getElementById('balance').innerText = bal + ' STARS';
+        document.getElementById('balance').innerText = parseFloat(bal).toLocaleString('ru-RU') + ' ₽';
 
-        // 3D Анимация карточки
+        // Логика вращения
+        const container = document.getElementById('card-container');
         const card = document.getElementById('card');
-        document.addEventListener('mousemove', (e) => {
-            let xAxis = (window.innerWidth / 2 - e.pageX) / 15;
-            let yAxis = (window.innerHeight / 2 - e.pageY) / 15;
-            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
-        });
+        
+        let rotationX = 0, rotationY = 0;
+        let velocityX = 0, velocityY = 0;
+        let isDragging = false;
+        let lastMouseX, lastMouseY;
 
-        // Сброс при выходе мыши
-        document.addEventListener('mouseleave', () => {
-            card.style.transform = `rotateY(0deg) rotateX(0deg)`;
-        });
+        function updateRotation() {
+            if (!isDragging) {
+                // Инерция и замедление
+                rotationX += velocityX;
+                rotationY += velocityY;
+                velocityX *= 0.95; 
+                velocityY *= 0.95;
+            }
+            card.style.transform = `rotateX(${-rotationY}deg) rotateY(${rotationX}deg)`;
+            requestAnimationFrame(updateRotation);
+        }
+
+        container.onpointerdown = (e) => {
+            isDragging = true;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            velocityX = 0; velocityY = 0;
+        };
+
+        window.onpointermove = (e) => {
+            if (!isDragging) return;
+            const deltaX = e.clientX - lastMouseX;
+            const deltaY = e.clientY - lastMouseY;
+            
+            velocityX = deltaX * 0.5;
+            velocityY = deltaY * 0.5;
+            
+            rotationX += velocityX;
+            rotationY += velocityY;
+            
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+        };
+
+        window.onpointerup = () => { isDragging = false; };
+
+        updateRotation();
+
+        function startDeposit() {
+            tg.sendData("action_deposit"); 
+            tg.close();
+        }
     </script>
 </body>
 </html>
