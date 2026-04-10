@@ -6,9 +6,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #001f3f 0%, #002b1b 100%);
+            background: linear-gradient(135deg, #020d18 0%, #011a0e 100%);
             color: white;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -22,145 +22,110 @@
             width: 100%;
             display: flex;
             justify-content: flex-end;
-            padding: 15px 25px;
+            padding: 20px;
             box-sizing: border-box;
         }
-        .user-info { display: flex; align-items: center; gap: 10px; }
-        .avatar { width: 35px; height: 35px; border-radius: 50%; border: 2px solid #00ffcc; object-fit: cover; }
 
-        .container {
-            perspective: 1200px;
-            margin-top: 40px;
+        .avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #00ffcc; }
+
+        .card-container {
+            perspective: 1000px;
+            margin-top: 50px;
             cursor: grab;
         }
-        .container:active { cursor: grabbing; }
 
         .card {
-            width: 300px;
-            height: 180px;
-            background: rgba(255, 255, 255, 0.07);
-            backdrop-filter: blur(20px);
+            width: 310px;
+            height: 185px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(15px);
             border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(0, 255, 204, 0.2);
             padding: 25px;
             transform-style: preserve-3d;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.6);
             position: relative;
-            pointer-events: none; /* Чтобы события мыши ловил контейнер */
         }
 
-        .card h2 { margin: 0; font-size: 22px; color: #00ffcc; letter-spacing: 2px; }
-        .card-data { margin-top: 35px; font-family: 'Courier New', monospace; }
-        .card-data div { margin-bottom: 8px; font-size: 14px; opacity: 0.9; }
-        
-        .balance-label { position: absolute; bottom: 25px; right: 25px; text-align: right; }
-        .balance-val { font-size: 26px; font-weight: bold; color: #00ffcc; }
+        .card h1 { margin: 0; font-size: 28px; color: #00ffcc; font-style: italic; }
+        .card-info { margin-top: 40px; font-family: monospace; font-size: 15px; }
+        .balance-box { position: absolute; bottom: 25px; right: 25px; text-align: right; }
+        .balance-val { font-size: 24px; color: #00ffcc; font-weight: bold; }
 
-        .btn-deposit {
-            margin-top: 60px;
-            padding: 15px 40px;
+        .btn {
+            margin-top: 80px;
+            padding: 16px 50px;
             background: #00ffcc;
-            color: #001f3f;
+            color: #011a0e;
             border: none;
-            border-radius: 12px;
+            border-radius: 15px;
             font-weight: bold;
             font-size: 16px;
-            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.3);
-            transition: transform 0.2s;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.4);
         }
-        .btn-deposit:active { transform: scale(0.95); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="user-info">
-            <span id="username">Loading...</span>
-            <img id="user-photo" class="avatar" src="https://via.placeholder.com/40" alt="">
-        </div>
+        <img id="u-pic" class="avatar" src="" alt="">
     </div>
 
-    <div class="container" id="card-container">
+    <div class="card-container" id="box">
         <div class="card" id="card">
-            <h2>BPay</h2>
-            <div class="card-data">
-                <div id="user-id">ID: 000000000</div>
-                <div id="card-username">@username</div>
+            <h1>BPay</h1>
+            <div class="card-info">
+                <div id="u-id">ID: ...</div>
+                <div id="u-name">@username</div>
             </div>
-            <div class="balance-label">
-                <div style="font-size: 10px; opacity: 0.7;">БАЛАНС</div>
-                <div class="balance-val" id="balance">0.00 ₽</div>
+            <div class="balance-box">
+                <div style="font-size: 10px; opacity: 0.6;">БАЛАНС</div>
+                <div class="balance-val" id="u-bal">0.00 ₽</div>
             </div>
         </div>
     </div>
 
-    <button class="btn-deposit" onclick="startDeposit()">Пополнить</button>
+    <button class="btn" onclick="deposit()">ПОПОЛНИТЬ</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        const user = tg.initDataUnsafe.user;
-        if (user) {
-            document.getElementById('username').innerText = user.first_name;
-            document.getElementById('card-username').innerText = '@' + (user.username || 'user');
-            document.getElementById('user-id').innerText = 'ID: ' + user.id;
-            if (user.photo_url) document.getElementById('user-photo').src = user.photo_url;
+        // Данные юзера
+        const u = tg.initDataUnsafe.user;
+        if(u) {
+            document.getElementById('u-name').innerText = '@' + (u.username || 'user');
+            document.getElementById('u-id').innerText = 'ID: ' + u.id;
+            document.getElementById('u-pic').src = u.photo_url || 'https://via.placeholder.com/45';
         }
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const bal = urlParams.get('bal') || 0;
-        document.getElementById('balance').innerText = parseFloat(bal).toLocaleString('ru-RU') + ' ₽';
+        // Баланс
+        const params = new URLSearchParams(window.location.search);
+        document.getElementById('u-bal').innerText = (params.get('bal') || 0) + ' ₽';
 
-        // Логика вращения
-        const container = document.getElementById('card-container');
-        const card = document.getElementById('card');
-        
-        let rotationX = 0, rotationY = 0;
-        let velocityX = 0, velocityY = 0;
-        let isDragging = false;
-        let lastMouseX, lastMouseY;
+        // 3D Вращение
+        let card = document.getElementById('card');
+        let box = document.getElementById('box');
+        let rX = 0, rY = 0, vX = 0, vY = 0, isDown = false, lX, lY;
 
-        function updateRotation() {
-            if (!isDragging) {
-                // Инерция и замедление
-                rotationX += velocityX;
-                rotationY += velocityY;
-                velocityX *= 0.95; 
-                velocityY *= 0.95;
-            }
-            card.style.transform = `rotateX(${-rotationY}deg) rotateY(${rotationX}deg)`;
-            requestAnimationFrame(updateRotation);
+        box.onpointerdown = e => { isDown = true; lX = e.clientX; lY = e.clientY; vX = 0; vY = 0; };
+        window.onpointermove = e => {
+            if(!isDown) return;
+            vX = (e.clientX - lX) * 0.5; vY = (e.clientY - lY) * 0.5;
+            rY += vX; rX -= vY;
+            lX = e.clientX; lY = e.clientY;
+        };
+        window.onpointerup = () => isDown = false;
+
+        function loop() {
+            if(!isDown) { rY += vX; rX -= vY; vX *= 0.95; vY *= 0.95; }
+            card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg)`;
+            requestAnimationFrame(loop);
         }
+        loop();
 
-        container.onpointerdown = (e) => {
-            isDragging = true;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-            velocityX = 0; velocityY = 0;
-        };
-
-        window.onpointermove = (e) => {
-            if (!isDragging) return;
-            const deltaX = e.clientX - lastMouseX;
-            const deltaY = e.clientY - lastMouseY;
-            
-            velocityX = deltaX * 0.5;
-            velocityY = deltaY * 0.5;
-            
-            rotationX += velocityX;
-            rotationY += velocityY;
-            
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-        };
-
-        window.onpointerup = () => { isDragging = false; };
-
-        updateRotation();
-
-        function startDeposit() {
-            tg.sendData("action_deposit"); 
+        function deposit() {
+            tg.sendData("action_deposit");
             tg.close();
         }
     </script>
