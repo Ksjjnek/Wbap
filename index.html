@@ -6,144 +6,110 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            background: linear-gradient(135deg, #001220 0%, #002211 100%);
-            color: white;
-            font-family: 'Segoe UI', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-            touch-action: none;
+            background: linear-gradient(135deg, #001f3f 0%, #002b1b 100%);
+            color: white; font-family: sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            height: 100vh; margin: 0; overflow: hidden; touch-action: none;
         }
-
         .header {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 10;
+            width: 100%; display: flex; justify-content: flex-end;
+            padding: 20px; box-sizing: border-box; align-items: center; gap: 10px;
         }
-        #nick { font-weight: 600; font-size: 15px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .avatar { width: 42px; height: 42px; border-radius: 50%; border: 2px solid #00ffcc; background: #333; }
-
-        .scene { perspective: 1000px; margin-top: 120px; cursor: grab; }
-        .card {
-            width: 320px;
-            height: 190px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(15px);
-            border-radius: 20px;
-            border: 1px solid rgba(0, 255, 204, 0.25);
-            padding: 25px;
-            transform-style: preserve-3d;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.7);
-            position: relative;
-        }
-
-        .card h1 { margin: 0; font-size: 28px; color: #00ffcc; letter-spacing: 3px; font-weight: 800; }
-        .card-details { margin-top: 45px; font-family: 'Courier New', monospace; }
-        .card-details div { font-size: 14px; margin-bottom: 5px; color: #eee; }
+        .avatar { width: 45px; height: 45px; border-radius: 50%; border: 2px solid #00ffcc; background: #000; }
         
-        .balance-box { position: absolute; bottom: 25px; right: 25px; text-align: right; }
-        .balance-val { font-size: 26px; font-weight: bold; color: #00ffcc; }
+        .card-box { perspective: 1000px; margin-top: 60px; cursor: grab; }
+        .card {
+            width: 310px; height: 185px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(15px); border-radius: 20px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+            padding: 25px; transform-style: preserve-3d;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5); position: relative;
+        }
+        .card h1 { margin: 0; font-size: 26px; color: #00ffcc; letter-spacing: 2px; }
+        .card-info { margin-top: 40px; font-family: monospace; font-size: 14px; color: #ccc; }
+        .bal-wrap { position: absolute; bottom: 25px; right: 25px; text-align: right; }
+        .bal-val { font-size: 26px; font-weight: bold; color: #00ffcc; }
 
-        .btn-deposit {
-            margin-top: 80px;
-            padding: 18px 70px;
-            background: #00ffcc;
-            color: #001220;
-            border: none;
-            border-radius: 15px;
-            font-weight: bold;
-            font-size: 17px;
-            box-shadow: 0 10px 25px rgba(0, 255, 204, 0.3);
-            transition: 0.2s;
+        .btn {
+            margin-top: 70px; padding: 16px 60px;
+            background: #00ffcc; color: #001f3f;
+            border: none; border-radius: 12px;
+            font-weight: bold; font-size: 16px;
+            box-shadow: 0 5px 20px rgba(0, 255, 204, 0.4);
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span id="nick">Загрузка...</span>
-        <img id="ava" class="avatar" src="" alt="">
+        <span id="top-name">User</span>
+        <img id="top-ava" class="avatar" src="https://via.placeholder.com/45" alt="">
     </div>
 
-    <div class="scene" id="scene">
+    <div class="card-box" id="box">
         <div class="card" id="card">
             <h1>BPay</h1>
-            <div class="card-details">
-                <div id="u-id">ID: 000000000</div>
-                <div id="u-nick">@username</div>
+            <div class="card-info">
+                <div id="card-id">ID: 000000000</div>
+                <div id="card-name">@username</div>
             </div>
-            <div class="balance-box">
+            <div class="bal-wrap">
                 <div style="font-size: 10px; opacity: 0.6;">БАЛАНС</div>
-                <div class="balance-val" id="u-bal">0.00 ₽</div>
+                <div class="bal-val" id="card-bal">0.00 ₽</div>
             </div>
         </div>
     </div>
 
-    <button class="btn-deposit" onclick="deposit()">Пополнить</button>
+    <button class="btn" onclick="sendDep()">ПОПОЛНИТЬ</button>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready(); // Сообщаем Telegram, что приложение готово
+        tg.ready();
         tg.expand();
 
-        // Функция для получения данных
-        function initData() {
-            const user = tg.initDataUnsafe?.user;
-            
-            if (user) {
-                document.getElementById('nick').innerText = user.first_name || "User";
-                document.getElementById('u-nick').innerText = '@' + (user.username || 'unknown');
-                document.getElementById('u-id').innerText = 'ID: ' + user.id;
-                
-                // Аватарка (может быть пустой, если не разрешено настройками приватности)
-                if (user.photo_url) {
-                    document.getElementById('ava').src = user.photo_url;
-                } else {
-                    document.getElementById('ava').style.display = 'none';
-                }
-            }
+        // ЧИТАЕМ ДАННЫЕ ИЗ URL (самый надежный способ)
+        const params = new URLSearchParams(window.location.search);
+        const urlBal = params.get('bal') || "0.00";
+        const urlId = params.get('id') || "Неизвестно";
+        const urlName = params.get('name') || "User";
 
-            // Парсим баланс из URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const balance = urlParams.get('bal') || "0.00";
-            document.getElementById('u-bal').innerText = parseFloat(balance).toFixed(2) + ' ₽';
+        // Если Telegram отдал данные через API, берем их, если нет — берем из URL
+        const user = tg.initDataUnsafe?.user;
+        const finalName = user ? (user.username || user.first_name) : urlName;
+        const finalId = user ? user.id : urlId;
+
+        document.getElementById('top-name').innerText = finalName;
+        document.getElementById('card-name').innerText = '@' + finalName;
+        document.getElementById('card-id').innerText = 'ID: ' + finalId;
+        document.getElementById('card-bal').innerText = parseFloat(urlBal).toFixed(2) + ' ₽';
+        
+        if (user && user.photo_url) {
+            document.getElementById('top-ava').src = user.photo_url;
         }
 
-        initData();
-
-        // --- ВРАЩЕНИЕ ---
+        // 3D ВРАЩЕНИЕ
         let card = document.getElementById('card');
-        let scene = document.getElementById('scene');
-        let rX = 0, rY = 0, vX = 0, vY = 0, isDrag = false, lastX, lastY;
+        let box = document.getElementById('box');
+        let rX = 0, rY = 0, vX = 0, vY = 0, isDown = false, lX, lY;
 
-        scene.onpointerdown = e => { isDrag = true; lastX = e.clientX; lastY = e.clientY; vX = 0; vY = 0; };
+        box.onpointerdown = e => { isDown = true; lX = e.clientX; lY = e.clientY; vX = 0; vY = 0; };
         window.onpointermove = e => {
-            if(!isDrag) return;
-            vX = (e.clientX - lastX) * 0.4;
-            vY = (e.clientY - lastY) * 0.4;
+            if(!isDown) return;
+            vX = (e.clientX - lX) * 0.5; vY = (e.clientY - lY) * 0.5;
             rY += vX; rX -= vY;
-            lastX = e.clientX; lastY = e.clientY;
+            lX = e.clientX; lY = e.clientY;
         };
-        window.onpointerup = () => isDrag = false;
+        window.onpointerup = () => isDown = false;
 
-        function animate() {
-            if(!isDrag) {
-                rY += vX; rX -= vY;
-                vX *= 0.96; vY *= 0.96;
-            }
+        function render() {
+            if(!isDown) { rY += vX; rX -= vY; vX *= 0.95; vY *= 0.95; }
             card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg)`;
-            requestAnimationFrame(animate);
+            requestAnimationFrame(render);
         }
-        animate();
+        render();
 
-        function deposit() {
+        function sendDep() {
             tg.sendData("action_deposit");
             tg.close();
         }
