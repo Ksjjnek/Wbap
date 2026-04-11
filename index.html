@@ -3,15 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>3D Банковская карта | Премиум дизайн</title>
+    <title>3D Банковская карта | Telegram Web App</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, -apple-system, 'Roboto', sans-serif;
+            font-family: 'Segoe UI', 'Poppins', 'Inter', system-ui, sans-serif;
         }
-
-        /* Фоновый градиент: темно-синий + темно-зеленый с динамическим свечением */
         body::before {
             content: "";
             position: fixed;
@@ -22,7 +20,6 @@
             background: radial-gradient(circle at 20% 30%, #0a2f2a, #05161a);
             z-index: -2;
         }
-
         body::after {
             content: "";
             position: fixed;
@@ -30,57 +27,46 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(125deg, rgba(10, 25, 47, 0.8) 0%, rgba(7, 40, 30, 0.9) 100%);
+            background: linear-gradient(125deg, rgba(10, 25, 47, 0.8), rgba(7, 40, 30, 0.9));
             z-index: -1;
         }
-
-        /* Декоративные частицы или сетка для атмосферы (необязательно, но стильно) */
         .ambient-grid {
             position: fixed;
             width: 100%;
             height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 255, 150, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(0, 255, 150, 0.03) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(0,255,150,0.03) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,255,150,0.03) 1px, transparent 1px);
             background-size: 40px 40px;
             pointer-events: none;
             z-index: 0;
         }
-
-        /* Небольшой текст-подсказка внизу */
         .instruction {
             position: fixed;
             bottom: 20px;
             left: 0;
             right: 0;
             text-align: center;
-            color: rgba(180, 220, 200, 0.7);
+            color: rgba(180,220,200,0.7);
             font-size: 14px;
-            font-weight: 500;
-            letter-spacing: 1px;
-            backdrop-filter: blur(5px);
-            background: rgba(0, 0, 0, 0.3);
+            background: rgba(0,0,0,0.3);
             width: fit-content;
             margin: 0 auto;
             padding: 8px 20px;
             border-radius: 40px;
+            backdrop-filter: blur(5px);
             pointer-events: none;
             z-index: 10;
             font-family: monospace;
-            border: 1px solid rgba(100, 200, 150, 0.3);
-            transition: opacity 0.3s;
         }
-
         @media (max-width: 600px) {
-            .instruction { font-size: 10px; bottom: 12px; padding: 5px 15px; }
+            .instruction { font-size: 10px; bottom: 12px; }
         }
     </style>
 </head>
 <body>
 <div class="ambient-grid"></div>
-<div class="instruction">🖱️ Мышь / палец — вращайте карту 360° | Плавное 3D</div>
+<div class="instruction">🖱️ Мышь / палец — вращайте карту | Данные из Telegram</div>
 
-<!-- Подключаем Three.js и дополнения -->
 <script type="importmap">
     {
         "imports": {
@@ -93,90 +79,169 @@
 <script type="module">
     import * as THREE from 'three';
     import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-    import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 
-    // --- Инициализация сцены, камеры, рендереров ---
+    // ---------- НАСТРОЙКИ ----------
+    // ⚠️ Если вы развернули сервер для аватарок, укажите его URL. Иначе аватарка будет в виде инициалов.
+    const AVATAR_API_URL = "";  // Пример: "https://your-server.onrender.com/avatar/"
+    // ---------------------------------
+
+    // --- Инициализация сцены (как в оригинале) ---
     const scene = new THREE.Scene();
-    scene.background = null; // прозрачный, чтобы видеть CSS фон
-    scene.fog = new THREE.FogExp2(0x05161a, 0.008); // легкая дымка для глубины
-
-    // Камера: угол обзора, соотношение, ближняя/дальняя плоскость
+    scene.background = null;
+    scene.fog = new THREE.FogExp2(0x05161a, 0.008);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(2, 1.5, 4);
     camera.lookAt(0, 0, 0);
-
-    // WebGL рендерер
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }); // alpha true для фона body
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.shadowMap.enabled = true; // тени для объема
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.shadowMap.enabled = true;
     document.body.appendChild(renderer.domElement);
 
-    // --- CSS2DRenderer для текста на карте (чтобы текст всегда был четким, но мы используем текстуру, 
-    // однако для чистоты и возможности легкой правки добавим CSS2D для эмблемы? Нет, лучше всю графику через текстуру.
-    // Оставляем только WebGL для карты. CSS2D не используем для главной карты, чтобы сохранить 3D-материал.
-    
-    // --- Освещение: создаем эффект драгоценного металла и объема ---
-    // Ambient light - мягкий свет
+    // Освещение (оставляем как было)
     const ambientLight = new THREE.AmbientLight(0x404060, 0.65);
     scene.add(ambientLight);
-    
-    // Основной направленный свет (слева сверху)
     const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
     mainLight.position.set(2, 3, 2);
     mainLight.castShadow = true;
-    mainLight.receiveShadow = false;
-    mainLight.shadow.mapSize.width = 1024;
-    mainLight.shadow.mapSize.height = 1024;
     scene.add(mainLight);
-    
-    // Заполняющий теплый свет справа
     const fillLight = new THREE.PointLight(0x4466aa, 0.6);
     fillLight.position.set(1.5, 1, 2);
     scene.add(fillLight);
-    
-    // Контровой холодный свет сзади-снизу для бликов на краях
     const backLight = new THREE.PointLight(0x33cc99, 0.45);
     backLight.position.set(-1, -0.8, -1.8);
     scene.add(backLight);
-    
-    // Динамический акцентный свет (вращается слегка, но не обязательно)
     const accentLight = new THREE.PointLight(0x88aaff, 0.5);
     accentLight.position.set(0.5, 1.2, 1.5);
     scene.add(accentLight);
-    
-    // Добавим еле заметный свет снизу для свечения
     const rimLight = new THREE.PointLight(0x66cc99, 0.3);
     rimLight.position.set(0, -1.2, 0.8);
     scene.add(rimLight);
     
-    // --- Вспомогательная сетка (опционально, для эстетики, но полупрозрачная, чтобы не мешать) ---
     const gridHelper = new THREE.GridHelper(8, 20, 0x33aa77, 0x226655);
     gridHelper.position.y = -1.2;
     gridHelper.material.transparent = true;
     gridHelper.material.opacity = 0.2;
     scene.add(gridHelper);
     
-    // Легкая парящая сфера с отражением вокруг (декор)
     const ambientGlow = new THREE.Mesh(
         new THREE.SphereGeometry(1.8, 32, 32),
         new THREE.MeshStandardMaterial({ color: 0x1a5f4a, emissive: 0x0a2f2a, roughness: 0.8, metalness: 0.1, transparent: true, opacity: 0.07 })
     );
-    ambientGlow.position.set(0, 0, 0);
     scene.add(ambientGlow);
     
-    // --- СОЗДАНИЕ ТЕКСТУРЫ БАНКОВСКОЙ КАРТЫ (Canvas с премиум дизайном) ---
-    const createCardTexture = () => {
-        // Размеры с соотношением сторон банковской карты ~1.586 (ширина/высота)
-        const width = 1024;
-        const height = 646;
+    // Частицы и звёзды (для красоты)
+    const particleCount = 400;
+    const particlesGeometry = new THREE.BufferGeometry();
+    const particlePositions = new Float32Array(particleCount * 3);
+    for (let i = 0; i < particleCount; i++) {
+        particlePositions[i*3] = (Math.random() - 0.5) * 5;
+        particlePositions[i*3+1] = (Math.random() - 0.5) * 3.5;
+        particlePositions[i*3+2] = (Math.random() - 0.5) * 4 - 1;
+    }
+    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
+    const particleMaterial = new THREE.PointsMaterial({ color: 0x66ddbb, size: 0.022, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending });
+    const particles = new THREE.Points(particlesGeometry, particleMaterial);
+    scene.add(particles);
+    
+    const starCount = 800;
+    const starGeo = new THREE.BufferGeometry();
+    const starPos = [];
+    for (let i = 0; i < starCount; i++) {
+        starPos.push((Math.random() - 0.5) * 200);
+        starPos.push((Math.random() - 0.5) * 100);
+        starPos.push((Math.random() - 0.5) * 80 - 40);
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
+    const starMat = new THREE.PointsMaterial({ color: 0x88ccaa, size: 0.08, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
+    const stars = new THREE.Points(starGeo, starMat);
+    scene.add(stars);
+    
+    // --- Геометрия карты ---
+    const cardWidth = 3.2;
+    const cardHeight = 2.02;
+    const cardDepth = 0.085;
+    const geometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
+    const edgeMaterial = new THREE.MeshStandardMaterial({ color: 0x1e4a44, roughness: 0.4, metalness: 0.7 });
+    const backMaterial = new THREE.MeshStandardMaterial({ color: 0x0a2a2a, roughness: 0.6, metalness: 0.3 });
+    // Временный материал-заглушка (будет заменён)
+    const tempMaterial = new THREE.MeshStandardMaterial({ color: 0x0a2c2d });
+    const materials = [edgeMaterial, edgeMaterial, edgeMaterial, edgeMaterial, tempMaterial, backMaterial];
+    const card = new THREE.Mesh(geometry, materials);
+    card.castShadow = true;
+    card.position.set(0, 0.05, 0);
+    scene.add(card);
+    window.cardMesh = card;  // чтобы динамический скрипт мог обновить текстуру
+
+    // Свечение вокруг карты
+    const glowGeometry = new THREE.BoxGeometry(cardWidth + 0.03, cardHeight + 0.03, cardDepth + 0.02);
+    const glowMaterial = new THREE.MeshBasicMaterial({ color: 0x44bba0, transparent: true, opacity: 0.12, side: THREE.BackSide });
+    const glowBorder = new THREE.Mesh(glowGeometry, glowMaterial);
+    card.add(glowBorder);
+    
+    // --- Управление ---
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.06;
+    controls.rotateSpeed = 1.5;
+    controls.enableZoom = true;
+    controls.enablePan = false;
+    controls.target.set(0, 0.05, 0);
+    controls.maxPolarAngle = Math.PI / 1.8;
+    controls.minDistance = 1.8;
+    controls.maxDistance = 6.5;
+    
+    // --- Динамическая подсветка ---
+    let time = 0;
+    const movingLight = new THREE.PointLight(0x44ccaa, 0.6);
+    movingLight.position.set(1, 0.5, 1.2);
+    scene.add(movingLight);
+    
+    // --- Анимация ---
+    function animate() {
+        requestAnimationFrame(animate);
+        time += 0.012;
+        const angle = time * 0.8;
+        movingLight.position.x = 1.2 + Math.sin(angle) * 0.6;
+        movingLight.position.z = 1.0 + Math.cos(angle * 0.7) * 0.8;
+        movingLight.intensity = 0.55 + Math.sin(time * 1.8) * 0.2;
+        rimLight.intensity = 0.35 + Math.sin(time * 2) * 0.1;
+        accentLight.intensity = 0.5 + Math.sin(time * 1.2) * 0.15;
+        fillLight.intensity = 0.6 + Math.sin(time * 0.9) * 0.1;
+        particles.rotation.y = time * 0.1;
+        particles.rotation.x = Math.sin(time * 0.2) * 0.1;
+        stars.rotation.y += 0.0005;
+        stars.rotation.x += 0.0003;
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+    
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // ========== ДИНАМИЧЕСКАЯ ТЕКСТУРА (данные из Telegram) ==========
+    async function loadImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "Anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+        });
+    }
+    
+    async function createCardTexture(name, cardNumber, avatarImg, firstName, lastName) {
+        const width = 1024, height = 646;
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;
         const ctx = canvas.getContext('2d');
         
-        // 1. Фоновый градиент карты (темный шик: сине-зеленый металлик)
+        // Фон
         const grad = ctx.createLinearGradient(0, 0, width, height);
         grad.addColorStop(0, '#0a2c2d');
         grad.addColorStop(0.5, '#0a3a3a');
@@ -184,7 +249,7 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, width, height);
         
-        // Декоративные узоры: легкая текстура "карбон" / линии
+        // Декоративные линии
         ctx.strokeStyle = 'rgba(80, 180, 140, 0.25)';
         ctx.lineWidth = 2;
         for (let i = 0; i < 40; i++) {
@@ -198,18 +263,11 @@
             ctx.stroke();
         }
         
-        // Скругленные края (маскировка, но визуально приятно)
-        ctx.save();
-        ctx.shadowBlur = 0;
-        
-        // 2. Элемент "чип" (золотистый прямоугольник) для банковской карты
-        ctx.shadowColor = 'rgba(0,0,0,0.3)';
+        // Чип
         ctx.fillStyle = '#d4af37';
-        ctx.shadowBlur = 6;
         ctx.fillRect(55, 55, 70, 55);
         ctx.fillStyle = '#b88d2c';
         ctx.fillRect(60, 60, 60, 45);
-        // Детали чипа
         ctx.fillStyle = '#e6c56e';
         ctx.fillRect(65, 65, 50, 35);
         for (let i = 0; i < 3; i++) {
@@ -217,61 +275,42 @@
             ctx.fillRect(70 + i * 15, 70, 5, 25);
         }
         
-        // 3. Аватар (круг с иконкой пользователя, градиент)
+        // Аватар
         const avatarX = width - 100;
         const avatarY = 85;
         const avatarRadius = 55;
-        
-        // Тень аватара
-        ctx.shadowBlur = 8;
-        ctx.shadowColor = 'rgba(0,0,0,0.5)';
         ctx.beginPath();
         ctx.arc(avatarX, avatarY, avatarRadius, 0, Math.PI * 2);
         ctx.fillStyle = '#1e2f2c';
         ctx.fill();
-        ctx.shadowBlur = 4;
-        // Градиентный круг
-        const avatarGrad = ctx.createLinearGradient(avatarX - 30, avatarY - 30, avatarX + 30, avatarY + 30);
-        avatarGrad.addColorStop(0, '#40bf9b');
-        avatarGrad.addColorStop(1, '#2a7f6e');
         ctx.beginPath();
         ctx.arc(avatarX, avatarY, avatarRadius - 4, 0, Math.PI * 2);
-        ctx.fillStyle = avatarGrad;
-        ctx.fill();
-        // Рисуем стилизованный силуэт человека / лица
-        ctx.fillStyle = '#f0f7f0';
-        ctx.shadowBlur = 2;
-        ctx.beginPath();
-        ctx.arc(avatarX, avatarY - 12, 18, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#1a2a25';
-        ctx.beginPath();
-        ctx.arc(avatarX - 8, avatarY - 18, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(avatarX + 8, avatarY - 18, 3, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(avatarX, avatarY - 8, 5, 0, Math.PI);
-        ctx.fill();
-        // Тело / плечи
-        ctx.beginPath();
-        ctx.ellipse(avatarX, avatarY + 15, 22, 28, 0, 0, Math.PI * 2);
-        ctx.fillStyle = '#f0f7f0';
-        ctx.fill();
-        ctx.fillStyle = '#2e6b5e';
-        ctx.beginPath();
-        ctx.ellipse(avatarX, avatarY + 18, 15, 20, 0, 0, Math.PI * 2);
-        ctx.fill();
+        if (avatarImg) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(avatarX, avatarY, avatarRadius - 4, 0, Math.PI * 2);
+            ctx.clip();
+            ctx.drawImage(avatarImg, avatarX - (avatarRadius - 4), avatarY - (avatarRadius - 4), (avatarRadius - 4) * 2, (avatarRadius - 4) * 2);
+            ctx.restore();
+        } else {
+            const gradAvatar = ctx.createLinearGradient(avatarX - 30, avatarY - 30, avatarX + 30, avatarY + 30);
+            gradAvatar.addColorStop(0, '#40bf9b');
+            gradAvatar.addColorStop(1, '#2a7f6e');
+            ctx.fillStyle = gradAvatar;
+            ctx.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.font = `bold ${avatarRadius - 15}px "Segoe UI"`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const initial = `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+            ctx.fillText(initial, avatarX, avatarY);
+            ctx.textAlign = 'left';
+        }
         
-        // 4. Имя владельца (Name Surname) — элегантный шрифт
-        ctx.font = `500 38px "Segoe UI", "Poppins", "Inter", system-ui`;
+        // Имя владельца
+        ctx.font = `500 38px "Segoe UI", "Poppins", system-ui`;
         ctx.fillStyle = '#ffffff';
-        ctx.shadowBlur = 0;
-        ctx.shadowColor = 'rgba(0,0,0,0.6)';
-        ctx.fillText("NAME SURNAME", 65, height - 115);
-        
-        // Дополнительная линия под именем (стиль)
+        ctx.fillText(name, 65, height - 115);
         ctx.strokeStyle = '#70cfb0';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
@@ -279,17 +318,12 @@
         ctx.lineTo(280, height - 100);
         ctx.stroke();
         
-        // 5. Номер карты (как в задании 1234 5678 9010 + добавим последние 4 цифры для реализма, но сохраним стиль)
-        ctx.font = `500 44px "JetBrains Mono", "SF Mono", monospace`;
+        // Номер карты (ID пользователя)
+        ctx.font = `500 44px "JetBrains Mono", monospace`;
         ctx.fillStyle = '#eef6f0';
-        ctx.shadowBlur = 5;
-        ctx.fillText("1234  5678  9010", 65, height - 45);
-        // Добавим маленькие декоративные цифры в углу (CVV стиль)
-        ctx.font = `16px monospace`;
-        ctx.fillStyle = 'rgba(255,255,240,0.7)';
-        ctx.fillText("VALID THRU 12/28", width - 180, height - 30);
+        ctx.fillText(cardNumber, 65, height - 45);
         
-        // 6. Логотип платёжной системы (два пересекающихся круга, Mastercard стиль)
+        // Логотип
         const logoX = width - 130;
         const logoY = height - 70;
         ctx.beginPath();
@@ -305,204 +339,75 @@
         ctx.fillStyle = '#ff5f00';
         ctx.fill();
         
-        // 7. Блики и глянец (полупрозрачные полосы)
-        ctx.globalCompositeOperation = 'lighter';
-        ctx.fillStyle = 'rgba(255,255,245,0.08)';
-        ctx.fillRect(0, 0, width, 20);
-        ctx.fillRect(0, height - 40, width, 25);
-        ctx.fillStyle = 'rgba(200,255,220,0.05)';
-        ctx.fillRect(0, 120, width, 12);
-        ctx.globalCompositeOperation = 'source-over';
-        
-        // Добавляем маленькую рамку вокруг карты (тонкий обод)
         ctx.strokeStyle = 'rgba(100,220,180,0.5)';
         ctx.lineWidth = 3;
         ctx.strokeRect(8, 8, width - 16, height - 16);
         
-        // Текстура готова
         const texture = new THREE.CanvasTexture(canvas);
-        texture.needsUpdate = true;
-        texture.anisotropy = 16; // улучшение четкости под углом
+        texture.anisotropy = 16;
         return texture;
-    };
-    
-    const cardTexture = createCardTexture();
-    cardTexture.wrapS = THREE.RepeatWrapping;
-    cardTexture.wrapT = THREE.RepeatWrapping;
-    
-    // --- Материал карты (глянцевый металлик) ---
-    const cardMaterial = new THREE.MeshStandardMaterial({
-        map: cardTexture,
-        roughness: 0.28,
-        metalness: 0.85,
-        emissive: 0x112222,
-        emissiveIntensity: 0.12,
-        side: THREE.DoubleSide  // чтобы при кручении сзади видно текстуру (но сзади будет другой материал)
-    });
-    
-    // Материал для задней стороны (темная карта с текстурой подложки)
-    const backMaterial = new THREE.MeshStandardMaterial({
-        color: 0x0a2a2a,
-        roughness: 0.6,
-        metalness: 0.3,
-        emissive: 0x031010,
-        emissiveIntensity: 0.1
-    });
-    
-    // Материалы для боковых граней (торцы карты)
-    const edgeMaterial = new THREE.MeshStandardMaterial({
-        color: 0x1e4a44,
-        roughness: 0.4,
-        metalness: 0.7
-    });
-    
-    // Геометрия карты: толщина 0.08, ширина 3.2, высота 2.02 (соотношение ~1.58)
-    const cardWidth = 3.2;
-    const cardHeight = 2.02;
-    const cardDepth = 0.085;
-    
-    const geometry = new THREE.BoxGeometry(cardWidth, cardHeight, cardDepth);
-    // Назначаем материалы для 6 сторон: право, лево, верх, низ, перед, зад
-    // Порядок: x+ (right), x- (left), y+ (up), y- (down), z+ (front), z- (back)
-    const materials = [
-        edgeMaterial, edgeMaterial,   // right, left
-        edgeMaterial, edgeMaterial,   // up, down
-        cardMaterial, backMaterial    // front (лицевая сторона), back (задняя)
-    ];
-    
-    const card = new THREE.Mesh(geometry, materials);
-    card.castShadow = true;
-    card.receiveShadow = false;
-    card.position.set(0, 0.05, 0);
-    scene.add(card);
-    
-    // Добавим легкое свечение вокруг карты (halo effect)
-    const glowGeometry = new THREE.BoxGeometry(cardWidth + 0.03, cardHeight + 0.03, cardDepth + 0.02);
-    const glowMaterial = new THREE.MeshBasicMaterial({
-        color: 0x44bba0,
-        transparent: true,
-        opacity: 0.12,
-        side: THREE.BackSide
-    });
-    const glowBorder = new THREE.Mesh(glowGeometry, glowMaterial);
-    card.add(glowBorder);
-    
-    // --- Эффект плавающих частиц вокруг карты (для атмосферы) ---
-    const particleCount = 400;
-    const particlesGeometry = new THREE.BufferGeometry();
-    const particlePositions = new Float32Array(particleCount * 3);
-    for (let i = 0; i < particleCount; i++) {
-        // Частицы в радиусе 2.5 вокруг карты
-        particlePositions[i*3] = (Math.random() - 0.5) * 5;
-        particlePositions[i*3+1] = (Math.random() - 0.5) * 3.5;
-        particlePositions[i*3+2] = (Math.random() - 0.5) * 4 - 1;
-    }
-    particlesGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-    const particleMaterial = new THREE.PointsMaterial({
-        color: 0x66ddbb,
-        size: 0.022,
-        transparent: true,
-        opacity: 0.45,
-        blending: THREE.AdditiveBlending
-    });
-    const particles = new THREE.Points(particlesGeometry, particleMaterial);
-    scene.add(particles);
-    
-    // --- Интерактивное управление (плавное вращение с inertia) ---
-    const controls = new OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;          // плавная инерция
-    controls.dampingFactor = 0.06;
-    controls.rotateSpeed = 1.5;
-    controls.zoomSpeed = 0.8;
-    controls.enableZoom = true;
-    controls.enablePan = false;             // отключаем панорамирование, фокус на карте
-    controls.zoomSpeed = 0.6;
-    controls.target.set(0, 0.05, 0);
-    controls.maxPolarAngle = Math.PI / 1.8;
-    controls.minDistance = 1.8;
-    controls.maxDistance = 6.5;
-    
-    // --- Динамическая анимация свечения и частиц, а также изменение текстур при необходимости ---
-    let time = 0;
-    
-    // Дополнительно: создаем вращающиеся световые акценты (для динамики)
-    const movingLight = new THREE.PointLight(0x44ccaa, 0.6);
-    movingLight.position.set(1, 0.5, 1.2);
-    scene.add(movingLight);
-    
-    // Фоновые звезды/точки (дополнительный слой)
-    const starCount = 800;
-    const starGeo = new THREE.BufferGeometry();
-    const starPos = [];
-    for (let i = 0; i < starCount; i++) {
-        starPos.push((Math.random() - 0.5) * 200);
-        starPos.push((Math.random() - 0.5) * 100);
-        starPos.push((Math.random() - 0.5) * 80 - 40);
-    }
-    starGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(starPos), 3));
-    const starMat = new THREE.PointsMaterial({ color: 0x88ccaa, size: 0.08, transparent: true, opacity: 0.4, blending: THREE.AdditiveBlending });
-    const stars = new THREE.Points(starGeo, starMat);
-    scene.add(stars);
-    
-    // --- Плавное обновление текстур (можно добавить отслеживание смены размера окна) ---
-    window.addEventListener('resize', onWindowResize, false);
-    function onWindowResize() {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
     }
     
-    // Микроанимация для акцентного света и частиц (оживляет сцену)
-    let angle = 0;
-    
-    // --- Цикл анимации ---
-    function animate() {
-        requestAnimationFrame(animate);
-        time += 0.012;
-        angle += 0.008;
+    async function updateCardWithUserData(user) {
+        if (!window.cardMesh) return;
+        const fullName = `${user.firstName} ${user.lastName}`.toUpperCase();
+        let idStr = String(user.id);
+        if (idStr.length < 12) idStr = idStr.padStart(12, '0');
+        if (idStr.length > 12) idStr = idStr.slice(0, 12);
+        const cardNumber = idStr.match(/.{1,4}/g).join('  ');
         
-        // Динамические эффекты: движущийся свет вокруг карты
-        movingLight.position.x = 1.2 + Math.sin(angle) * 0.6;
-        movingLight.position.z = 1.0 + Math.cos(angle * 0.7) * 0.8;
-        movingLight.intensity = 0.55 + Math.sin(angle * 1.8) * 0.2;
-        
-        // Легкое вращение частиц
-        particles.rotation.y = time * 0.1;
-        particles.rotation.x = Math.sin(time * 0.2) * 0.1;
-        
-        // Звездный фон медленно вращается
-        stars.rotation.y += 0.0005;
-        stars.rotation.x += 0.0003;
-        
-        // Маленькое покачивание карты (если не вращать мышью, создает ощущение "парения")
-        // Но чтобы не конфликтовать с OrbitControls, делаем очень мягкое смещение только когда controls не используется активно?
-        // Просто добавляем микродвижение всей группе? Лучше не трогать карту, чтобы controls работал предсказуемо.
-        // Вместо этого добавим мерцание rim света
-        rimLight.intensity = 0.35 + Math.sin(time * 2) * 0.1;
-        accentLight.intensity = 0.5 + Math.sin(time * 1.2) * 0.15;
-        
-        // Маленькое изменение металличности текстуры? нет, но можно менять цвет подсветки
-        fillLight.intensity = 0.6 + Math.sin(time * 0.9) * 0.1;
-        
-        // Обновление текстуры карты, если нужно (статично, но можно обновить при желании, оставляем без изменений)
-        // карта не обновляет текстуру постоянно, но texture.needsUpdate не требуется.
-        
-        // Обновляем controls
-        controls.update(); // важно для плавности damping
-        
-        // Рендер сцены
-        renderer.render(scene, camera);
+        let avatarImg = null;
+        if (AVATAR_API_URL && user.photoUrl) {
+            try {
+                avatarImg = await loadImage(user.photoUrl);
+            } catch(e) { console.warn("Не удалось загрузить аватар", e); }
+        }
+        const newTexture = await createCardTexture(fullName, cardNumber, avatarImg, user.firstName, user.lastName);
+        const frontMaterial = new THREE.MeshStandardMaterial({
+            map: newTexture,
+            roughness: 0.28,
+            metalness: 0.85,
+            emissive: 0x112222,
+            emissiveIntensity: 0.12
+        });
+        // Заменяем только лицевой материал (индекс 4)
+        window.cardMesh.material[4] = frontMaterial;
+        window.cardMesh.material.needsUpdate = true;
     }
     
-    animate();
+    // Инициализация Telegram Web App
+    async function initTelegram() {
+        if (window.Telegram && Telegram.WebApp) {
+            const webApp = Telegram.WebApp;
+            webApp.ready();
+            const user = webApp.initDataUnsafe.user;
+            if (user) {
+                const firstName = user.first_name || '';
+                const lastName = user.last_name || '';
+                const userId = user.id;
+                let photoUrl = null;
+                if (AVATAR_API_URL) {
+                    try {
+                        const resp = await fetch(`${AVATAR_API_URL}${userId}`);
+                        if (resp.ok) {
+                            const blob = await resp.blob();
+                            photoUrl = URL.createObjectURL(blob);
+                        }
+                    } catch(e) { console.warn("Сервер аватарок недоступен", e); }
+                }
+                await updateCardWithUserData({ firstName, lastName, id: userId, photoUrl });
+            } else {
+                // Демо для теста без Telegram
+                await updateCardWithUserData({ firstName: "DEMO", lastName: "USER", id: 123456789012 });
+            }
+        } else {
+            console.log("Не в Telegram, показываем демо");
+            await updateCardWithUserData({ firstName: "DEMO", lastName: "USER", id: 123456789012 });
+        }
+    }
     
-    // Маленькая задержка для пересчета тени и финальный старт
-    setTimeout(() => {
-        controls.update();
-    }, 100);
-    
-    // Консольное приветствие
-    console.log('3D Карта активирована | Дизайн: тёмно-синий/зелёный стиль | Вращайте карту');
+    // Ждём, пока карта будет готова, и запускаем
+    setTimeout(initTelegram, 500);
 </script>
 </body>
 </html>
