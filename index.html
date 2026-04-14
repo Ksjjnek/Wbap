@@ -4,140 +4,169 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <style>
-        :root { --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); }
         body {
-            background: radial-gradient(circle at center, #002b36 0%, #000 100%);
+            background: radial-gradient(circle at top right, #0b1e2b 0%, #000 100%);
             color: white; font-family: 'Segoe UI', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; margin: 0; overflow: hidden; touch-action: none;
         }
 
         /* 3D Сцена */
-        .scene { perspective: 1200px; margin-top: 100px; cursor: grab; }
+        .scene { perspective: 1500px; margin-top: 100px; }
         
-        .card-container {
-            width: 320px; height: 190px;
+        .card-box {
+            width: 330px; height: 200px;
             position: relative; transform-style: preserve-3d;
-            transition: transform 0.1s;
+            transition: transform 0.1s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        /* Общие стили граней */
-        .card-face {
+        /* Лицевая и обратная стороны */
+        .face {
             position: absolute; width: 100%; height: 100%;
-            display: flex; flex-direction: column; padding: 25px;
-            box-sizing: border-box; border-radius: 20px;
-            backdrop-filter: blur(15px);
-            border: 1px solid var(--border);
-            backface-visibility: visible;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(25px);
+            backface-visibility: hidden;
         }
-
-        /* Передняя грань (стекло) */
-        .front {
-            background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
-            transform: translateZ(5px); /* Смещение вперед */
-            z-index: 2;
-        }
-
-        /* Задняя грань */
-        .back {
-            background: rgba(255, 255, 255, 0.05);
-            transform: translateZ(-5px) rotateY(180deg);
-        }
-
-        /* Боковые грани (толщина) */
-        .side {
-            position: absolute; background: rgba(255, 255, 255, 0.2);
-            filter: blur(1px);
-        }
-        .side-top, .side-bottom { width: 320px; height: 10px; }
-        .side-left, .side-right { width: 10px; height: 190px; }
         
-        .side-top { transform: rotateX(90deg) translateZ(5px); top: -5px; width: 280px; left: 20px; }
-        .side-bottom { transform: rotateX(90deg) translateZ(-185px); bottom: -185px; width: 280px; left: 20px; }
+        .front {
+            background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.02));
+            transform: translateZ(8px);
+            padding: 25px; box-sizing: border-box;
+            display: flex; flex-direction: column; justify-content: space-between;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), inset 0 0 15px rgba(255,255,255,0.05);
+        }
 
-        /* Текст на карте */
-        .chip { width: 45px; height: 35px; background: linear-gradient(45deg, #ffd700, #b8860b); border-radius: 5px; margin-bottom: 20px; }
-        .card-num { font-size: 20px; letter-spacing: 3px; font-family: monospace; text-shadow: 0 2px 4px black; }
-        .holder { font-size: 12px; margin-top: 30px; opacity: 0.7; text-transform: uppercase; }
-        .bal-val { position: absolute; bottom: 25px; right: 25px; font-size: 24px; font-weight: bold; color: #00ffcc; }
+        /* Задняя сторона — теперь без уродливой полоски */
+        .back {
+            background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01));
+            transform: translateZ(-8px) rotateY(180deg);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* Толщина (боковушки) */
+        .side {
+            position: absolute; background: rgba(255, 255, 255, 0.08);
+            border: 0.5px solid rgba(255,255,255,0.1);
+        }
+        .side-y { width: 16px; height: 180px; top: 10px; }
+        .side-x { width: 310px; height: 16px; left: 10px; }
+        .s-right { transform: rotateY(90deg) translateZ(322px); }
+        .s-left { transform: rotateY(90deg) translateZ(-8px); }
+        .s-top { transform: rotateX(90deg) translateZ(8px); }
+        .s-bottom { transform: rotateX(90deg) translateZ(-192px); }
+
+        /* Элементы дизайна */
+        .chip { 
+            width: 50px; height: 38px; 
+            background: linear-gradient(135deg, #f0d060, #a08020); 
+            border-radius: 6px; position: relative;
+            box-shadow: 0 0 10px rgba(240, 208, 96, 0.2);
+        }
+        .chip::after { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(0,0,0,0.2); border-radius: 2px; }
+
+        .card-number {
+            font-family: 'Roboto Mono', monospace; font-size: 20px;
+            letter-spacing: 2px; color: rgba(255,255,255,0.9);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .user-info { display: flex; justify-content: space-between; align-items: flex-end; }
+        .user-name { font-size: 11px; letter-spacing: 2px; opacity: 0.5; text-transform: uppercase; font-family: 'Orbitron', sans-serif; }
+        
+        .balance { 
+            text-align: right; font-family: 'Orbitron', sans-serif; 
+            color: #00ffcc; font-size: 22px; font-weight: 700;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 204, 0.4));
+        }
 
         /* Кнопки */
-        .controls { margin-top: 80px; display: flex; flex-direction: column; gap: 15px; width: 80%; }
+        .actions { margin-top: 70px; display: flex; flex-direction: column; gap: 15px; width: 85%; }
         .btn {
-            padding: 16px; border: none; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer;
-            transition: 0.3s;
+            padding: 18px; border-radius: 16px; border: none; font-weight: 700;
+            font-family: 'Orbitron', sans-serif; letter-spacing: 1px; transition: 0.3s;
         }
-        .btn-main { background: #00ffcc; color: #001f3f; box-shadow: 0 5px 15px rgba(0,255,204,0.3); }
-        .btn-test { background: rgba(255,255,255,0.1); color: white; border: 1px solid var(--border); }
+        .btn-pay { 
+            background: linear-gradient(90deg, #00ffcc, #00ccff); 
+            color: #001e2b; box-shadow: 0 10px 20px rgba(0, 255, 204, 0.2);
+        }
+        .btn-test { background: rgba(255,255,255,0.05); color: white; border: 1px solid rgba(255,255,255,0.1); }
+        .btn:active { transform: scale(0.96); }
+
     </style>
 </head>
 <body>
 
-    <div class="scene" id="scene">
-        <div class="card-container" id="card">
-            <div class="side side-top"></div>
-            <div class="side side-bottom"></div>
-            
-            <div class="card-face front">
-                <div class="chip"></div>
-                <div class="card-num" id="c-num">0000 0000 0000 0000</div>
-                <div class="holder" id="c-name">NAME SURNAME</div>
-                <div class="bal-val" id="c-bal">0.00 ₽</div>
+    <div class="scene">
+        <div class="card-box" id="card">
+            <div class="side side-y s-right"></div>
+            <div class="side side-y s-left"></div>
+            <div class="side side-x s-top"></div>
+            <div class="side side-x s-bottom"></div>
+
+            <div class="face front">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="chip"></div>
+                    <div style="font-family: 'Orbitron'; font-weight: bold; font-size: 18px; opacity: 0.8;">BPAY</div>
+                </div>
+                
+                <div class="card-number" id="c-num">4825 6559 1926 0000</div>
+                
+                <div class="user-info">
+                    <div>
+                        <div class="user-name">CARD HOLDER</div>
+                        <div id="c-name" style="font-size: 14px; font-weight: 600;">USER NAME</div>
+                    </div>
+                    <div class="balance" id="c-bal">0.00 ₽</div>
+                </div>
             </div>
             
-            <div class="card-face back">
-                <div style="width: 100%; height: 40px; background: #000; margin-top: 20px;"></div>
+            <div class="face back">
+                <div style="font-size: 10px; opacity: 0.2;">BPay Digital Signature</div>
             </div>
         </div>
     </div>
 
-    <div class="controls">
-        <button class="btn btn-main" onclick="deposit()">ПОПОЛНИТЬ</button>
-        <button class="btn btn-test" onclick="checkConnection()">ПРОВЕРИТЬ СВЯЗЬ</button>
+    <div class="actions">
+        <button class="btn btn-pay" onclick="sendDep()">ПОПОЛНИТЬ</button>
+        <button class="btn btn-test" onclick="checkConn()">ПРОВЕРИТЬ СВЯЗЬ</button>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        tg.ready(); tg.expand();
 
-        // Парсим данные из URL
         const params = new URLSearchParams(window.location.search);
-        document.getElementById('c-num').innerText = params.get('card') || 'НЕТ НОМЕРА';
+        document.getElementById('c-num').innerText = params.get('card') || '4000 0000 0000 0000';
+        document.getElementById('c-name').innerText = params.get('name') || 'CLIENT';
         document.getElementById('c-bal').innerText = parseFloat(params.get('bal') || 0).toFixed(2) + ' ₽';
-        document.getElementById('c-name').innerText = params.get('name') || 'USER';
 
-        // 3D вращение с инерцией
+        // 3D Анимация
         let card = document.getElementById('card');
-        let rX = 20, rY = -20, vX = 0, vY = 0, isDown = false, lX, lY;
+        let rX = 15, rY = -15, vX = 0, vY = 0, isD = false, lx, ly;
 
-        document.addEventListener('pointerdown', e => { isDown = true; lX = e.clientX; lY = e.clientY; });
+        document.addEventListener('pointerdown', e => { isD = true; lx = e.clientX; ly = e.clientY; });
         document.addEventListener('pointermove', e => {
-            if(!isDown) return;
-            vX = (e.clientX - lX) * 0.5; vY = (e.clientY - lY) * 0.5;
+            if(!isD) return;
+            vX = (e.clientX - lx) * 0.4; vY = (e.clientY - ly) * 0.4;
             rY += vX; rX -= vY;
-            lX = e.clientX; lY = e.clientY;
+            lx = e.clientX; ly = e.clientY;
         });
-        document.addEventListener('pointerup', () => isDown = false);
+        document.addEventListener('pointerup', () => isD = false);
 
-        function animate() {
-            if(!isDown) { rY += vX; rX -= vY; vX *= 0.95; vY *= 0.95; }
+        function update() {
+            if(!isD) { rY += vX; rX -= vY; vX *= 0.95; vY *= 0.95; }
             card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg)`;
-            requestAnimationFrame(animate);
+            requestAnimationFrame(update);
         }
-        animate();
+        update();
 
-        function deposit() {
-            tg.sendData("action_deposit");
-            tg.close();
-        }
-
-        function checkConnection() {
-            // Генерируем 3 случайные цифры
+        function sendDep() { tg.sendData("action_deposit"); tg.close(); }
+        function checkConn() {
             const code = Math.floor(100 + Math.random() * 900);
-            alert("Проверка связи... Код: " + code);
-            // Отправляем код боту
+            alert("Код: " + code);
             tg.sendData("check_" + code);
             tg.close();
         }
