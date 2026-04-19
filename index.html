@@ -3,74 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BPay Premium v3.1</title>
+    <title>BPay System</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* Полная блокировка системных сдвигов */
-        html, body { 
-            width: 100%; height: 100%; 
-            margin: 0; padding: 0; 
-            overflow: hidden; 
-            background: #03070b; color: white;
-            font-family: 'Orbitron', sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
+        * { touch-action: manipulation; box-sizing: border-box; }
+        html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; background: #03070b; color: white; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; }
 
         .bg-blob { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.4; pointer-events: none; }
         .blob-blue { width: 300px; height: 300px; background: #0064ff; top: -50px; left: -50px; }
         .blob-green { width: 350px; height: 350px; background: #00ffcc; bottom: -50px; right: -50px; opacity: 0.15; }
 
-        #notify {
-            position: fixed; top: -120px;
-            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
-            padding: 15px 35px; border-radius: 50px;
-            border: 1px solid rgba(0, 255, 204, 0.4);
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000; font-size: 13px; text-align: center; pointer-events: none;
-        }
-
-        .scene { 
-            perspective: 1200px; 
-            filter: drop-shadow(0 20px 40px rgba(0,0,0,0.7));
-            /* Ключевой фикс: запрещаем браузеру трогать жесты в этой зоне */
-            touch-action: none; 
-            -webkit-user-select: none;
-            user-select: none;
-        }
-        
-        .card-container {
-            width: 85vw; max-width: 350px; height: 54vw; max-height: 220px;
-            position: relative; transform-style: preserve-3d;
-            pointer-events: none; /* Чтобы события шли на сцену */
-        }
-
+        /* --- КАРТА (С ТОЛЩИНОЙ) --- */
+        #app-user { display: none; width: 100%; height: 100%; align-items: center; justify-content: center; flex-direction: column; }
+        .scene { perspective: 1200px; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.7)); touch-action: none; }
+        .card-container { width: 85vw; max-width: 350px; height: 54vw; max-height: 220px; position: relative; transform-style: preserve-3d; pointer-events: none; }
         .layer { position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden; }
-
-        .front {
-            background: linear-gradient(135deg, rgba(15, 32, 59, 0.94), rgba(10, 45, 40, 0.85));
-            backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15);
-            transform: translateZ(2px); display: flex; flex-direction: column; 
-            padding: 22px; box-sizing: border-box; justify-content: space-between;
-        }
-
-        .back {
-            background: #0a1525; transform: translateZ(-2px) rotateY(180deg);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+        
+        .front { background: linear-gradient(135deg, rgba(15, 32, 59, 0.94), rgba(10, 45, 40, 0.85)); backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15); transform: translateZ(2px); display: flex; flex-direction: column; padding: 22px; justify-content: space-between; }
+        .edge { background: rgba(255, 255, 255, 0.1); border: 1.5px solid rgba(255,255,255,0.05); transform: translateZ(0); }
+        .back { background: #0a1525; transform: translateZ(-2px) rotateY(180deg); border: 1px solid rgba(255, 255, 255, 0.1); }
 
         .mag-stripe { width: 100%; height: 42px; background: #050505; margin-top: 25px; }
-        .signature-bar { 
-            width: 70%; height: 32px; background: rgba(255,255,255,0.1); 
-            margin: 20px; display: flex; align-items: center; justify-content: flex-end; padding: 0 12px;
-        }
+        .signature-bar { width: 70%; height: 32px; background: rgba(255,255,255,0.1); margin: 20px; display: flex; align-items: center; justify-content: flex-end; padding: 0 12px; }
         #cvv-val { background: white; color: black; padding: 2px 8px; border-radius: 3px; font-weight: bold; font-family: monospace; font-size: 14px; }
+        .bcode-text { font-size: 10px; margin-right: 8px; color: #888; font-weight: bold; }
 
         .chip { width: 48px; height: 34px; background: linear-gradient(135deg, #fceabb, #f8b500); border-radius: 6px; }
         #card-num-val { font-size: 1.25rem; letter-spacing: 2px; margin: 18px 0; color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        #balance-val { font-size: 1.5rem; color: #00ffcc; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,204,0.4); }
+        #balance-val { font-size: 1.5rem; color: #00ffcc; font-weight: bold; }
+        .banned-text { color: #ff3333 !important; text-shadow: 0 0 10px rgba(255,50,50,0.5) !important; }
 
-        .glow .front { animation: neon 1s infinite alternate; }
-        @keyframes neon { from { border-color: rgba(0,255,204,0.3); } to { border-color: rgba(0,255,204,1); } }
+        #ban-banner { display: none; background: rgba(255,0,0,0.2); border: 1px solid red; color: white; padding: 10px; border-radius: 10px; margin-bottom: 20px; text-align: center; font-size: 12px; }
+
+        /* --- АДМИНКА --- */
+        #app-admin, #admin-dashboard { display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; z-index: 10; }
+        .admin-box { background: rgba(0,0,0,0.6); padding: 30px; border-radius: 15px; border: 1px solid #00ffcc; text-align: center; width: 90%; max-width: 400px; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: rgba(255,255,255,0.1); border: 1px solid #555; color: white; border-radius: 5px; font-family: 'Orbitron'; }
+        button { width: 100%; padding: 12px; margin: 5px 0; background: #00ffcc; color: black; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; font-family: 'Orbitron'; }
+        button.red { background: #ff3333; color: white; }
+        button:active { opacity: 0.8; }
+        .menu-btn { margin-bottom: 10px; }
+        #admin-actions { display: none; }
+
     </style>
 </head>
 <body>
@@ -78,98 +53,209 @@
     <div class="bg-blob blob-blue"></div>
     <div class="bg-blob blob-green"></div>
 
-    <div id="notify">Облако BPay активно</div>
-
-    <div class="scene" id="touch-zone">
-        <div class="card-container" id="card">
-            <div class="layer front">
-                <div style="display: flex; justify-content: space-between;">
-                    <div class="chip"></div>
-                    <div style="font-size: 12px; opacity: 0.7; font-weight: bold;">BPAY PREMIUM</div>
+    <div id="app-user">
+        <div id="ban-banner"></div>
+        <div class="scene" id="touch-zone">
+            <div class="card-container" id="card">
+                <div class="layer front">
+                    <div style="display: flex; justify-content: space-between;">
+                        <div class="chip"></div>
+                        <div style="font-size: 12px; opacity: 0.7; font-weight: bold;">BPAY PREMIUM</div>
+                    </div>
+                    <div id="card-num-val">XXXX XXXX XXXX XXXX</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                        <div id="user-name-val" style="font-size: 13px; font-weight: bold;">USER</div>
+                        <div id="balance-val">0.00 ₽</div>
+                    </div>
                 </div>
-                <div id="card-num-val">4825 6559 1926 4410</div>
-                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div style="font-size: 13px; font-weight: bold;">ꘜ РАБОТЯГА</div>
-                    <div id="balance-val">74 200.00 ₽</div>
-                </div>
-            </div>
-
-            <div class="layer back">
-                <div class="mag-stripe"></div>
-                <div class="signature-bar">
-                    <div id="cvv-val">926</div>
+                <div class="layer edge"></div> <div class="layer back">
+                    <div class="mag-stripe"></div>
+                    <div class="signature-bar">
+                        <span class="bcode-text">BCODE</span>
+                        <div id="cvv-val">XXX</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <div id="app-admin">
+        <div class="admin-box">
+            <h3>BPay Admin</h3>
+            <input type="text" id="a-login" placeholder="Логин">
+            <input type="password" id="a-pass" placeholder="Пароль">
+            <button onclick="loginAdmin()">ВХОД</button>
+        </div>
+    </div>
+
+    <div id="admin-dashboard">
+        <div class="admin-box" id="admin-menu">
+            <h3>Меню</h3>
+            <button class="menu-btn" onclick="showAction('topup')">Пополнить баланс</button>
+            <button class="menu-btn" onclick="alert('Казна: Вывод и Пополнение (в разработке)')">Казна</button>
+            <button class="menu-btn red" onclick="showAction('ban')">Бан</button>
+            <button class="menu-btn" onclick="showAction('unban')">Разбан</button>
+        </div>
+
+        <div class="admin-box" id="admin-actions">
+            <button onclick="showMenu()" style="background:#555; color:white; margin-bottom: 15px;">← Назад</button>
+            <h3 id="action-title">Действие</h3>
+            
+            <input list="users-list" id="target-id" placeholder="ID пользователя (поиск...)">
+            <datalist id="users-list"></datalist>
+
+            <div id="topup-inputs" style="display:none;">
+                <input type="number" id="topup-amount" placeholder="Сумма в рублях">
+            </div>
+
+            <div id="ban-inputs" style="display:none;">
+                <select id="ban-time">
+                    <option value="1 день">1 день</option>
+                    <option value="3 дня">3 дня</option>
+                    <option value="1 неделя">1 неделя</option>
+                    <option value="1 месяц">1 месяц</option>
+                    <option value="Навсегда">Навсегда</option>
+                </select>
+                <input type="text" id="ban-reason" placeholder="Причина бана">
+            </div>
+
+            <button onclick="executeAction()" id="action-btn">Выполнить</button>
+        </div>
+    </div>
+
     <script>
+        // ЗАМЕНИ НА СВОЙ ДОМЕН (ИЛИ IP), ГДЕ КРУТИТСЯ FLASK
+        const API_URL = "http://127.0.0.1:5000"; 
+        
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        let currentAction = "";
+
+        // --- РОУТИНГ: КТО ЗАШЕЛ? ---
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            // Зашел юзер из ТГ
+            document.getElementById('app-user').style.display = 'flex';
+            loadUserData(tg.initDataUnsafe.user);
+        } else {
+            // Зашли из обычного браузера
+            document.getElementById('app-admin').style.display = 'flex';
+        }
+
+        // --- ЛОГИКА ПОЛЬЗОВАТЕЛЯ ---
+        async function loadUserData(user) {
+            const res = await fetch(`${API_URL}/api/init`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ tg_id: user.id, name: user.first_name })
+            });
+            const data = await res.json();
+            
+            document.getElementById('user-name-val').innerText = 'ꘜ ' + data.name.toUpperCase();
+            
+            if (data.banned) {
+                document.getElementById('card-num-val').innerText = "BANNED BANNED BANNED";
+                document.getElementById('cvv-val').innerText = "BAN";
+                document.getElementById('balance-val').innerText = "BANNED";
+                document.getElementById('balance-val').classList.add('banned-text');
+                
+                const banner = document.getElementById('ban-banner');
+                banner.style.display = 'block';
+                banner.innerHTML = `ВЫ ЗАБАНЕНЫ<br>Срок: ${data.ban_time}<br>Причина: ${data.ban_reason}`;
+            } else {
+                document.getElementById('card-num-val').innerText = data.card_num;
+                document.getElementById('cvv-val').innerText = data.bcode;
+                document.getElementById('balance-val').innerText = data.balance.toFixed(2) + ' ₽';
+            }
+        }
+
+        // --- ЛОГИКА АДМИНА ---
+        async function loginAdmin() {
+            const l = document.getElementById('a-login').value;
+            const p = document.getElementById('a-pass').value;
+            const res = await fetch(`${API_URL}/api/admin/login`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ login: l, password: p })
+            });
+            const data = await res.json();
+            if (data.success) {
+                document.getElementById('app-admin').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'flex';
+                loadUsersList();
+            } else { alert("Неверный логин или пароль!"); }
+        }
+
+        async function loadUsersList() {
+            const res = await fetch(`${API_URL}/api/admin/users`);
+            const users = await res.json();
+            const datalist = document.getElementById('users-list');
+            datalist.innerHTML = '';
+            users.forEach(u => {
+                const option = document.createElement('option');
+                option.value = u.id;
+                option.text = u.name;
+                datalist.appendChild(option);
+            });
+        }
+
+        function showAction(action) {
+            currentAction = action;
+            document.getElementById('admin-menu').style.display = 'none';
+            document.getElementById('admin-actions').style.display = 'block';
+            
+            document.getElementById('topup-inputs').style.display = action === 'topup' ? 'block' : 'none';
+            document.getElementById('ban-inputs').style.display = action === 'ban' ? 'block' : 'none';
+            
+            const titles = { 'topup': 'Пополнение', 'ban': 'Блокировка', 'unban': 'Разбан' };
+            document.getElementById('action-title').innerText = titles[action];
+        }
+
+        function showMenu() {
+            document.getElementById('admin-menu').style.display = 'block';
+            document.getElementById('admin-actions').style.display = 'none';
+            document.getElementById('target-id').value = '';
+        }
+
+        async function executeAction() {
+            const id = document.getElementById('target-id').value;
+            if(!id) return alert("Укажите ID!");
+
+            const payload = { action: currentAction, tg_id: id };
+
+            if (currentAction === 'topup') {
+                payload.amount = document.getElementById('topup-amount').value;
+            } else if (currentAction === 'ban') {
+                payload.duration = document.getElementById('ban-time').value;
+                payload.reason = document.getElementById('ban-reason').value;
+            }
+
+            const res = await fetch(`${API_URL}/api/admin/action`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+            if(data.success) {
+                alert("Действие успешно выполнено!");
+                showMenu();
+            } else { alert("Ошибка: " + data.error); }
+        }
+
+        // --- ВРАЩЕНИЕ КАРТЫ (Из прошлой версии) ---
         const card = document.getElementById('card');
         const touchZone = document.getElementById('touch-zone');
-        const notify = document.getElementById('notify');
-        
-        // --- ПРИЕМ ДАННЫХ ---
-        const TOPIC = "ksjjnek_bpay_secure_channel";
-        const eventSource = new EventSource(`https://ntfy.sh/${TOPIC}/sse`);
+        let targetRx = 15, targetRy = -15, currentRx = 15, currentRy = -15, isDown = false, lx, ly;
 
-        eventSource.onmessage = (e) => {
-            try {
-                const payload = JSON.parse(e.data);
-                const data = JSON.parse(payload.message);
-
-                if (data.type === 'msg') {
-                    notify.innerText = data.value;
-                    notify.style.top = "30px";
-                    card.classList.add('glow');
-                    setTimeout(() => { notify.style.top = "-120px"; card.classList.remove('glow'); }, 4000);
-                } 
-                else if (data.type === 'balance') {
-                    document.getElementById('balance-val').innerText = data.value;
-                } 
-                else if (data.type === 'card_info') {
-                    const parts = data.value.split('|');
-                    document.getElementById('card-num-val').innerText = parts[0];
-                    document.getElementById('cvv-val').innerText = parts[1];
-                }
-            } catch(err) { console.log("Сырое сообщение ntfy"); }
-        };
-
-        // --- ИСПРАВЛЕННАЯ ФИЗИКА (БЕЗ ТОРМОЗОВ) ---
-        let targetRx = 15, targetRy = -15;
-        let currentRx = 15, currentRy = -15;
-        let isDown = false, lx, ly;
-
-        touchZone.onpointerdown = e => { 
-            isDown = true; 
-            lx = e.clientX; 
-            ly = e.clientY;
-            touchZone.setPointerCapture(e.pointerId); // Захватываем палец
-        };
-
+        touchZone.onpointerdown = e => { isDown = true; lx = e.clientX; ly = e.clientY; touchZone.setPointerCapture(e.pointerId); };
         touchZone.onpointermove = e => {
-            if(!isDown) return;
-            e.preventDefault(); // Запрещаем скролл страницы
-
-            const deltaX = e.clientX - lx;
-            const deltaY = e.clientY - ly;
-
-            targetRy += deltaX * 0.6; 
-            targetRx -= deltaY * 0.6;
-
-            lx = e.clientX; 
-            ly = e.clientY;
+            if(!isDown) return; e.preventDefault();
+            targetRy += (e.clientX - lx) * 0.6; targetRx -= (e.clientY - ly) * 0.6;
+            lx = e.clientX; ly = e.clientY;
         };
-
-        touchZone.onpointerup = e => { 
-            isDown = false; 
-            touchZone.releasePointerCapture(e.pointerId); 
-        };
+        touchZone.onpointerup = e => { isDown = false; touchZone.releasePointerCapture(e.pointerId); };
 
         function update() {
-            // Мягкая интерполяция (0.15 — золотая середина между скоростью и плавностью)
             currentRx += (targetRx - currentRx) * 0.15;
             currentRy += (targetRy - currentRy) * 0.15;
-            
             card.style.transform = `rotateX(${currentRx}deg) rotateY(${currentRy}deg)`;
             requestAnimationFrame(update);
         }
