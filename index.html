@@ -2,107 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPay Premium Glass v2</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>BPay Premium</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --bg-color: #03070b;
-            --accent-green: #00ffcc;
-            --accent-blue: #0064ff;
-        }
-
-        body {
-            background: var(--bg-color);
-            color: white;
+        /* Фикс ширины и скролла для мобилок */
+        * { touch-action: manipulation; }
+        html, body { 
+            width: 100%; height: 100%; 
+            margin: 0; padding: 0; 
+            overflow: hidden; /* Убирает любой скролл */
+            background: #03070b; color: white;
             font-family: 'Orbitron', sans-serif;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; overflow: hidden; perspective: 1500px;
         }
 
-        /* Декоративные пятна фона */
-        .bg-blob { position: absolute; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.5; }
-        .blob-blue { width: 400px; height: 400px; background: var(--accent-blue); top: -10%; left: -10%; }
-        .blob-green { width: 500px; height: 500px; background: var(--accent-green); bottom: -15%; right: -10%; opacity: 0.2; }
+        .bg-blob { position: absolute; border-radius: 50%; filter: blur(80px); z-index: -1; opacity: 0.4; }
+        .blob-blue { width: 300px; height: 300px; background: #0064ff; top: -50px; left: -50px; }
+        .blob-green { width: 350px; height: 350px; background: #00ffcc; bottom: -50px; right: -50px; opacity: 0.15; }
 
-        /* Уведомление */
         #notify {
             position: fixed; top: -120px;
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(25px);
-            padding: 18px 45px; border-radius: 50px;
+            background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(20px);
+            padding: 15px 35px; border-radius: 50px;
             border: 1px solid rgba(0, 255, 204, 0.4);
             transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 1000; text-align: center; font-size: 14px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0, 255, 204, 0.1);
+            z-index: 1000; font-size: 13px; text-align: center;
         }
 
-        /* Контейнер для 3D тени */
-        .scene {
-            filter: drop-shadow(0 30px 50px rgba(0,0,0,0.8));
-        }
-
+        .scene { perspective: 1200px; filter: drop-shadow(0 20px 40px rgba(0,0,0,0.7)); }
+        
         .card-container {
-            width: 350px; height: 220px;
+            width: 85vw; max-width: 350px; height: 54vw; max-height: 220px;
             position: relative; transform-style: preserve-3d;
         }
 
-        .layer {
-            position: absolute; inset: 0; border-radius: 20px;
-            backface-visibility: hidden; overflow: hidden;
-        }
+        .layer { position: absolute; inset: 0; border-radius: 18px; backface-visibility: hidden; }
 
-        /* ЛИЦЕВАЯ СТОРОНА */
         .front {
-            background: linear-gradient(135deg, rgba(15, 32, 59, 0.8), rgba(10, 45, 40, 0.7));
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            transform: translateZ(2px);
-            display: flex; flex-direction: column; padding: 25px; box-sizing: border-box;
-            justify-content: space-between;
+            background: linear-gradient(135deg, rgba(15, 32, 59, 0.9), rgba(10, 45, 40, 0.8));
+            backdrop-filter: blur(15px); border: 1px solid rgba(255, 255, 255, 0.15);
+            transform: translateZ(2px); display: flex; flex-direction: column; 
+            padding: 20px; box-sizing: border-box; justify-content: space-between;
         }
 
-        /* ТОРЕЦ (ГРАНЬ) */
-        .edge {
-            background: rgba(255, 255, 255, 0.1);
-            transform: translateZ(0);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* ОБРАТНАЯ СТОРОНА */
         .back {
-            background: linear-gradient(135deg, #0f203b, #0a2d28);
-            transform: translateZ(-2px) rotateY(180deg);
-            padding: 0; display: flex; flex-direction: column;
+            background: #0a1525; transform: translateZ(-2px) rotateY(180deg);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Элементы задней стороны */
-        .mag-stripe { width: 100%; height: 45px; background: #0a0a0a; margin-top: 25px; }
-        .signature-area { 
-            width: 80%; height: 35px; background: rgba(255,255,255,0.1); 
-            margin: 15px 25px; display: flex; align-items: center; justify-content: flex-end;
-            padding: 0 15px; font-family: 'Inter', sans-serif; font-style: italic; color: #888;
+        /* Задняя сторона без лишнего текста */
+        .mag-stripe { width: 100%; height: 40px; background: #050505; margin-top: 20px; }
+        .signature-bar { 
+            width: 70%; height: 30px; background: rgba(255,255,255,0.1); 
+            margin: 20px; display: flex; align-items: center; justify-content: flex-end; padding: 0 10px;
         }
-        .cvv-box { background: white; color: black; padding: 2px 8px; border-radius: 4px; font-style: normal; font-weight: bold; font-family: monospace; }
-        .back-info { padding: 0 25px; font-size: 8px; opacity: 0.3; line-height: 1.4; font-family: 'Inter', sans-serif; }
+        #cvv-val { background: white; color: black; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-family: monospace; }
 
-        /* Декор переда */
-        .chip { 
-            width: 50px; height: 38px; 
-            background: linear-gradient(135deg, #fceabb, #f8b500, #fceabb); 
-            border-radius: 7px; position: relative;
-        }
-        .chip::before { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; }
-
-        .card-num { font-size: 22px; letter-spacing: 3.5px; margin: 25px 0; color: #eee; }
-        .balance { font-size: 24px; color: var(--accent-green); font-weight: bold; text-shadow: 0 0 15px rgba(0,255,204,0.3); }
+        .chip { width: 45px; height: 32px; background: linear-gradient(135deg, #fceabb, #f8b500); border-radius: 5px; }
+        #card-num-val { font-size: 1.2rem; letter-spacing: 2px; margin: 15px 0; }
+        #balance-val { font-size: 1.4rem; color: #00ffcc; font-weight: bold; text-shadow: 0 0 10px rgba(0,255,204,0.3); }
 
         .glow .front { animation: neon 1.5s infinite alternate; }
-        @keyframes neon {
-            from { border-color: rgba(0, 255, 204, 0.3); box-shadow: inset 0 0 15px rgba(0, 255, 204, 0.1); }
-            to { border-color: rgba(0, 255, 204, 0.8); box-shadow: inset 0 0 30px rgba(0, 255, 204, 0.3); }
-        }
+        @keyframes neon { from { border-color: rgba(0,255,204,0.3); } to { border-color: rgba(0,255,204,1); } }
     </style>
 </head>
 <body>
@@ -110,38 +72,27 @@
     <div class="bg-blob blob-blue"></div>
     <div class="bg-blob blob-green"></div>
 
-    <div id="notify">Система BPay готова</div>
+    <div id="notify">Облако BPay активно</div>
 
     <div class="scene">
         <div class="card-container" id="card">
             <div class="layer front">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="display: flex; justify-content: space-between;">
                     <div class="chip"></div>
-                    <div style="text-align: right; opacity: 0.8;">BPAY PREMIUM</div>
+                    <div style="font-size: 12px; opacity: 0.7;">BPAY PREMIUM</div>
                 </div>
-                <div class="card-num">4825 6559 1926 4410</div>
+                <div id="card-num-val">4825 6559 1926 4410</div>
                 <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                    <div>
-                        <div style="font-size: 8px; opacity: 0.4; letter-spacing: 2px;">HOLDER</div>
-                        <div style="font-size: 14px;">ꘜ РАБОТЯГА</div>
-                    </div>
-                    <div class="balance">74 200.00 ₽</div>
+                    <div style="font-size: 12px;">ꘜ РАБОТЯГА</div>
+                    <div id="balance-val">74 200.00 ₽</div>
                 </div>
             </div>
 
-            <div class="layer edge"></div>
-
             <div class="layer back">
                 <div class="mag-stripe"></div>
-                <div class="signature-area">
-                    <span style="font-size: 10px; margin-right: 10px;">Security Code</span>
-                    <div class="cvv-box">926</div>
+                <div class="signature-bar">
+                    <div id="cvv-val">926</div>
                 </div>
-                <div class="back-info">
-                    THIS CARD IS PROPERTY OF BPAY DIGITAL SYSTEMS. IF FOUND PLEASE RETURN TO NEAREST BRANCH.
-                    AUTHORIZED SIGNATURE REQUIRED. FOR CUSTOMER SERVICE CALL +7 800 555 35 35.
-                </div>
-                <div style="margin-top: auto; padding: 20px; opacity: 0.2; font-size: 12px; letter-spacing: 5px;">WORLDWIDE</div>
             </div>
         </div>
     </div>
@@ -150,19 +101,31 @@
         const card = document.getElementById('card');
         const notify = document.getElementById('notify');
         
-        // --- СВЯЗЬ (NTFY) ---
+        // --- ЛОГИКА ПРИЕМА ДАННЫХ ---
         const TOPIC = "ksjjnek_bpay_secure_channel";
         const eventSource = new EventSource(`https://ntfy.sh/${TOPIC}/sse`);
 
         eventSource.onmessage = (e) => {
-            const data = JSON.parse(e.data);
-            notify.innerText = data.message;
-            notify.style.top = "40px";
-            card.classList.add('glow');
-            setTimeout(() => { notify.style.top = "-120px"; card.classList.remove('glow'); }, 5000);
+            const payload = JSON.parse(e.data);
+            const data = JSON.parse(payload.message); // Парсим вложенный JSON из Python
+
+            if (data.type === 'msg') {
+                notify.innerText = data.value;
+                notify.style.top = "30px";
+                card.classList.add('glow');
+                setTimeout(() => { notify.style.top = "-120px"; card.classList.remove('glow'); }, 4000);
+            } 
+            else if (data.type === 'balance') {
+                document.getElementById('balance-val').innerText = data.value;
+            } 
+            else if (data.type === 'card_info') {
+                const parts = data.value.split('|');
+                document.getElementById('card-num-val').innerText = parts[0];
+                document.getElementById('cvv-val').innerText = parts[1];
+            }
         };
 
-        // --- УЛУЧШЕННАЯ ФИЗИКА ---
+        // --- БЫСТРАЯ ФИЗИКА ---
         let targetRx = 15, targetRy = -15;
         let currentRx = 15, currentRy = -15;
         let isDown = false, lx, ly;
@@ -170,18 +133,16 @@
         document.onpointerdown = e => { isDown = true; lx = e.clientX; ly = e.clientY; };
         document.onpointermove = e => {
             if(!isDown) return;
-            // Чувствительность выше (0.7 вместо 0.35)
-            targetRy += (e.clientX - lx) * 0.7;
-            targetRx -= (e.clientY - ly) * 0.7;
+            targetRy += (e.clientX - lx) * 0.8; // Еще чувствительнее
+            targetRx -= (e.clientY - ly) * 0.8;
             lx = e.clientX; ly = e.clientY;
         };
         document.onpointerup = () => isDown = false;
 
         function update() {
-            // Коэффициент плавности выше (0.15 вместо 0.08) - карта "быстрее"
-            currentRx += (targetRx - currentRx) * 0.15;
-            currentRy += (targetRy - currentRy) * 0.15;
-            
+            // Коэффициент 0.25 дает мгновенный отклик
+            currentRx += (targetRx - currentRx) * 0.25;
+            currentRy += (targetRy - currentRy) * 0.25;
             card.style.transform = `rotateX(${currentRx}deg) rotateY(${currentRy}deg)`;
             requestAnimationFrame(update);
         }
