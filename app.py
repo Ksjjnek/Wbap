@@ -1,31 +1,52 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import json
 import os
 import random
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app) # Разрешаем запросы
+CORS(app)
 
-DB_FILE = 'bpay_db.json'
+# --- НАСТРОЙКА БАЗЫ ДАННЫХ ---
+# Вставь сюда URI строку из настроек Supabase (Database -> Connection string -> URI)
+# Не забудь заменить [YOUR-PASSWORD] на твой настоящий пароль
+DATABASE_URL = "postgresql://postgres:ts5BdN4hvZGnuch@db.zjaeftnfjdcgdrpepvtx.supabase.co:5432/postgres"
 
-# Загрузка базы данных
-def load_db():
-    if not os.path.exists(DB_FILE):
-        return {}
-    with open(DB_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+def get_db_connection():
+    """Создает подключение к PostgreSQL"""
+    return psycopg2.connect(DATABASE_URL, cursor_factory=RealDictCursor)
 
-# Сохранение базы данных
-def save_db(db):
-    with open(DB_FILE, 'w', encoding='utf-8') as f:
-        json.dump(db, f, ensure_ascii=False, indent=4)
+def init_db():
+    """Создает таблицу пользователей, если она еще не существует"""
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            tg_id TEXT PRIMARY KEY,
+            name TEXT,
+            card_num TEXT,
+            bcode TEXT,
+            balance FLOAT DEFAULT 0,
+            banned BOOLEAN DEFAULT FALSE,
+            ban_reason TEXT DEFAULT '',
+            ban_time TEXT DEFAULT ''
+        );
+    ''')
+    conn.commit()
+    cur.close()
+    conn.close()
 
-# Генерация новой карты
+# Запускаем инициализацию при старте сервера
+init_db()
+
 def generate_card():
+    """Генерирует случайный номер карты и BCODE"""
     num = f"4825 {random.randint(1000,9999)} {random.randint(1000,9999)} {random.randint(1000,9999)}"
     bcode = str(random.randint(100, 999))
     return num, bcode
+
+# --- РОУТЫ API ---
 
 @app.route('/api/init', methods=['POST'])
 def init_user():
@@ -33,36 +54,43 @@ def init_user():
     tg_id = str(data.get('tg_id'))
     name = data.get('name', 'USER')
     
-    db = load_db()
+    conn = get_db_connection()
+    cur = conn.cursor()
     
-    # Если новичок — создаем карту
-    if tg_id not in db:
+    # Проверяем, есть ли такой пользователь
+    cur.execute("SELECT * FROM users WHERE tg_id = %s", (tg_id,))
+    user = cur.fetchone()
+    
+    if not user:
+        # Если новичок — генерируем данные
         card_num, bcode = generate_card()
-        db[tg_id] = {
-            "name": name,
-            "card_num": card_num,
-            "bcode": bcode,
-            "balance": 0,
-            "banned": False,
-            "ban_reason": "",
-            "ban_time": ""
-        }
-        save_db(db)
-        
-    return jsonify(db[tg_id])
+        cur.execute(
+            "INSERT INTO users (tg_id, name, card_num, bcode, balance) VALUES (%s, %s, %s, %s, %s) RETURNING *",
+            (tg_id, name, card_num, bcode, 0.0)
+        )
+        user = cur.fetchone()
+        conn.commit()
+    
+    cur.close()
+    conn.close()
+    return jsonify(user)
 
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
     data = request.json
+    # Логин и пароль из твоего ТЗ
     if data.get('login') == 'Bpay' and data.get('password') == 'Bpayadminka1557':
         return jsonify({"success": True})
     return jsonify({"success": False}), 401
 
 @app.route('/api/admin/users', methods=['GET'])
 def get_users():
-    db = load_db()
-    # Возвращаем список пользователей для подсказок (автокомплита)
-    users = [{"id": k, "name": v["name"]} for k, v in db.items()]
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT tg_id as id, name FROM users")
+    users = cur.fetchall()
+    cur.close()
+    conn.close()
     return jsonify(users)
 
 @app.route('/api/admin/action', methods=['POST'])
@@ -70,25 +98,37 @@ def admin_action():
     data = request.json
     action = data.get('action')
     tg_id = str(data.get('tg_id'))
-    db = load_db()
+    
+    conn = get_db_connection()
+    cur = conn.cursor()
 
-    if tg_id not in db:
+    # Проверяем существование пользователя
+    cur.execute("SELECT * FROM users WHERE tg_id = %s", (tg_id,))
+    if not cur.fetchone():
         return jsonify({"error": "Пользователь не найден"}), 404
 
     if action == 'topup':
-        db[tg_id]['balance'] += float(data.get('amount', 0))
+        amount = float(data.get('amount', 0))
+        cur.execute("UPDATE users SET balance = balance + %s WHERE tg_id = %s", (amount, tg_id))
+    
     elif action == 'ban':
-        db[tg_id]['banned'] = True
-        db[tg_id]['ban_time'] = data.get('duration')
-        db[tg_id]['ban_reason'] = data.get('reason')
+        cur.execute(
+            "UPDATE users SET banned = TRUE, ban_time = %s, ban_reason = %s WHERE tg_id = %s",
+            (data.get('duration'), data.get('reason'), tg_id)
+        )
+    
     elif action == 'unban':
-        db[tg_id]['banned'] = False
-        db[tg_id]['ban_time'] = ""
-        db[tg_id]['ban_reason'] = ""
+        cur.execute(
+            "UPDATE users SET banned = FALSE, ban_time = '', ban_reason = '' WHERE tg_id = %s",
+            (tg_id,)
+        )
         
-    save_db(db)
-    return jsonify({"success": True, "user": db[tg_id]})
+    conn.commit()
+    cur.close()
+    conn.close()
+    return jsonify({"success": True})
 
 if __name__ == '__main__':
-    # На хостинге (или в Pydroid) запускаем на 5000 порту
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # На Render порт берется из переменной окружения
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port)
