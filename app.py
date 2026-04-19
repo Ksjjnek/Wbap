@@ -11,7 +11,7 @@ CORS(app)
 # --- НАСТРОЙКА БАЗЫ ДАННЫХ ---
 # Вставь сюда URI строку из настроек Supabase (Database -> Connection string -> URI)
 # Не забудь заменить [YOUR-PASSWORD] на твой настоящий пароль
-DATABASE_URL = "postgresql://postgres:ts5BdN4hvZGnuch@db.zjaeftnfjdcgdrpepvtx.supabase.co:5432/postgres"
+DATABASE_URL = "postgresql://postgres.zjaeftnfjdcgdrpepvtx:ts5BdN4hvZGnuch@aws-0-eu-west-1.pooler.supabase.com:6543/postgres"
 
 def get_db_connection():
     """Создает подключение к PostgreSQL"""
