@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # ВАЖНО: Используй здесь ссылку от Connection Pooler (порт 6543)
-DATABASE_URL = os.getenv('postgresql://postgres.zjaeftnfjdcgdrpepvtx:ts5BdN4hvZGnuch@aws-0-eu-west-1.pooler.supabase.com:6543/postgres")
+DATABASE_URL = ("postgresql://postgres.zjaeftnfjdcgdrpepvtx:ts5BdN4hvZGnuch@aws-0-eu-west-1.pooler.supabase.com:6543/postgres")
 
 def get_db_connection():
     try:
