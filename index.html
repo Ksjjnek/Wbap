@@ -3,96 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPay Premium Glass</title>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <title>BPay Premium Glass v2</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            /* Темный базовый фон */
-            background: #03070b; 
-            color: white; font-family: 'Orbitron', sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; margin: 0; overflow: hidden; perspective: 1200px;
+        :root {
+            --bg-color: #03070b;
+            --accent-green: #00ffcc;
+            --accent-blue: #0064ff;
         }
 
-        /* Те самые размытые изюминки на фоне */
-        .bg-blob {
-            position: absolute; border-radius: 50%; filter: blur(100px); z-index: -1;
+        body {
+            background: var(--bg-color);
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; margin: 0; overflow: hidden; perspective: 1500px;
         }
-        .blob-blue { width: 350px; height: 350px; background: rgba(0, 80, 200, 0.4); top: 5%; left: 0%; }
-        .blob-green { width: 400px; height: 400px; background: rgba(0, 200, 120, 0.25); bottom: 5%; right: -5%; }
+
+        /* Декоративные пятна фона */
+        .bg-blob { position: absolute; border-radius: 50%; filter: blur(120px); z-index: -1; opacity: 0.5; }
+        .blob-blue { width: 400px; height: 400px; background: var(--accent-blue); top: -10%; left: -10%; }
+        .blob-green { width: 500px; height: 500px; background: var(--accent-green); bottom: -15%; right: -10%; opacity: 0.2; }
 
         /* Уведомление */
         #notify {
             position: fixed; top: -120px;
-            background: linear-gradient(135deg, rgba(0, 255, 204, 0.2), rgba(0, 100, 255, 0.2));
-            backdrop-filter: blur(20px);
-            padding: 20px 50px; border-radius: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(25px);
+            padding: 18px 45px; border-radius: 50px;
             border: 1px solid rgba(0, 255, 204, 0.4);
-            transition: 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
-            box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2);
-            z-index: 1000; font-weight: bold; text-align: center;
-            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000; text-align: center; font-size: 14px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5), 0 0 20px rgba(0, 255, 204, 0.1);
         }
 
-        /* Контейнер карты */
+        /* Контейнер для 3D тени */
+        .scene {
+            filter: drop-shadow(0 30px 50px rgba(0,0,0,0.8));
+        }
+
         .card-container {
-            width: 340px; height: 215px;
+            width: 350px; height: 220px;
             position: relative; transform-style: preserve-3d;
-            /* Убрали transition, так как теперь анимируем через JS для плавности */
         }
 
-        /* Слои карты для реалистичной тонкой толщины */
         .layer {
             position: absolute; inset: 0; border-radius: 20px;
-            box-sizing: border-box; backface-visibility: hidden;
+            backface-visibility: hidden; overflow: hidden;
         }
 
-        /* Передняя часть карты */
+        /* ЛИЦЕВАЯ СТОРОНА */
         .front {
-            /* Темно-синий и темно-зеленый прозрачный градиент */
-            background: linear-gradient(135deg, rgba(10, 40, 80, 0.65), rgba(10, 60, 45, 0.5));
+            background: linear-gradient(135deg, rgba(15, 32, 59, 0.8), rgba(10, 45, 40, 0.7));
             backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05); /* Легкий блик сверху */
-            transform: translateZ(1.5px);
-            display: flex; flex-direction: column; padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transform: translateZ(2px);
+            display: flex; flex-direction: column; padding: 25px; box-sizing: border-box;
             justify-content: space-between;
-            box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 20px 50px rgba(0,0,0,0.6);
         }
 
-        /* Тонкий край (основа) */
-        .middle {
+        /* ТОРЕЦ (ГРАНЬ) */
+        .edge {
             background: rgba(255, 255, 255, 0.1);
-            border: 2px solid rgba(255,255,255,0.15);
-            transform: translateZ(0px);
-        }
-
-        /* Задняя часть карты */
-        .back {
-            background: linear-gradient(135deg, rgba(10, 40, 80, 0.8), rgba(10, 60, 45, 0.7));
+            transform: translateZ(0);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transform: translateZ(-1.5px) rotateY(180deg);
         }
 
-        /* Дизайн внутренностей */
+        /* ОБРАТНАЯ СТОРОНА */
+        .back {
+            background: linear-gradient(135deg, #0f203b, #0a2d28);
+            transform: translateZ(-2px) rotateY(180deg);
+            padding: 0; display: flex; flex-direction: column;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Элементы задней стороны */
+        .mag-stripe { width: 100%; height: 45px; background: #0a0a0a; margin-top: 25px; }
+        .signature-area { 
+            width: 80%; height: 35px; background: rgba(255,255,255,0.1); 
+            margin: 15px 25px; display: flex; align-items: center; justify-content: flex-end;
+            padding: 0 15px; font-family: 'Inter', sans-serif; font-style: italic; color: #888;
+        }
+        .cvv-box { background: white; color: black; padding: 2px 8px; border-radius: 4px; font-style: normal; font-weight: bold; font-family: monospace; }
+        .back-info { padding: 0 25px; font-size: 8px; opacity: 0.3; line-height: 1.4; font-family: 'Inter', sans-serif; }
+
+        /* Декор переда */
         .chip { 
-            width: 48px; height: 35px; 
-            background: linear-gradient(135deg, #e6c27a, #997328, #e6c27a); 
-            border-radius: 6px; box-shadow: 0 0 8px rgba(230,194,122,0.4);
-            position: relative; overflow: hidden;
+            width: 50px; height: 38px; 
+            background: linear-gradient(135deg, #fceabb, #f8b500, #fceabb); 
+            border-radius: 7px; position: relative;
         }
-        .chip::after { content: ''; position: absolute; inset: 4px; border: 1px solid rgba(0,0,0,0.3); border-radius: 3px; }
-        
-        .card-num { font-size: 21px; letter-spacing: 3px; color: #fff; margin: 25px 0; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
-        .balance { font-size: 26px; color: #00ffcc; font-weight: bold; text-shadow: 0 0 15px rgba(0,255,204,0.4); }
-        
-        /* Свечение при сообщении */
-        .glow .front {
-            animation: neonGlow 2s infinite;
-        }
-        @keyframes neonGlow {
-            0%, 100% { box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 0 20px rgba(0, 255, 204, 0.2); border-color: rgba(0, 255, 204, 0.3); }
-            50% { box-shadow: inset 0 0 20px rgba(255,255,255,0.05), 0 0 40px rgba(0, 255, 204, 0.7); border-color: rgba(0, 255, 204, 0.8); }
+        .chip::before { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(0,0,0,0.2); border-radius: 4px; }
+
+        .card-num { font-size: 22px; letter-spacing: 3.5px; margin: 25px 0; color: #eee; }
+        .balance { font-size: 24px; color: var(--accent-green); font-weight: bold; text-shadow: 0 0 15px rgba(0,255,204,0.3); }
+
+        .glow .front { animation: neon 1.5s infinite alternate; }
+        @keyframes neon {
+            from { border-color: rgba(0, 255, 204, 0.3); box-shadow: inset 0 0 15px rgba(0, 255, 204, 0.1); }
+            to { border-color: rgba(0, 255, 204, 0.8); box-shadow: inset 0 0 30px rgba(0, 255, 204, 0.3); }
         }
     </style>
 </head>
@@ -101,26 +110,38 @@
     <div class="bg-blob blob-blue"></div>
     <div class="bg-blob blob-green"></div>
 
-    <div id="notify">Система онлайн</div>
+    <div id="notify">Система BPay готова</div>
 
-    <div class="card-container" id="card">
-        <div class="layer back"></div>
-        <div class="layer middle"></div>
-        <div class="layer front">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div class="chip"></div>
-                <div style="text-align: right;">
-                    <div style="font-size: 14px; letter-spacing: 2px; color: #fff; opacity: 0.8;">BPAY</div>
-                    <div style="font-size: 8px; opacity: 0.4; letter-spacing: 1px;">DIGITAL</div>
+    <div class="scene">
+        <div class="card-container" id="card">
+            <div class="layer front">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div class="chip"></div>
+                    <div style="text-align: right; opacity: 0.8;">BPAY PREMIUM</div>
+                </div>
+                <div class="card-num">4825 6559 1926 4410</div>
+                <div style="display: flex; justify-content: space-between; align-items: flex-end;">
+                    <div>
+                        <div style="font-size: 8px; opacity: 0.4; letter-spacing: 2px;">HOLDER</div>
+                        <div style="font-size: 14px;">ꘜ РАБОТЯГА</div>
+                    </div>
+                    <div class="balance">74 200.00 ₽</div>
                 </div>
             </div>
-            <div class="card-num">4825 6559 1926 4410</div>
-            <div style="display: flex; justify-content: space-between; align-items: flex-end;">
-                <div>
-                    <div style="font-size: 9px; opacity: 0.5; letter-spacing: 2px; margin-bottom: 3px;">CARDHOLDER</div>
-                    <div style="font-size: 14px; font-weight: bold; text-transform: uppercase;">ꘜ Работяга</div>
+
+            <div class="layer edge"></div>
+
+            <div class="layer back">
+                <div class="mag-stripe"></div>
+                <div class="signature-area">
+                    <span style="font-size: 10px; margin-right: 10px;">Security Code</span>
+                    <div class="cvv-box">926</div>
                 </div>
-                <div class="balance">74 200 ₽</div>
+                <div class="back-info">
+                    THIS CARD IS PROPERTY OF BPAY DIGITAL SYSTEMS. IF FOUND PLEASE RETURN TO NEAREST BRANCH.
+                    AUTHORIZED SIGNATURE REQUIRED. FOR CUSTOMER SERVICE CALL +7 800 555 35 35.
+                </div>
+                <div style="margin-top: auto; padding: 20px; opacity: 0.2; font-size: 12px; letter-spacing: 5px;">WORLDWIDE</div>
             </div>
         </div>
     </div>
@@ -129,49 +150,42 @@
         const card = document.getElementById('card');
         const notify = document.getElementById('notify');
         
-        // --- ПОДКЛЮЧЕНИЕ К PYTHON (NTFY) ---
-        const TOPIC = "ksjjnek_bpay_secure_channel"; // Тот же самый канал!
+        // --- СВЯЗЬ (NTFY) ---
+        const TOPIC = "ksjjnek_bpay_secure_channel";
         const eventSource = new EventSource(`https://ntfy.sh/${TOPIC}/sse`);
 
-        eventSource.onmessage = (event) => {
-            const data = JSON.parse(event.data);
+        eventSource.onmessage = (e) => {
+            const data = JSON.parse(e.data);
             notify.innerText = data.message;
             notify.style.top = "40px";
             card.classList.add('glow');
-
-            setTimeout(() => {
-                notify.style.top = "-120px";
-                card.classList.remove('glow');
-            }, 5000);
+            setTimeout(() => { notify.style.top = "-120px"; card.classList.remove('glow'); }, 5000);
         };
 
-        // --- ПЛАВНАЯ ФИЗИКА (LERP) ---
-        let targetRx = 15, targetRy = -15; // Куда стремится карта
-        let currentRx = 15, currentRy = -15; // Где она сейчас
-        let isDown = false, lastX, lastY;
+        // --- УЛУЧШЕННАЯ ФИЗИКА ---
+        let targetRx = 15, targetRy = -15;
+        let currentRx = 15, currentRy = -15;
+        let isDown = false, lx, ly;
 
-        // Отслеживаем касания/мышь
-        document.onpointerdown = e => { isDown = true; lastX = e.clientX; lastY = e.clientY; };
+        document.onpointerdown = e => { isDown = true; lx = e.clientX; ly = e.clientY; };
         document.onpointermove = e => {
             if(!isDown) return;
-            // Чувствительность вращения
-            targetRy += (e.clientX - lastX) * 0.35;
-            targetRx -= (e.clientY - lastY) * 0.35;
-            lastX = e.clientX; lastY = e.clientY;
+            // Чувствительность выше (0.7 вместо 0.35)
+            targetRy += (e.clientX - lx) * 0.7;
+            targetRx -= (e.clientY - ly) * 0.7;
+            lx = e.clientX; ly = e.clientY;
         };
-        document.onpointerup = () => { isDown = false; };
-        document.onpointerleave = () => { isDown = false; };
+        document.onpointerup = () => isDown = false;
 
-        // Анимационный цикл (60 кадров в секунду)
-        function animate() {
-            // Формула плавности (чем меньше 0.08, тем более "вязким" и плавным будет движение)
-            currentRx += (targetRx - currentRx) * 0.08;
-            currentRy += (targetRy - currentRy) * 0.08;
+        function update() {
+            // Коэффициент плавности выше (0.15 вместо 0.08) - карта "быстрее"
+            currentRx += (targetRx - currentRx) * 0.15;
+            currentRy += (targetRy - currentRy) * 0.15;
             
             card.style.transform = `rotateX(${currentRx}deg) rotateY(${currentRy}deg)`;
-            requestAnimationFrame(animate); // Зацикливаем
+            requestAnimationFrame(update);
         }
-        animate(); // Запускаем движок
+        update();
     </script>
 </body>
 </html>
