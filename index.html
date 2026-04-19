@@ -3,100 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BPay Standalone</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    <title>BPay Premium Card</title>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body {
-            background: #050a0f; color: white;
-            font-family: 'Orbitron', sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            justify-content: center; height: 100vh; margin: 0;
-            overflow: hidden; perspective: 2000px;
-        }
-
-        /* Уведомление сверху */
-        #notify {
-            position: fixed; top: -100px;
-            background: rgba(0, 255, 204, 0.2);
-            backdrop-filter: blur(10px);
-            padding: 15px 40px; border-radius: 50px;
-            border: 1px solid #00ffcc;
-            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
-            z-index: 100;
-        }
-
-        .card-container {
-            width: 350px; height: 210px;
-            position: relative; transform-style: preserve-3d;
-            transition: transform 0.1s;
-        }
-
-        /* Слой толщины для углов (Rim) */
-        .card-rim {
-            position: absolute; inset: -2px;
-            background: linear-gradient(135deg, #444, #111, #444);
-            border-radius: 24px;
-            transform: translateZ(0);
-            box-shadow: 0 0 15px rgba(0,0,0,0.8);
-        }
-
-        .face {
-            position: absolute; inset: 0;
-            border-radius: 22px;
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.1);
-            display: flex; flex-direction: column;
-            padding: 25px; box-sizing: border-box;
-            backface-visibility: hidden;
-        }
-
-        .front {
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
-            transform: translateZ(10px); /* Вынос вперед для объема */
-            justify-content: space-between;
-        }
-
-        .back {
-            background: rgba(255,255,255,0.05);
-            transform: translateZ(-10px) rotateY(180deg);
-        }
-
-        /* Контент карты */
-        .chip { width: 50px; height: 38px; background: linear-gradient(45deg, #ffd700, #b8860b); border-radius: 6px; }
-        .card-num { font-size: 20px; letter-spacing: 2px; color: #eee; margin: 20px 0; }
-        .card-holder { font-size: 10px; opacity: 0.5; letter-spacing: 3px; }
-        .balance { font-size: 24px; color: #00ffcc; font-weight: bold; align-self: flex-end; }
-
-        /* Эффект свечения при сообщении */
-        .glow { animation: pulse 1.5s infinite; }
-        @keyframes pulse {
-            0% { box-shadow: 0 0 10px #00ffcc; }
-            50% { box-shadow: 0 0 30px #00ffcc; }
-            100% { box-shadow: 0 0 10px #00ffcc; }
-        }
+        /* Весь CSS остается ТАКИМ ЖЕ, как в прошлом ответе */
+        body { background: #020508; color: white; font-family: 'Orbitron', sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; overflow: hidden; perspective: 2000px; }
+        #notify { position: fixed; top: -120px; background: rgba(0, 255, 204, 0.15); backdrop-filter: blur(15px); padding: 20px 50px; border-radius: 20px; border: 1px solid rgba(0, 255, 204, 0.5); transition: 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 10px 30px rgba(0, 255, 204, 0.2); z-index: 1000; font-weight: bold; text-align: center; }
+        .card-container { width: 340px; height: 210px; position: relative; transform-style: preserve-3d; transition: transform 0.1s linear; }
+        .card-rim { position: absolute; inset: -3px; background: linear-gradient(135deg, #555, #111, #555); border-radius: 26px; transform: translateZ(0); box-shadow: 0 0 25px rgba(0,0,0,0.9); }
+        .face { position: absolute; inset: 0; border-radius: 22px; backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; padding: 25px; box-sizing: border-box; backface-visibility: hidden; }
+        .front { background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(255,255,255,0.03)); transform: translateZ(12px); justify-content: space-between; }
+        .back { background: rgba(255,255,255,0.05); transform: translateZ(-12px) rotateY(180deg); }
+        .chip { width: 48px; height: 35px; background: linear-gradient(45deg, #ffd700, #b8860b); border-radius: 6px; }
+        .card-num { font-size: 19px; letter-spacing: 2px; color: #fff; margin: 20px 0; opacity: 0.9; }
+        .balance { font-size: 26px; color: #00ffcc; font-weight: bold; align-self: flex-end; text-shadow: 0 0 10px rgba(0,255,204,0.5); }
+        .glow { animation: neon 1.5s infinite; }
+        @keyframes neon { 0%, 100% { box-shadow: 0 0 15px rgba(0, 255, 204, 0.3); } 50% { box-shadow: 0 0 40px rgba(0, 255, 204, 0.6); } }
     </style>
 </head>
 <body>
 
-    <div id="notify">Сообщение из Python!</div>
+    <div id="notify">Ожидание сигнала...</div>
 
     <div class="card-container" id="card">
         <div class="card-rim"></div>
-        
         <div class="face front">
-            <div style="display: flex; justify-content: space-between;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div class="chip"></div>
-                <div style="font-weight: bold; color: rgba(255,255,255,0.3);">PREMIUM</div>
+                <div style="font-size: 14px; opacity: 0.6;">BPAY CLOUD</div>
             </div>
             <div class="card-num">4825 6559 1926 4410</div>
             <div style="display: flex; justify-content: space-between; align-items: flex-end;">
                 <div>
-                    <div class="card-holder">CARD HOLDER</div>
-                    <div id="user-name">STANDALONE USER</div>
+                    <div style="font-size: 9px; opacity: 0.4;">HOLDER</div>
+                    <div style="font-size: 13px; font-weight: bold;">ꘜ РАБОТЯГА</div>
                 </div>
-                <div class="balance">5 230.00 ₽</div>
+                <div class="balance">74 200.00 ₽</div>
             </div>
         </div>
         <div class="face back"></div>
@@ -106,7 +48,31 @@
         const card = document.getElementById('card');
         const notify = document.getElementById('notify');
         
-        // --- 3D Вращение ---
+        // ВАЖНО: Название канала должно быть таким же, как в Python!
+        const TOPIC = "ksjjnek_bpay_secure_channel";
+
+        // Подключаемся к облаку ntfy
+        const eventSource = new EventSource(`https://ntfy.sh/${TOPIC}/sse`);
+
+        eventSource.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            
+            // Выводим сообщение
+            notify.innerText = data.message;
+            notify.style.top = "40px";
+            card.classList.add('glow');
+
+            setTimeout(() => {
+                notify.style.top = "-120px";
+                card.classList.remove('glow');
+            }, 5000);
+        };
+
+        eventSource.onerror = () => {
+            console.log("Ошибка подключения. Переподключение...");
+        };
+
+        // 3D Вращение
         let rX = 15, rY = -15, isD = false, lx, ly;
         document.onpointerdown = e => { isD = true; lx = e.clientX; ly = e.clientY; };
         document.onpointermove = e => {
@@ -117,24 +83,6 @@
             card.style.transform = `rotateX(${rX}deg) rotateY(${rY}deg)`;
         };
         document.onpointerup = () => isD = false;
-
-        // --- Связь с Python ---
-        const socket = io();
-
-        socket.on('new_message', function(data) {
-            // Показываем уведомление
-            notify.innerText = data.msg;
-            notify.style.top = "40px";
-            
-            // Заставляем карту светиться
-            card.classList.add('glow');
-
-            // Убираем через 3 секунды
-            setTimeout(() => {
-                notify.style.top = "-100px";
-                card.classList.remove('glow');
-            }, 3000);
-        });
     </script>
 </body>
 </html>
