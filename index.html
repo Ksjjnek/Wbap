@@ -141,8 +141,8 @@
 
         function update() {
             // Коэффициент 0.25 дает мгновенный отклик
-            currentRx += (targetRx - currentRx) * 0.25;
-            currentRy += (targetRy - currentRy) * 0.25;
+            currentRx += (targetRx - currentRx) * 1;
+            currentRy += (targetRy - currentRy) * 1;
             card.style.transform = `rotateX(${currentRx}deg) rotateY(${currentRy}deg)`;
             requestAnimationFrame(update);
         }
