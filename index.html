@@ -3,247 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BPay Админ-панель</title>
+    <title>BPay Admin</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        /* --- СТИЛИ (CSS) --- */
-        body {
-            background-color: #1c1c1e;
-            color: #ffffff;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            margin: 0;
-            padding: 20px;
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #1c1c1e);
+            --text-color: var(--tg-theme-text-color, #ffffff);
+            --hint-color: var(--tg-theme-hint-color, #aaaaaa);
+            --button-color: var(--tg-theme-button-color, #0088cc);
+            --button-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #2c2c2e);
         }
 
-        /* Экран загрузки */
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: -apple-system, sans-serif;
+            margin: 0;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Красивая загрузка */
         #loading-screen {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #1c1c1e;
-            display: none; /* Скрыт по умолчанию */
+            inset: 0;
+            background: var(--bg-color);
+            display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            z-index: 9999;
-            transition: opacity 0.3s;
+            z-index: 1000;
+            transition: opacity 0.5s;
         }
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid rgba(255, 255, 255, 0.1);
-            border-top: 4px solid #0088cc;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-        #loading-text { font-size: 16px; font-weight: bold; color: #aaaaaa; }
+        .loader-dots { display: flex; gap: 8px; margin-bottom: 15px; }
+        .dot { width: 12px; height: 12px; background: var(--button-color); border-radius: 50%; animation: pulse 1.5s infinite; }
+        .dot:nth-child(2) { animation-delay: 0.3s; }
+        .dot:nth-child(3) { animation-delay: 0.6s; }
+        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
 
-        /* Авторизация и Дашборд */
-        .container { max-width: 600px; margin: 0 auto; }
-        .box { background: #2c2c2e; padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-        
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 8px;
-            border: none;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        input { background: #1c1c1e; color: white; border: 1px solid #3a3a3c; }
-        button { background: #0088cc; color: white; font-weight: bold; cursor: pointer; }
-        button:active { background: #0077b3; }
-        
-        .btn-danger { background: #ff3b30; }
-        .btn-success { background: #34c759; }
-        
-        /* Карточка пользователя */
-        .user-card {
-            background: #3a3a3c;
+        /* Карточка профиля из Telegram */
+        .user-profile-card {
+            background: var(--secondary-bg);
             padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 15px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
         }
-        .user-header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 10px; }
-        .user-info span { display: block; margin-bottom: 5px; color: #ccc; }
-        .user-info strong { color: white; }
-        .banned-text { color: #ff3b30 !important; font-weight: bold; }
-        .active-text { color: #34c759 !important; }
-        .action-row { display: flex; gap: 10px; margin-top: 10px; }
+        .user-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--button-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; }
+        .user-details b { display: block; font-size: 16px; }
+        .user-details span { color: var(--hint-color); font-size: 13px; }
+
+        /* Стили кнопок и инпутов */
+        .box { background: var(--secondary-bg); padding: 20px; border-radius: 15px; }
+        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; box-sizing: border-box; }
+        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--button-color); color: var(--button-text); font-weight: bold; font-size: 16px; cursor: pointer; }
+        
+        /* Список юзеров */
+        .user-item { background: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-bottom: 10px; }
+        .flex-row { display: flex; justify-content: space-between; align-items: center; }
+        .status-active { color: #34c759; }
+        .status-banned { color: #ff3b30; }
+        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+        .btn-small { padding: 8px; font-size: 13px; }
+        .btn-ban { background: #ff3b30; }
     </style>
 </head>
 <body>
 
     <div id="loading-screen">
-        <div class="spinner"></div>
-        <div id="loading-text">Будим сервер...</div>
+        <div class="loader-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+        <div id="loading-text" style="color: var(--hint-color);">Проверяем соединение...</div>
     </div>
 
-    <div id="login-container" class="container">
-        <div class="box">
-            <h2 style="text-align: center; margin-top: 0;">Вход в Админку</h2>
-            <input type="text" id="login-input" placeholder="Логин">
-            <input type="password" id="password-input" placeholder="Пароль">
-            <button onclick="login()">Войти</button>
+    <div id="admin-card" class="user-profile-card" style="display: none;">
+        <div id="admin-avatar" class="user-avatar">?</div>
+        <div class="user-details">
+            <b id="admin-name">Загрузка...</b>
+            <span id="admin-id">ID: 000000</span>
         </div>
     </div>
 
-    <div id="dashboard" class="container" style="display: none;">
-        <h2>Пользователи</h2>
+    <div id="login-form" class="box" style="display: none;">
+        <h3 style="margin-top: 0;">Вход в управление</h3>
+        <input type="text" id="log" placeholder="Логин">
+        <input type="password" id="pas" placeholder="Пароль">
+        <button onclick="tryLogin()">Войти</button>
+    </div>
+
+    <div id="main-content" style="display: none;">
+        <h3>Список пользователей</h3>
         <div id="users-list"></div>
     </div>
 
     <script>
-        // --- ВАЖНАЯ НАСТРОЙКА ---
-        // Вставь сюда ссылку на твой Render, чтобы сайт знал, куда отправлять запросы
-        const BACKEND_URL = "https://wbap.onrender.com"; 
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-        // --- ЛОГИКА ЗАГРУЗКИ ---
-        const loadingScreen = document.getElementById('loading-screen');
-        const loadingText = document.getElementById('loading-text');
-        let loadingInterval;
-        const phrases = ["Будим сервер...", "Проверяем базу данных...", "Собираем данные...", "Почти готово..."];
+        const API = "https://ТВОЙ-RENDER.onrender.com"; // ЗАМЕНИ НА СВОЮ
 
-        function showLoader() {
-            loadingScreen.style.display = 'flex';
-            loadingScreen.style.opacity = '1';
-            let i = 0;
-            loadingText.innerText = phrases[0];
-            loadingInterval = setInterval(() => {
-                i = (i + 1) % phrases.length;
-                loadingText.innerText = phrases[i];
-            }, 2500);
+        // Инициализация данных из ТГ
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            const user = tg.initDataUnsafe.user;
+            document.getElementById('admin-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            document.getElementById('admin-id').innerText = "ID: " + user.id;
+            document.getElementById('admin-avatar').innerText = user.first_name[0];
+            document.getElementById('admin-card').style.display = 'flex';
         }
 
-        function hideLoader() {
-            clearInterval(loadingInterval);
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => loadingScreen.style.display = 'none', 300);
-        }
+        // Плавная загрузка
+        const phrases = ["Связываемся с базой...", "Расставляем по полочкам...", "Проверяем права..."];
+        let pIdx = 0;
+        setInterval(() => {
+            pIdx = (pIdx + 1) % phrases.length;
+            document.getElementById('loading-text').innerText = phrases[pIdx];
+        }, 2000);
 
-        // --- АВТОРИЗАЦИЯ ---
-        function login() {
-            const loginVal = document.getElementById('login-input').value;
-            const passVal = document.getElementById('password-input').value;
+        // Показываем логин после микро-паузы для красоты
+        setTimeout(() => {
+            document.getElementById('loading-screen').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading-screen').style.display = 'none';
+                document.getElementById('login-form').style.display = 'block';
+            }, 500);
+        }, 3000);
+
+        function tryLogin() {
+            const l = document.getElementById('log').value;
+            const p = document.getElementById('pas').value;
             
-            showLoader(); // Показываем загрузку, пока Render просыпается
-
-            fetch(`${BACKEND_URL}/api/admin/login`, {
+            fetch(`${API}/api/admin/login`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ login: loginVal, password: passVal })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({login: l, password: p})
             })
-            .then(res => res.json())
+            .then(r => r.json())
             .then(data => {
-                if (data.success) {
-                    document.getElementById('login-container').style.display = 'none';
-                    document.getElementById('dashboard').style.display = 'block';
-                    loadUsers(); // Грузим юзеров
+                if(data.success) {
+                    document.getElementById('login-form').style.display = 'none';
+                    document.getElementById('main-content').style.display = 'block';
+                    loadUsers();
                 } else {
-                    hideLoader();
-                    alert("Неверный логин или пароль!");
+                    alert("Неверные данные!");
                 }
-            })
-            .catch(err => {
-                hideLoader();
-                alert("Ошибка соединения с сервером.");
             });
         }
 
-        // --- ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ ---
         function loadUsers() {
-            fetch(`${BACKEND_URL}/api/admin/users`)
-            .then(res => res.json())
+            fetch(`${API}/api/admin/users`)
+            .then(r => r.json())
             .then(users => {
-                const list = document.getElementById('users-list');
-                list.innerHTML = ''; // Очищаем список
-                
-                users.forEach(u => {
-                    // Проверяем статус бана
-                    let statusHtml = u.banned 
-                        ? `<span id="status-${u.id}" class="banned-text">Забанен</span>`
-                        : `<span id="status-${u.id}" class="active-text">Активен</span>`;
-
-                    list.innerHTML += `
-                        <div class="user-card">
-                            <div class="user-header">
-                                <strong>${u.name} (ID: ${u.id})</strong>
-                                ${statusHtml}
-                            </div>
-                            <div class="user-info">
-                                <span>Баланс: <strong id="balance-${u.id}">${u.balance || 0}</strong> звезд</span>
-                            </div>
-                            
-                            <div class="action-row">
-                                <input type="number" id="amount-${u.id}" placeholder="Сумма" style="margin-bottom:0;">
-                                <button onclick="action('topup', '${u.id}')">Пополнить</button>
-                            </div>
-                            <div class="action-row">
-                                <button class="btn-danger" onclick="action('ban', '${u.id}')">Бан</button>
-                                <button class="btn-success" onclick="action('unban', '${u.id}')">Разбан</button>
-                            </div>
+                const container = document.getElementById('users-list');
+                container.innerHTML = users.map(u => `
+                    <div class="user-item">
+                        <div class="flex-row">
+                            <b>${u.name}</b>
+                            <span id="st-${u.id}" class="${u.banned ? 'status-banned' : 'status-active'}">
+                                ${u.banned ? 'Забанен' : 'Активен'}
+                            </span>
                         </div>
-                    `;
-                });
-                hideLoader(); // Сервер ответил, данные готовы, прячем загрузку
-            })
-            .catch(err => {
-                hideLoader();
-                alert("Не удалось загрузить пользователей");
+                        <div style="margin-top:5px; font-size:14px; color: var(--hint-color)">
+                            Баланс: <span id="bal-${u.id}" style="color:#fff">${u.balance}</span> ⭐
+                        </div>
+                        <div class="action-btns">
+                            <button class="btn-small" onclick="doAction('topup', '${u.id}')">+ Пополнить</button>
+                            <button class="btn-small btn-ban" onclick="doAction('${u.banned ? 'unban' : 'ban'}', '${u.id}')">
+                                ${u.banned ? 'Разбанить' : 'Бан'}
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
             });
         }
 
-        // --- ВЗАИМОДЕЙСТВИЕ (БЕЗ ПЕРЕЗАГРУЗКИ) ---
-        function action(type, tg_id) {
-            let amount = 0;
-            let reason = '';
-            let duration = '';
+        function doAction(type, id) {
+            let val = type === 'topup' ? prompt("Сколько звезд начислить?") : null;
+            if (type === 'topup' && !val) return;
 
-            // Собираем данные в зависимости от действия
-            if (type === 'topup') {
-                amount = document.getElementById(`amount-${tg_id}`).value;
-                if (!amount) return alert('Введите сумму!');
-            } else if (type === 'ban') {
-                reason = prompt("Причина бана:");
-                if (reason === null) return; // Отмена
-                duration = prompt("Срок бана (например: навсегда):", "навсегда");
-                if (duration === null) return;
-            }
-
-            // Отправляем запрос на сервер (в фоновом режиме)
-            fetch(`${BACKEND_URL}/api/admin/action`, {
+            fetch(`${API}/api/admin/action`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: type, tg_id: tg_id, amount: amount, reason: reason, duration: duration })
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({action: type, tg_id: id, amount: val})
             })
-            .then(res => res.json())
+            .then(r => r.json())
             .then(data => {
-                if (data.success) {
-                    // --- МГНОВЕННОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
-                    
-                    if (type === 'topup') {
-                        const balanceEl = document.getElementById(`balance-${tg_id}`);
-                        const currentVal = parseFloat(balanceEl.innerText) || 0;
-                        balanceEl.innerText = currentVal + parseFloat(amount);
-                        document.getElementById(`amount-${tg_id}`).value = ''; // очищаем инпут
-                    } 
-                    else if (type === 'ban') {
-                        const statusEl = document.getElementById(`status-${tg_id}`);
-                        statusEl.innerText = 'Забанен';
-                        statusEl.className = 'banned-text';
-                    } 
-                    else if (type === 'unban') {
-                        const statusEl = document.getElementById(`status-${tg_id}`);
-                        statusEl.innerText = 'Активен';
-                        statusEl.className = 'active-text';
+                if(data.success) {
+                    if(type === 'topup') {
+                        const b = document.getElementById(`bal-${id}`);
+                        b.innerText = parseFloat(b.innerText) + parseFloat(val);
+                    } else {
+                        // Мгновенная смена статуса
+                        const st = document.getElementById(`st-${id}`);
+                        const isBan = type === 'ban';
+                        st.innerText = isBan ? 'Забанен' : 'Активен';
+                        st.className = isBan ? 'status-banned' : 'status-active';
                     }
-                } else {
-                    alert("Ошибка: " + data.error);
                 }
             });
         }
