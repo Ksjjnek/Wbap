@@ -2,209 +2,150 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BPay Admin</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин Конфет</title>
     <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #1c1c1e);
-            --text-color: var(--tg-theme-text-color, #ffffff);
-            --hint-color: var(--tg-theme-hint-color, #aaaaaa);
-            --button-color: var(--tg-theme-button-color, #0088cc);
-            --button-text: var(--tg-theme-button-text-color, #ffffff);
-            --secondary-bg: var(--tg-theme-secondary-bg-color, #2c2c2e);
+        body { font-family: sans-serif; background-color: #2b2b2b; color: white; padding: 20px; }
+        .wbap-hidden { display: none !important; }
+        .wbap-btn {
+            padding: 12px 20px; margin: 5px; cursor: pointer; border: none; 
+            border-radius: 8px; background: #4CAF50; color: white; font-weight: bold;
         }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: -apple-system, sans-serif;
-            margin: 0;
-            padding: 15px;
-            display: flex;
-            flex-direction: column;
+        .wbap-btn-blue { background: #2196F3; }
+        .wbap-lupa-icon {
+            font-size: 50px; cursor: pointer; display: inline-block; margin: 20px 0; transition: 0.3s;
         }
-
-        /* Красивая загрузка */
-        #loading-screen {
-            position: fixed;
-            inset: 0;
-            background: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.5s;
+        .wbap-pulse { animation: wbap-pulse-anim 2s infinite; opacity: 0.7; }
+        @keyframes wbap-pulse-anim { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+        .wbap-glow { animation: wbap-glow-anim 1s infinite; color: #ffeb3b; text-shadow: 0 0 20px #ffeb3b; }
+        @keyframes wbap-glow-anim { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.5); } }
+        #wbap-chat-box {
+            margin-top: 20px; border: 1px solid #555; border-radius: 10px; padding: 10px;
+            max-width: 350px; background: #333;
         }
-        .loader-dots { display: flex; gap: 8px; margin-bottom: 15px; }
-        .dot { width: 12px; height: 12px; background: var(--button-color); border-radius: 50%; animation: pulse 1.5s infinite; }
-        .dot:nth-child(2) { animation-delay: 0.3s; }
-        .dot:nth-child(3) { animation-delay: 0.6s; }
-        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.2); } }
-
-        /* Карточка профиля из Telegram */
-        .user-profile-card {
-            background: var(--secondary-bg);
-            padding: 15px;
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-bottom: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+        #wbap-chat-messages {
+            height: 200px; overflow-y: auto; margin-bottom: 10px; border-bottom: 1px solid #555; padding-bottom: 5px; font-size: 14px;
         }
-        .user-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--button-color); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px; }
-        .user-details b { display: block; font-size: 16px; }
-        .user-details span { color: var(--hint-color); font-size: 13px; }
-
-        /* Стили кнопок и инпутов */
-        .box { background: var(--secondary-bg); padding: 20px; border-radius: 15px; }
-        input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 10px; border: 1px solid #444; background: #000; color: #fff; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; border-radius: 10px; border: none; background: var(--button-color); color: var(--button-text); font-weight: bold; font-size: 16px; cursor: pointer; }
-        
-        /* Список юзеров */
-        .user-item { background: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-bottom: 10px; }
-        .flex-row { display: flex; justify-content: space-between; align-items: center; }
-        .status-active { color: #34c759; }
-        .status-banned { color: #ff3b30; }
-        .action-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-        .btn-small { padding: 8px; font-size: 13px; }
-        .btn-ban { background: #ff3b30; }
+        .wbap-msg { margin-bottom: 8px; }
+        .wbap-time { font-size: 11px; color: #aaa; margin-left: 5px; }
+        input[type="text"] {
+            flex: 1; padding: 8px; border-radius: 5px; border: 1px solid #555; background: #444; color: white;
+        }
     </style>
 </head>
 <body>
 
-    <div id="loading-screen">
-        <div class="loader-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
-        <div id="loading-text" style="color: var(--hint-color);">Проверяем соединение...</div>
-    </div>
+    <h2>Управление продажами</h2>
+    <button onclick="sellCandies()" class="wbap-btn wbap-btn-blue">Выставить 10 конфет</button>
+    <button onclick="simulateBuy()" class="wbap-btn">[Тест] Имитация покупки</button>
 
-    <div id="admin-card" class="user-profile-card" style="display: none;">
-        <div id="admin-avatar" class="user-avatar">?</div>
-        <div class="user-details">
-            <b id="admin-name">Загрузка...</b>
-            <span id="admin-id">ID: 000000</span>
+    <div id="wbap-status-area" class="wbap-hidden">
+        <div id="wbap-lupa" class="wbap-lupa-icon">🔍</div>
+        <div id="wbap-mini-menu" class="wbap-hidden">
+            <button onclick="finalAction('success')" class="wbap-btn">Продать</button>
+            <button onclick="finalAction('skip')" class="wbap-btn" style="background:#f44336;">Пропустить</button>
+            <button onclick="toggleChat()" class="wbap-btn wbap-btn-blue">Открыть чат</button>
         </div>
     </div>
 
-    <div id="login-form" class="box" style="display: none;">
-        <h3 style="margin-top: 0;">Вход в управление</h3>
-        <input type="text" id="log" placeholder="Логин">
-        <input type="password" id="pas" placeholder="Пароль">
-        <button onclick="tryLogin()">Войти</button>
-    </div>
-
-    <div id="main-content" style="display: none;">
-        <h3>Список пользователей</h3>
-        <div id="users-list"></div>
+    <div id="wbap-chat-box" class="wbap-hidden">
+        <div id="wbap-chat-messages"></div>
+        <div style="display: flex; gap: 5px; margin-top: 10px;">
+            <input type="text" id="wbap-chat-input" placeholder="Введите сообщение...">
+            <button onclick="sendMessage()" class="wbap-btn">Отправить</button>
+        </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
+        // ВАЖНО: Замени этот URL на адрес твоего сервера на Timeweb
+        const API_URL = "https://bpaybot.site"; 
+        const SECRET_TOKEN = "Wbap_Secret_12345";
 
-        const API = "https://ТВОЙ-RENDER.onrender.com"; // ЗАМЕНИ НА СВОЮ
+        let currentAdId = null;
+        let statusInterval = null;
+        let chatInterval = null;
 
-        // Инициализация данных из ТГ
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            const user = tg.initDataUnsafe.user;
-            document.getElementById('admin-name').innerText = user.first_name + (user.last_name ? ' ' + user.last_name : '');
-            document.getElementById('admin-id').innerText = "ID: " + user.id;
-            document.getElementById('admin-avatar').innerText = user.first_name[0];
-            document.getElementById('admin-card').style.display = 'flex';
+        async function apiRequest(endpoint, method = 'GET', body = null) {
+            const options = {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'X-App-Token': SECRET_TOKEN }
+            };
+            if (body) options.body = JSON.stringify(body);
+            try {
+                const res = await fetch(`${API_URL}${endpoint}`, options);
+                return await res.json();
+            } catch (e) {
+                console.error("Ошибка соединения с сервером:", e);
+            }
         }
 
-        // Плавная загрузка
-        const phrases = ["Связываемся с базой...", "Расставляем по полочкам...", "Проверяем права..."];
-        let pIdx = 0;
-        setInterval(() => {
-            pIdx = (pIdx + 1) % phrases.length;
-            document.getElementById('loading-text').innerText = phrases[pIdx];
-        }, 2000);
+        async function sellCandies() {
+            const data = await apiRequest('/sell', 'POST', { item: "Конфеты", count: 10 });
+            if(data && data.id) {
+                currentAdId = data.id;
+                document.getElementById('wbap-status-area').classList.remove('wbap-hidden');
+                const lupa = document.getElementById('wbap-lupa');
+                lupa.classList.add('wbap-pulse');
+                lupa.classList.remove('wbap-glow');
+                startStatusMonitoring();
+            }
+        }
 
-        // Показываем логин после микро-паузы для красоты
-        setTimeout(() => {
-            document.getElementById('loading-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('loading-screen').style.display = 'none';
-                document.getElementById('login-form').style.display = 'block';
-            }, 500);
-        }, 3000);
-
-        function tryLogin() {
-            const l = document.getElementById('log').value;
-            const p = document.getElementById('pas').value;
-            
-            fetch(`${API}/api/admin/login`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({login: l, password: p})
-            })
-            .then(r => r.json())
-            .then(data => {
-                if(data.success) {
-                    document.getElementById('login-form').style.display = 'none';
-                    document.getElementById('main-content').style.display = 'block';
-                    loadUsers();
-                } else {
-                    alert("Неверные данные!");
+        function startStatusMonitoring() {
+            if (statusInterval) clearInterval(statusInterval);
+            statusInterval = setInterval(async () => {
+                const data = await apiRequest(`/check_status/${currentAdId}`);
+                if (data && data.status === 'pending') {
+                    document.getElementById('wbap-lupa').classList.replace('wbap-pulse', 'wbap-glow');
+                    document.getElementById('wbap-mini-menu').classList.remove('wbap-hidden');
+                    clearInterval(statusInterval);
                 }
-            });
+            }, 3000);
         }
 
-        function loadUsers() {
-            fetch(`${API}/api/admin/users`)
-            .then(r => r.json())
-            .then(users => {
-                const container = document.getElementById('users-list');
-                container.innerHTML = users.map(u => `
-                    <div class="user-item">
-                        <div class="flex-row">
-                            <b>${u.name}</b>
-                            <span id="st-${u.id}" class="${u.banned ? 'status-banned' : 'status-active'}">
-                                ${u.banned ? 'Забанен' : 'Активен'}
-                            </span>
-                        </div>
-                        <div style="margin-top:5px; font-size:14px; color: var(--hint-color)">
-                            Баланс: <span id="bal-${u.id}" style="color:#fff">${u.balance}</span> ⭐
-                        </div>
-                        <div class="action-btns">
-                            <button class="btn-small" onclick="doAction('topup', '${u.id}')">+ Пополнить</button>
-                            <button class="btn-small btn-ban" onclick="doAction('${u.banned ? 'unban' : 'ban'}', '${u.id}')">
-                                ${u.banned ? 'Разбанить' : 'Бан'}
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-            });
+        async function finalAction(type) {
+            await apiRequest(`/confirm/${currentAdId}?action=${type}`, 'POST');
+            document.getElementById('wbap-status-area').classList.add('wbap-hidden');
+            document.getElementById('wbap-mini-menu').classList.add('wbap-hidden');
+            document.getElementById('wbap-chat-box').classList.add('wbap-hidden');
+            if (chatInterval) clearInterval(chatInterval);
+            alert("Действие выполнено!");
         }
 
-        function doAction(type, id) {
-            let val = type === 'topup' ? prompt("Сколько звезд начислить?") : null;
-            if (type === 'topup' && !val) return;
+        function toggleChat() {
+            const chatBox = document.getElementById('wbap-chat-box');
+            chatBox.classList.toggle('wbap-hidden');
+            if (!chatBox.classList.contains('wbap-hidden')) {
+                loadChat();
+                if (chatInterval) clearInterval(chatInterval);
+                chatInterval = setInterval(loadChat, 3000);
+            } else {
+                clearInterval(chatInterval);
+            }
+        }
 
-            fetch(`${API}/api/admin/action`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({action: type, tg_id: id, amount: val})
-            })
-            .then(r => r.json())
-            .then(data => {
-                if(data.success) {
-                    if(type === 'topup') {
-                        const b = document.getElementById(`bal-${id}`);
-                        b.innerText = parseFloat(b.innerText) + parseFloat(val);
-                    } else {
-                        // Мгновенная смена статуса
-                        const st = document.getElementById(`st-${id}`);
-                        const isBan = type === 'ban';
-                        st.innerText = isBan ? 'Забанен' : 'Активен';
-                        st.className = isBan ? 'status-banned' : 'status-active';
-                    }
-                }
-            });
+        async function sendMessage() {
+            const input = document.getElementById('wbap-chat-input');
+            if (!input.value) return;
+            await apiRequest(`/chat/${currentAdId}/send`, 'POST', { sender: "Продавец", text: input.value });
+            input.value = '';
+            loadChat();
+        }
+
+        async function loadChat() {
+            if (!currentAdId) return;
+            const messages = await apiRequest(`/chat/${currentAdId}/history`);
+            if(!messages) return;
+            const container = document.getElementById('wbap-chat-messages');
+            container.innerHTML = messages.map(m => `
+                <div class="wbap-msg"><b>${m.sender}:</b> ${m.text} <span class="wbap-time">${m.time}</span></div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        async function simulateBuy() {
+            if(!currentAdId) return alert("Сначала выставь товар!");
+            await apiRequest(`/buy/${currentAdId}`, 'POST');
         }
     </script>
 </body>
